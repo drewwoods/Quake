@@ -27,7 +27,7 @@ ARCH=i386
 RPMARCH=i386
 endif
 
-MAINDIR=/grog/Projects/QW
+MAINDIR=./
 
 BUILD_DEBUG_DIR=debug$(ARCH)$(GLIBC)
 BUILD_RELEASE_DIR=release$(ARCH)$(GLIBC)
@@ -37,7 +37,7 @@ SERVER_DIR=$(MAINDIR)/server
 MESA_DIR=/usr/local/src/Mesa-3.0
 
 CC=gcc
-BASE_CFLAGS=-Wall -Dstricmp=strcasecmp -I$(CLIENT_DIR) -I$(SERVER_DIR)
+BASE_CFLAGS=-Wall -Dstricmp=strcasecmp -I$(CLIENT_DIR) -I$(SERVER_DIR) -m32
 DEBUG_CFLAGS=$(BASE_CFLAGS) -g
 ifeq ($(ARCH),axp)
 RELEASE_CFLAGS=$(BASE_CFLAGS) -ffast-math -funroll-loops \
@@ -49,9 +49,9 @@ RELEASE_CFLAGS=$(BASE_CFLAGS) -m486 -O6 -ffast-math -funroll-loops \
 endif
 GLCFLAGS=-DGLQUAKE -I/usr/local/src/Mesa-3.0/include -I/usr/include/glide
 
-LDFLAGS=-lm
+LDFLAGS=-lm -z muldefs
 SVGALDFLAGS=-lvga
-XLDFLAGS=-L/usr/X11R6/lib -lX11 -lXext
+XLDFLAGS=-L/usr/lib/i386-linux-gnu/ -L/usr/X11R6/lib -lX11 -lXext
 GL_SVGA_LDFLAGS=-L/usr/X11/lib -L/usr/local/src/Mesa-3.0/lib -lm -lMesaGL -lglide2x -lX11 -lXext -lvga
 GL_X11_LDFLAGS=-L/usr/X11/lib -L/usr/local/src/Mesa-3.0/lib -lm -lGL -lX11 -lXext
 
@@ -71,7 +71,7 @@ ifeq ($(ARCH),axp)
 TARGETS=$(BUILDDIR)/qwsv 
 #$(BUILDDIR)/qwcl.x11
 else
-TARGETS=$(BUILDDIR)/qwsv $(BUILDDIR)/qwcl $(BUILDDIR)/qwcl.x11 $(BUILDDIR)/glqwcl $(BUILDDIR)/glqwcl.glx
+TARGETS=$(BUILDDIR)/qwsv $(BUILDDIR)/qwcl.x11 # $(BUILDDIR)/glqwcl.glx  $(BUILDDIR)/qwcl $(BUILDDIR)/glqwcl
 endif
 
 build_debug:
@@ -79,14 +79,14 @@ build_debug:
 		$(BUILD_DEBUG_DIR)/client \
 		$(BUILD_DEBUG_DIR)/glclient \
 		$(BUILD_DEBUG_DIR)/server 
-	$(MAKE) targets BUILDDIR=$(BUILD_DEBUG_DIR) CFLAGS="$(DEBUG_CFLAGS)"
+	$(MAKE) -f $(MAKEFILE_LIST) targets BUILDDIR=$(BUILD_DEBUG_DIR) CFLAGS="$(DEBUG_CFLAGS)"
 
 build_release:
 	@-mkdir $(BUILD_RELEASE_DIR) \
 		$(BUILD_RELEASE_DIR)/client \
 		$(BUILD_RELEASE_DIR)/glclient \
 		$(BUILD_RELEASE_DIR)/server
-	$(MAKE) targets BUILDDIR=$(BUILD_RELEASE_DIR) CFLAGS="$(RELEASE_CFLAGS)"
+	$(MAKE) -f $(MAKEFILE_LIST) targets BUILDDIR=$(BUILD_RELEASE_DIR) CFLAGS="$(RELEASE_CFLAGS)"
 
 all: build_debug build_release
 
@@ -915,10 +915,10 @@ qwsv.spec : $(MAINDIR)/qwsv.spec.sh $(BUILD_RELEASE_DIR)/qwsv
 clean: clean-debug clean-release
 
 clean-debug:
-	$(MAKE) clean2 BUILDDIR=$(BUILD_DEBUG_DIR) CFLAGS="$(DEBUG_CFLAGS)"
+	$(MAKE) -f $(MAKEFILE_LIST) clean2 BUILDDIR=$(BUILD_DEBUG_DIR) CFLAGS="$(DEBUG_CFLAGS)"
 
 clean-release:
-	$(MAKE) clean2 BUILDDIR=$(BUILD_RELEASE_DIR) CFLAGS="$(DEBUG_CFLAGS)"
+	$(MAKE) -f $(MAKEFILE_LIST) clean2 BUILDDIR=$(BUILD_RELEASE_DIR) CFLAGS="$(DEBUG_CFLAGS)"
 
 clean2:
 	-rm -f $(QWSV_OBJS) \

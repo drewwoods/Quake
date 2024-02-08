@@ -25,29 +25,26 @@ ARCH=i386
 endif
 NOARCH=noarch
 
-MOUNT_DIR=/grog/Projects/WinQuake
-MASTER_DIR=/grog/Projects/QuakeMaster
+MOUNT_DIR=./
+MASTER_DIR=./
 MESA_DIR=/usr/local/src/Mesa-2.6
 TDFXGL_DIR = /home/zoid/3dfxgl
 
 BUILD_DEBUG_DIR=debug$(ARCH)$(GLIBC)
 BUILD_RELEASE_DIR=release$(ARCH)$(GLIBC)
 
-EGCS=/usr/local/egcs-1.1.2/bin/gcc
-CC=$(EGCS)
-
-BASE_CFLAGS=-Dstricmp=strcasecmp
+BASE_CFLAGS=-Dstricmp=strcasecmp -m32
 RELEASE_CFLAGS=$(BASE_CFLAGS) -g -mpentiumpro -O6 -ffast-math -funroll-loops \
 	-fomit-frame-pointer -fexpensive-optimizations
 DEBUG_CFLAGS=$(BASE_CFLAGS) -g
-LDFLAGS=-lm
+LDFLAGS=-lm -z muldefs
 SVGALDFLAGS=-lvga
-XLDFLAGS=-L/usr/X11R6/lib -lX11 -lXext -lXxf86dga
+XLDFLAGS=-L/lib/i386-linux-gnu/ -L/usr/lib/i386-linux-gnu/ -L/usr/X11R6/lib -lX11 -lXext -l:libXxf86dga.so.1
 XCFLAGS=-DX11
 
 MESAGLLDFLAGS=-L/usr/X11/lib -L/usr/local/lib -L$(MESA_DIR)/lib -lMesaGL -lglide2x -lX11 -lXext -ldl
 TDFXGLLDFLAGS=-L$(TDFXGL_DIR)/release$(ARCH)$(GLIBC) -l3dfxgl -lglide2x -ldl
-GLLDFLAGS=-L/usr/X11/lib -L/usr/local/lib -lGL -lX11 -lXext -ldl -lXxf86dga -lXxf86vm -lm
+GLLDFLAGS=-L/lib/i386-linux-gnu/ -L/usr/lib/i386-linux-gnu/ -L/usr/X11/lib -lGL -lX11 -lXext -ldl -lm -l:libXxf86dga.so.1 -l:libXxf86vm.so.1
 GLCFLAGS=-DGLQUAKE -I$(MESA_DIR)/include -I/usr/include/glide
 
 DO_CC=$(CC) $(CFLAGS) -o $@ -c $<
@@ -64,12 +61,12 @@ DO_GL_AS=$(CC) $(CFLAGS) $(GLCFLAGS) -DELF -x assembler-with-cpp -o $@ -c $<
 # SETUP AND BUILD
 #############################################################################
 
-TARGETS=$(BUILDDIR)/bin/squake \
-	$(BUILDDIR)/bin/glquake \
+TARGETS= $(BUILDDIR)/bin/quake.x11 \
 	$(BUILDDIR)/bin/glquake.glx \
-	$(BUILDDIR)/bin/glquake.3dfxgl \
-	$(BUILDDIR)/bin/quake.x11
-	# $(BUILDDIR)/bin/unixded
+	# $(BUILDDIR)/bin/glquake.3dfxgl \
+	# $(BUILDDIR)/bin/glquake \
+	# $(BUILDDIR)/bin/unixded \
+	# $(BUILDDIR)/bin/squake
 
 build_debug:
 	@-mkdir $(BUILD_DEBUG_DIR) \
@@ -78,7 +75,7 @@ build_debug:
 		$(BUILD_DEBUG_DIR)/squake \
 		$(BUILD_DEBUG_DIR)/unixded \
 		$(BUILD_DEBUG_DIR)/x11
-	$(MAKE) targets BUILDDIR=$(BUILD_DEBUG_DIR) CFLAGS="$(DEBUG_CFLAGS)"
+	$(MAKE) -f $(MAKEFILE_LIST) targets BUILDDIR=$(BUILD_DEBUG_DIR) CFLAGS="$(DEBUG_CFLAGS)"
 
 build_release:
 	@-mkdir $(BUILD_RELEASE_DIR) \
@@ -87,7 +84,7 @@ build_release:
 		$(BUILD_RELEASE_DIR)/squake \
 		$(BUILD_RELEASE_DIR)/unixded \
 		$(BUILD_RELEASE_DIR)/x11
-	$(MAKE) targets BUILDDIR=$(BUILD_RELEASE_DIR) CFLAGS="$(RELEASE_CFLAGS)"
+	$(MAKE) -f $(MAKEFILE_LIST) targets BUILDDIR=$(BUILD_RELEASE_DIR) CFLAGS="$(RELEASE_CFLAGS)"
 
 all: build_debug build_release
 
@@ -1229,10 +1226,10 @@ clean: clean-debug clean-release
 	rm -f squake.spec glquake.spec quake.x11.spec
 
 clean-debug:
-	$(MAKE) clean2 BUILDDIR=$(BUILD_DEBUG_DIR) CFLAGS="$(DEBUG_CFLAGS)"
+	$(MAKE) -f $(MAKEFILE_LIST) clean2 BUILDDIR=$(BUILD_DEBUG_DIR) CFLAGS="$(DEBUG_CFLAGS)"
 
 clean-release:
-	$(MAKE) clean2 BUILDDIR=$(BUILD_RELEASE_DIR) CFLAGS="$(DEBUG_CFLAGS)"
+	$(MAKE) -f $(MAKEFILE_LIST) clean2 BUILDDIR=$(BUILD_RELEASE_DIR) CFLAGS="$(DEBUG_CFLAGS)"
 
 clean2:
 	-rm -f $(SQUAKE_OBJS) $(X11_OBJS) $(GLQUAKE_OBJS) $(GLSVGA_OBJS) \
