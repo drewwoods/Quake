@@ -863,6 +863,7 @@ void VID_Init(unsigned char *palette)
 	XMapWindow(dpy, win);
 
 	if (vidmode_active) {
+		XSetInputFocus(dpy, win, RevertToParent, CurrentTime);
 		XMoveWindow(dpy, win, 0, 0);
 		XRaiseWindow(dpy, win);
 		XWarpPointer(dpy, None, win, 0, 0, 0, 0, 0, 0);
