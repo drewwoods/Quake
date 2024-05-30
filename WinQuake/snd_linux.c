@@ -74,9 +74,16 @@ qboolean SNDDMA_Init(void)
 		return 0;
 	}
 
-	if (!(caps & DSP_CAP_TRIGGER) || !(caps & DSP_CAP_MMAP))
+	if (!(caps & DSP_CAP_TRIGGER))
 	{
-		Con_Printf("Sorry but your soundcard can't do this\n");
+		Con_Printf("Sorry but your soundcard doesnt support DSP_CAP_TRIGGER\n");
+		close(audio_fd);
+		return 0;
+	}
+
+	if (!(caps & DSP_CAP_MMAP))
+	{
+		Con_Printf("Sorry but your soundcard doesnt support DSP_CAP_MMAP\n");
 		close(audio_fd);
 		return 0;
 	}

@@ -36,7 +36,7 @@ BUILD_RELEASE_DIR=release$(ARCH)$(GLIBC)
 BASE_CFLAGS=-Dstricmp=strcasecmp -m32
 RELEASE_CFLAGS=$(BASE_CFLAGS) -g -mpentiumpro -O6 -ffast-math -funroll-loops \
 	-fomit-frame-pointer -fexpensive-optimizations
-DEBUG_CFLAGS=$(BASE_CFLAGS) -g
+DEBUG_CFLAGS=$(BASE_CFLAGS) -g -O0 -ggdb
 LDFLAGS=-lm -z muldefs
 SVGALDFLAGS=-lvga
 XLDFLAGS=-L/lib/i386-linux-gnu/ -L/usr/lib/i386-linux-gnu/ -L/usr/X11R6/lib -lX11 -lXext -l:libXxf86dga.so.1
