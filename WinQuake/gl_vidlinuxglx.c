@@ -444,13 +444,24 @@ void VID_Shutdown(void)
 		return;
 	IN_DeactivateMouse();
 	if (dpy) {
-		if (ctx)
+		XSync(dpy, False);
+		if (ctx) {
+			printf("Found context, destroying...\n");
 			glXDestroyContext(dpy, ctx);
-		if (win)
+		}
+		if (win) {
+			printf("Found window, destroying...\n");
 			XDestroyWindow(dpy, win);
-		if (vidmode_active)
+		}
+// This seems to hang, unsure why
+#define ATTEMPT_TO_FIX_X_GLX_BUG
+#ifdef ATTEMPT_TO_FIX_X_GLX_BUG
+		if (vidmode_active) {
+			printf("Restoring video mode...\n");
 			XF86VidModeSwitchToMode(dpy, scrnum, vidmodes[0]);
+		}
 		XCloseDisplay(dpy);
+#endif
 	}
 	vidmode_active = false;
 	dpy = NULL;
