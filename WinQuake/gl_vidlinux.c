@@ -280,10 +280,10 @@ void CheckMultiTextureExtensions(void)
 			return;
 		}
 
-		qglMTexCoord2fSGIS = (void *) dlsym(prjobj, "glMTexCoord2fSGIS");
-		qglSelectTextureSGIS = (void *) dlsym(prjobj, "glSelectTextureSGIS");
+		qglMTexCoord2f = (void *) dlsym(prjobj, "glMTexCoord2fSGIS");
+		qglSelectTexture = (void *) dlsym(prjobj, "glSelectTextureSGIS");
 
-		if (qglMTexCoord2fSGIS && qglSelectTextureSGIS) {
+		if (qglMTexCoord2f && qglSelectTexture) {
 			Con_Printf("Multitexture extensions found.\n");
 			gl_mtexable = true;
 		} else

@@ -1281,17 +1281,17 @@ int GL_LoadPicTexture (qpic_t *pic)
 }
 
 /****************************************/
-
-static GLenum oldtarget = TEXTURE0_SGIS;
+static GLenum oldtarget = -1;
 
 void GL_SelectTexture (GLenum target) 
 {
+	oldtarget = oldtarget == -1 ? target : oldtarget;
 	if (!gl_mtexable)
 		return;
-	qglSelectTextureSGIS(target);
+	qglSelectTexture(target);
 	if (target == oldtarget) 
 		return;
-	cnttextures[oldtarget-TEXTURE0_SGIS] = currenttexture;
-	currenttexture = cnttextures[target-TEXTURE0_SGIS];
+	cnttextures[oldtarget-qglMtex0] = currenttexture;
+	currenttexture = cnttextures[target-qglMtex0];
 	oldtarget = target;
 }
