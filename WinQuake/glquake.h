@@ -232,18 +232,17 @@ extern	const char *gl_extensions;
 void R_TranslatePlayerSkin (int playernum);
 void GL_Bind (int texnum);
 
-// Multitexture
-#define    TEXTURE0_SGIS				0x835E
-#define    TEXTURE1_SGIS				0x835F
-
 #ifndef _WIN32
 #define APIENTRY /* */
 #endif
 
 typedef void (APIENTRY *lpMTexFUNC) (GLenum, GLfloat, GLfloat);
 typedef void (APIENTRY *lpSelTexFUNC) (GLenum);
-extern lpMTexFUNC qglMTexCoord2fSGIS;
-extern lpSelTexFUNC qglSelectTextureSGIS;
+extern lpMTexFUNC qglMTexCoord2f;
+extern lpSelTexFUNC qglSelectTexture;
+
+extern GLenum qglMTex0;
+extern GLenum qglMTex1;
 
 extern qboolean gl_mtexable;
 

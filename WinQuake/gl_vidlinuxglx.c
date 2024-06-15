@@ -78,6 +78,12 @@ static int default_dotclock_vidmode;
 static int num_vidmodes;
 static qboolean vidmode_active = false;
 
+// Multitexture
+#define    TEXTURE0_SGIS				0x835E
+#define    TEXTURE1_SGIS				0x835F
+#define    TEXTURE0_ARB					0x84C0
+#define    TEXTURE1_ARB					0x84C1
+
 /*-----------------------------------------------------------------------*/
 
 //int		texture_mode = GL_NEAREST;
@@ -543,22 +549,35 @@ void CheckMultiTextureExtensions(void)
 {
 	void *prjobj;
 
-	if (strstr(gl_extensions, "GL_SGIS_multitexture ") && !COM_CheckParm("-nomtex")) {
-		Con_Printf("Found GL_SGIS_multitexture...\n");
+	qboolean gl_mtex_avail = strstr(gl_extensions, "GL_SGIS_multitexture ") || strstr(gl_extensions, "GL_ARB_multitexture ");
+
+	if (gl_mtex_avail && !COM_CheckParm("-nomtex")) {
+		Con_Printf("Found GL_multitexture...\n");
 
 		if ((prjobj = dlopen(NULL, RTLD_LAZY)) == NULL) {
 			Con_Printf("Unable to open symbol list for main program.\n");
 			return;
 		}
 
-		qglMTexCoord2fSGIS = (void *) dlsym(prjobj, "glMTexCoord2fSGIS");
-		qglSelectTextureSGIS = (void *) dlsym(prjobj, "glSelectTextureSGIS");
+		if (strstr(gl_extensions, "GL_SGIS_multitexture ")) {
+			qglMTexCoord2f = (void *) dlsym(prjobj, "glMTexCoord2fSGIS");
+			qglSelectTexture = (void *) dlsym(prjobj, "glSelectTextureSGIS");
+			qglMTex0 = TEXTURE0_SGIS;
+			qglMTex1 = TEXTURE1_SGIS;
+		} else {
+			qglMTexCoord2f = (void *) dlsym(prjobj, "glMultiTexCoord2fARB");
+			qglSelectTexture = (void *) dlsym(prjobj, "glActiveTextureARB");
+			qglMTex0 = TEXTURE0_ARB;
+			qglMTex1 = TEXTURE1_ARB;
+		}
 
-		if (qglMTexCoord2fSGIS && qglSelectTextureSGIS) {
+		if (qglMTexCoord2f && qglSelectTexture) {
 			Con_Printf("Multitexture extensions found.\n");
 			gl_mtexable = true;
-		} else
+		} else {
+			printf("%p %p\n", qglMTexCoord2f, qglSelectTexture);
 			Con_Printf("Symbol not found, disabled.\n");
+		}
 
 		dlclose(prjobj);
 	}
