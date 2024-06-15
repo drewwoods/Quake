@@ -34,7 +34,7 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 #include <X11/keysym.h>
 #include <X11/cursorfont.h>
 
-#include <X11/extensions/xf86dga.h>
+#include <X11/extensions/Xxf86dga.h>
 #include <X11/extensions/xf86vmode.h>
 
 #define WARP_WIDTH              320
@@ -914,7 +914,7 @@ void VID_Init(unsigned char *palette)
 
 	GL_Init();
 
-	sprintf (gldir, "%s/glquake", com_gamedir);
+	snprintf (gldir, sizeof(gldir), "%s/glquake", com_gamedir);
 	Sys_mkdir (gldir);
 
 	VID_SetPalette(palette);
