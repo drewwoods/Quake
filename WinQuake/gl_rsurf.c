@@ -279,8 +279,8 @@ void DrawGLWaterPolyLightmap (glpoly_t *p);
 lpMTexFUNC qglMTexCoord2f = NULL;
 lpSelTexFUNC qglSelectTexture = NULL;
 
-GLenum qglMtex0;
-GLenum qglMtex1;
+GLenum qglMTex0;
+GLenum qglMTex1;
 
 qboolean mtexenabled = false;
 
@@ -290,7 +290,7 @@ void GL_DisableMultitexture(void)
 {
 	if (mtexenabled) {
 		glDisable(GL_TEXTURE_2D);
-		GL_SelectTexture(qglMtex0);
+		GL_SelectTexture(qglMTex0);
 		mtexenabled = false;
 	}
 }
@@ -298,7 +298,7 @@ void GL_DisableMultitexture(void)
 void GL_EnableMultitexture(void) 
 {
 	if (gl_mtexable) {
-		GL_SelectTexture(qglMtex1);
+		GL_SelectTexture(qglMTex1);
 		glEnable(GL_TEXTURE_2D);
 		mtexenabled = true;
 	}
@@ -433,7 +433,7 @@ void R_DrawSequentialPoly (msurface_t *s)
 
 			t = R_TextureAnimation (s->texinfo->texture);
 			// Binds world to texture env 0
-			GL_SelectTexture(qglMtex0);
+			GL_SelectTexture(qglMTex0);
 			GL_Bind (t->gl_texturenum);
 			glTexEnvf(GL_TEXTURE_ENV, GL_TEXTURE_ENV_MODE, GL_REPLACE);
 			// Binds lightmap to texenv 1
@@ -457,8 +457,8 @@ void R_DrawSequentialPoly (msurface_t *s)
 			v = p->verts[0];
 			for (i=0 ; i<p->numverts ; i++, v+= VERTEXSIZE)
 			{
-				qglMTexCoord2f (qglMtex0, v[3], v[4]);
-				qglMTexCoord2f (qglMtex1, v[5], v[6]);
+				qglMTexCoord2f (qglMTex0, v[3], v[4]);
+				qglMTexCoord2f (qglMTex1, v[5], v[6]);
 				glVertex3fv (v);
 			}
 			glEnd ();
@@ -536,7 +536,7 @@ void R_DrawSequentialPoly (msurface_t *s)
 		p = s->polys;
 
 		t = R_TextureAnimation (s->texinfo->texture);
-		GL_SelectTexture(qglMtex0);
+		GL_SelectTexture(qglMTex0);
 		GL_Bind (t->gl_texturenum);
 		glTexEnvf(GL_TEXTURE_ENV, GL_TEXTURE_ENV_MODE, GL_REPLACE);
 		GL_EnableMultitexture();
@@ -559,8 +559,8 @@ void R_DrawSequentialPoly (msurface_t *s)
 		v = p->verts[0];
 		for (i=0 ; i<p->numverts ; i++, v+= VERTEXSIZE)
 		{
-			qglMTexCoord2f (qglMtex0, v[3], v[4]);
-			qglMTexCoord2f (qglMtex1, v[5], v[6]);
+			qglMTexCoord2f (qglMTex0, v[3], v[4]);
+			qglMTexCoord2f (qglMTex1, v[5], v[6]);
 
 			nv[0] = v[0] + 8*sin(v[1]*0.05+realtime)*sin(v[2]*0.05+realtime);
 			nv[1] = v[1] + 8*sin(v[0]*0.05+realtime)*sin(v[2]*0.05+realtime);
@@ -1668,7 +1668,7 @@ void GL_BuildLightmaps (void)
 	}
 
  	if (!gl_texsort.value)
-		GL_SelectTexture(qglMtex1);
+		GL_SelectTexture(qglMTex1);
 
 	//
 	// upload all lightmaps that were filled
@@ -1691,7 +1691,7 @@ void GL_BuildLightmaps (void)
 	}
 
  	if (!gl_texsort.value)
-		GL_SelectTexture(qglMtex0);
+		GL_SelectTexture(qglMTex0);
 
 }
 

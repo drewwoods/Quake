@@ -562,13 +562,13 @@ void CheckMultiTextureExtensions(void)
 		if (strstr(gl_extensions, "GL_SGIS_multitexture ")) {
 			qglMTexCoord2f = (void *) dlsym(prjobj, "glMTexCoord2fSGIS");
 			qglSelectTexture = (void *) dlsym(prjobj, "glSelectTextureSGIS");
-			qglMtex0 = TEXTURE0_SGIS;
-			qglMtex1 = TEXTURE1_SGIS;
+			qglMTex0 = TEXTURE0_SGIS;
+			qglMTex1 = TEXTURE1_SGIS;
 		} else {
 			qglMTexCoord2f = (void *) dlsym(prjobj, "glMultiTexCoord2fARB");
 			qglSelectTexture = (void *) dlsym(prjobj, "glActiveTextureARB");
-			qglMtex0 = TEXTURE0_ARB;
-			qglMtex1 = TEXTURE1_ARB;
+			qglMTex0 = TEXTURE0_ARB;
+			qglMTex1 = TEXTURE1_ARB;
 		}
 
 		if (qglMTexCoord2f && qglSelectTexture) {

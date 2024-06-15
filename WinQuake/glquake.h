@@ -241,8 +241,8 @@ typedef void (APIENTRY *lpSelTexFUNC) (GLenum);
 extern lpMTexFUNC qglMTexCoord2f;
 extern lpSelTexFUNC qglSelectTexture;
 
-extern GLenum qglMtex0;
-extern GLenum qglMtex1;
+extern GLenum qglMTex0;
+extern GLenum qglMTex1;
 
 extern qboolean gl_mtexable;
 
