@@ -65,9 +65,18 @@ int UDP_Init (void)
 		return -1;
 
 	// determine my name & address
-	gethostname(buff, MAXHOSTNAMELEN);
+	// gethostname may fail, and it does not guarantee a trailing NUL when the
+	// supplied buffer is too small.  Keep a valid name for the resolver below.
+	if (gethostname(buff, MAXHOSTNAMELEN) == -1)
+		Q_strcpy(buff, "localhost");
+	buff[MAXHOSTNAMELEN - 1] = 0;
 	local = gethostbyname(buff);
-	myAddr = *(int *)local->h_addr_list[0];
+	// Some macOS configurations do not publish the local hostname through DNS.
+	// Use loopback in that case instead of dereferencing a NULL host entry.
+	if (local && local->h_addr_list && local->h_addr_list[0])
+		myAddr = *(int *)local->h_addr_list[0];
+	else
+		myAddr = htonl(INADDR_LOOPBACK);
 
 	// if the quake hostname isn't set, set it to the machine name
 	if (Q_strcmp(hostname.string, "UNNAMED") == 0)
