@@ -204,6 +204,12 @@ void S_Init (void)
 	snd_initialized = true;
 
 	S_Startup ();
+	if (!sound_started)
+	{
+		// A missing or rejected output device should not stop the game itself.
+		snd_initialized = false;
+		return;
+	}
 
 	SND_InitScaletable ();
 
@@ -1014,4 +1020,3 @@ void S_BeginPrecaching (void)
 void S_EndPrecaching (void)
 {
 }
-
