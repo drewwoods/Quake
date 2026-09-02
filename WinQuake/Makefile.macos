@@ -1,8 +1,8 @@
 #
 # Native macOS build for the original Quake software renderer.
 #
-# Audio is intentionally disabled for now.  Cocoa presents the 8-bit
-# framebuffer and supplies keyboard and mouse events.
+# Cocoa presents the 8-bit framebuffer and supplies keyboard and mouse events.
+# Core Audio plays the output from Quake's original software mixer.
 #
 
 CC              ?= clang
@@ -19,7 +19,8 @@ debug_CFLAGS     = -O0 -g
 CFLAGS           := $(COMMON_CFLAGS) $($(CONFIG)_CFLAGS) $(CFLAGS)
 OBJCFLAGS        := $(CFLAGS) -fobjc-arc $(OBJCFLAGS)
 unexport CFLAGS OBJCFLAGS
-LDLIBS            = -framework Cocoa -framework CoreGraphics -lm
+LDLIBS            = -framework Cocoa -framework CoreGraphics \
+	-framework AudioUnit -framework AudioToolbox -framework CoreAudio -lm
 
 SOURCES = \
 	cl_demo.c cl_input.c cl_main.c cl_parse.c cl_tent.c chase.c \
@@ -33,7 +34,7 @@ SOURCES = \
 	r_edge.c r_misc.c r_main.c r_sky.c r_sprite.c r_surf.c \
 	r_part.c r_vars.c screen.c sbar.c \
 	sv_main.c sv_phys.c sv_move.c sv_user.c zone.c view.c wad.c world.c \
-	cd_null.c snd_null.c sys_linux.c
+	cd_null.c snd_dma.c snd_mem.c snd_mix.c snd_macos.c sys_linux.c
 
 OBJECTS = $(SOURCES:%.c=$(BUILD_DIR)/%.o) $(BUILD_DIR)/vid_macos.o
 DEPS    = $(OBJECTS:.o=.d)

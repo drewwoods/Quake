@@ -395,4 +395,3 @@ void SND_PaintChannelFrom16 (channel_t *ch, sfxcache_t *sc, int count)
 
 	ch->pos += count;
 }
-
