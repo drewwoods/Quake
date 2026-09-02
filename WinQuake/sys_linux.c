@@ -396,7 +396,11 @@ int main (int c, char **v)
 		nostdout = 1;
 	else {
 		fcntl(0, F_SETFL, fcntl (0, F_GETFL, 0) | FNDELAY);
+#ifdef __APPLE__
+		printf ("macOS Quake -- Version %0.3f\n", LINUX_VERSION);
+#else
 		printf ("Linux Quake -- Version %0.3f\n", LINUX_VERSION);
+#endif
 	}
 
     oldtime = Sys_FloatTime () - 0.1;
@@ -454,4 +458,3 @@ void Sys_MakeCodeWriteable (unsigned long startaddr, unsigned long length)
     		Sys_Error("Protection change failed\n");
 
 }
-
