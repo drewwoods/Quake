@@ -31,7 +31,9 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 										//  polygon (while processing)
 // !!! if this is changed, it must be changed in d_ifacea.h too !!!
 #define	MAXHEIGHT		1024
-#define	MAXWIDTH		1280
+// Edge coordinates use signed 12.20 fixed point, so 2047 is the largest
+// representable screen width.
+#define	MAXWIDTH		2047
 #define MAXDIMENSION	((MAXHEIGHT > MAXWIDTH) ? MAXHEIGHT : MAXWIDTH)
 
 #define SIN_BUFFER_SIZE	(MAXDIMENSION+CYCLE)
@@ -66,7 +68,7 @@ extern	entity_t		*currententity;
 #define	MINEDGES			NUMSTACKEDGES
 #define NUMSTACKSURFACES	800
 #define MINSURFACES			NUMSTACKSURFACES
-#define	MAXSPANS			3000
+#define	MAXSPANS			5000
 
 // !!! if this is changed, it must be changed in asm_draw.h too !!!
 typedef struct espan_s
