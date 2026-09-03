@@ -631,7 +631,14 @@ CL_LerpView
 Re-interpolates the visible client state to an arbitrary point between the
 last two snapshots.  Rendering is paced to the display rather than to the
 simulation, so a rendered frame usually falls between two simulation steps;
-frac is how far through the current step it lands.
+alpha is how far through the current step it lands.
+
+Snapshot spacing is NOT the step length.  A local server emits one per
+simulation step (~13.9 ms), but demo playback and network play deliver
+10-20 per second, 50-100 ms apart.  So alpha cannot be used as the lerp
+fraction directly -- doing that sweeps the whole snapshot interval every
+step and resets, which reads as jitter.  Convert to a client time first and
+measure that against the snapshots' real spacing.
 
 Deliberately free of side effects.  Trails, dlights, particles, efrags and
 the visedict list are built once per simulation step by CL_RelinkEntities
@@ -644,18 +651,27 @@ smoothing, and it lands on movement only: view angles come straight from
 the mouse and are not touched here.
 ===============
 */
-void CL_LerpView (float frac)
+void CL_LerpView (float alpha)
 {
 	entity_t	*ent;
 	int			i, j;
-	float		f, d;
+	float		f, d, t, frac, efrac;
 	vec3_t		delta;
 	float		bobjrotate;
 
+	f = cl.mtime[0] - cl.mtime[1];
+	if (f <= 0)
+		return;			// nothing to interpolate between
+
+// where this frame really falls in client time: back off the part of the
+// current simulation step that has not happened yet
+	t = cl.time - (1.0 - alpha) * host_frametime;
+
+	frac = (t - cl.mtime[1]) / f;
+	if (frac < 0)
+		frac = 0;
 	if (frac >= 1.0)
 		return;			// already showing the newest snapshot
-	if (cl.mtime[0] == cl.mtime[1])
-		return;			// nothing to interpolate between
 
 	for (i=0 ; i<3 ; i++)
 		cl.velocity[i] = cl.mvelocity[1][i] +
@@ -683,24 +699,24 @@ void CL_LerpView (float frac)
 		if (ent->msgtime != cl.mtime[0])
 			continue;
 
-		f = frac;
+		efrac = frac;
 		for (j=0 ; j<3 ; j++)
 		{
 			delta[j] = ent->msg_origins[0][j] - ent->msg_origins[1][j];
 			if (delta[j] > 100 || delta[j] < -100)
-				f = 1;		// assume a teleportation, not a motion
+				efrac = 1;	// assume a teleportation, not a motion
 		}
 
 		for (j=0 ; j<3 ; j++)
 		{
-			ent->origin[j] = ent->msg_origins[1][j] + f*delta[j];
+			ent->origin[j] = ent->msg_origins[1][j] + efrac*delta[j];
 
 			d = ent->msg_angles[0][j] - ent->msg_angles[1][j];
 			if (d > 180)
 				d -= 360;
 			else if (d < -180)
 				d += 360;
-			ent->angles[j] = ent->msg_angles[1][j] + f*d;
+			ent->angles[j] = ent->msg_angles[1][j] + efrac*d;
 		}
 
 	// CL_RelinkEntities drives these locally, so restore rather than lerp

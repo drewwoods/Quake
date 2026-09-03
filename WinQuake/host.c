@@ -634,9 +634,6 @@ static float Host_LerpFrac (void)
 {
 	float	dt, frac;
 
-	if (cls.timedemo || !host_interpolate.value)
-		return 1.0;
-
 	dt = 1.0 / host_maxfps.value;
 	frac = (realtime - oldrealtime) / dt;
 
@@ -848,7 +845,12 @@ void _Host_Frame (float time)
 	if (host_speeds.value)
 		time1 = Sys_FloatTime ();
 
-	CL_LerpView (Host_LerpFrac ());
+// only worth interpolating when rendering is actually paced to the display.
+// Where it is not -- timedemo, or a backend with no refresh rate to follow --
+// frames land 1:1 on simulation steps, so there is no intermediate moment to
+// interpolate to and doing it anyway would just show a step-old world.
+	if (host_interpolate.value && !cls.timedemo && Host_RefreshInterval () > 0)
+		CL_LerpView (Host_LerpFrac ());
 
 	SCR_UpdateScreen ();
 
