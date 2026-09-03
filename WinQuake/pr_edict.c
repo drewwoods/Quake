@@ -21,6 +21,8 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 
 #include "quakedef.h"
 
+#include <stddef.h>
+
 dprograms_t		*progs;
 dfunction_t		*pr_functions;
 char			*pr_strings;
@@ -716,6 +718,28 @@ char *ED_NewString (char *string)
 	return new;
 }
 
+/*
+===============
+ED_NewStringOffset
+
+QuakeC strings are signed 32-bit offsets from pr_strings.  Copy engine-owned
+strings into the server hunk before exposing them to QuakeC; on a 64-bit host,
+static data may be more than 2 GB away from progs.dat.
+===============
+*/
+string_t ED_NewStringOffset (char *string)
+{
+	char		*new;
+	ptrdiff_t	offset;
+
+	new = ED_NewString (string);
+	offset = new - pr_strings;
+	if (offset < 0 || offset > Q_MAXINT)
+		Sys_Error ("ED_NewStringOffset: string offset out of range");
+
+	return (string_t)offset;
+}
+
 
 /*
 =============
@@ -739,7 +763,7 @@ qboolean	ED_ParseEpair (void *base, ddef_t *key, char *s)
 	switch (key->type & ~DEF_SAVEGLOBAL)
 	{
 	case ev_string:
-		*(string_t *)d = ED_NewString (s) - pr_strings;
+		*(string_t *)d = ED_NewStringOffset (s);
 		break;
 		
 	case ev_float:
@@ -1057,6 +1081,8 @@ void PR_LoadProgs (void)
 
 	for (i=0 ; i<progs->numglobals ; i++)
 		((int *)pr_globals)[i] = LittleLong (((int *)pr_globals)[i]);
+
+	PR_InitStringBuffers ();
 }
 
 

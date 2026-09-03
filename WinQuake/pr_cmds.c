@@ -920,7 +920,15 @@ void PF_dprint (void)
 	Con_DPrintf ("%s",PF_VarString(0));
 }
 
-char	pr_string_temp[128];
+static char	*pr_string_temp;
+
+/* Keep builtin return strings close enough to pr_strings for QuakeC's
+ * signed 32-bit string offsets on 64-bit hosts.  This is recreated whenever
+ * progs.dat is loaded because it belongs to the per-map server hunk. */
+void PR_InitStringBuffers (void)
+{
+	pr_string_temp = Hunk_AllocName (128, "string_temp");
+}
 
 void PF_ftos (void)
 {
@@ -1931,4 +1939,3 @@ PF_setspawnparms
 
 builtin_t *pr_builtins = pr_builtin;
 int pr_numbuiltins = sizeof(pr_builtin)/sizeof(pr_builtin[0]);
-
