@@ -96,8 +96,10 @@ static int verbose=0;
 
 static byte current_palette[768];
 
-static long X11_highhunkmark;
 static long X11_buffersize;
+#if !EDGE_COORDINATES_64BIT
+static long X11_highhunkmark;
+#endif
 
 int vid_surfcachesize;
 void *vid_surfcache;
@@ -124,6 +126,40 @@ void shiftmask_init()
     for(g_shift=-8,x=1;x<g_mask;x=x<<1)g_shift++;
     for(b_shift=-8,x=1;x<b_mask;x=x<<1)b_shift++;
     shiftmask_fl=1;
+}
+
+static void AllocateRendererBuffer(void)
+{
+	if (d_pzbuffer)
+	{
+		D_FlushCaches ();
+#if EDGE_COORDINATES_64BIT
+		free (d_pzbuffer);
+#else
+		Hunk_FreeToHighMark (X11_highhunkmark);
+#endif
+		d_pzbuffer = NULL;
+	}
+
+#if !EDGE_COORDINATES_64BIT
+	X11_highhunkmark = Hunk_HighMark ();
+#endif
+
+	X11_buffersize = (long)vid.width * vid.height * sizeof (*d_pzbuffer);
+	vid_surfcachesize = D_SurfaceCacheForRes (vid.width, vid.height);
+	X11_buffersize += vid_surfcachesize;
+
+#if EDGE_COORDINATES_64BIT
+	d_pzbuffer = malloc ((size_t)X11_buffersize);
+#else
+	d_pzbuffer = Hunk_HighAllocName (X11_buffersize, "video");
+#endif
+	if (d_pzbuffer == NULL)
+		Sys_Error ("Not enough memory for video mode\n");
+
+	vid_surfcache = (byte *)d_pzbuffer
+		+ (long)vid.width * vid.height * sizeof (*d_pzbuffer);
+	D_InitCaches (vid_surfcache, vid_surfcachesize);
 }
 
 PIXEL16 xlib_rgb16(int r,int g,int b)
@@ -301,29 +337,7 @@ void ResetFrameBuffer(void)
 		free(x_framebuffer[0]);
 	}
 
-	if (d_pzbuffer)
-	{
-		D_FlushCaches ();
-		Hunk_FreeToHighMark (X11_highhunkmark);
-		d_pzbuffer = NULL;
-	}
-	X11_highhunkmark = Hunk_HighMark ();
-
-// alloc an extra line in case we want to wrap, and allocate the z-buffer
-	X11_buffersize = vid.width * vid.height * sizeof (*d_pzbuffer);
-
-	vid_surfcachesize = D_SurfaceCacheForRes (vid.width, vid.height);
-
-	X11_buffersize += vid_surfcachesize;
-
-	d_pzbuffer = Hunk_HighAllocName (X11_buffersize, "video");
-	if (d_pzbuffer == NULL)
-		Sys_Error ("Not enough memory for video mode\n");
-
-	vid_surfcache = (byte *) d_pzbuffer
-		+ vid.width * vid.height * sizeof (*d_pzbuffer);
-
-	D_InitCaches(vid_surfcache, vid_surfcachesize);
+	AllocateRendererBuffer ();
 
 	pwidth = x_visinfo->depth / 8;
 	if (pwidth == 3) pwidth = 4;
@@ -355,30 +369,7 @@ void ResetSharedFrameBuffers(void)
 	int minsize = getpagesize();
 	int frm;
 
-	if (d_pzbuffer)
-	{
-		D_FlushCaches ();
-		Hunk_FreeToHighMark (X11_highhunkmark);
-		d_pzbuffer = NULL;
-	}
-
-	X11_highhunkmark = Hunk_HighMark ();
-
-// alloc an extra line in case we want to wrap, and allocate the z-buffer
-	X11_buffersize = vid.width * vid.height * sizeof (*d_pzbuffer);
-
-	vid_surfcachesize = D_SurfaceCacheForRes (vid.width, vid.height);
-
-	X11_buffersize += vid_surfcachesize;
-
-	d_pzbuffer = Hunk_HighAllocName (X11_buffersize, "video");
-	if (d_pzbuffer == NULL)
-		Sys_Error ("Not enough memory for video mode\n");
-
-	vid_surfcache = (byte *) d_pzbuffer
-		+ vid.width * vid.height * sizeof (*d_pzbuffer);
-
-	D_InitCaches(vid_surfcache, vid_surfcachesize);
+	AllocateRendererBuffer ();
 
 	for (frm=0 ; frm<2 ; frm++)
 	{
@@ -512,6 +503,9 @@ void	VID_Init (unsigned char *palette)
 		if (!vid.height)
 			Sys_Error("VID: Bad window height\n");
 	}
+	if (vid.width > MAXWIDTH || vid.height > MAXHEIGHT)
+		Sys_Error("VID: maximum software-renderer size is %dx%d\n",
+			MAXWIDTH, MAXHEIGHT);
 
 	template_mask = 0;
 
@@ -711,6 +705,15 @@ void VID_SetPalette(unsigned char *palette)
 void	VID_Shutdown (void)
 {
 	Con_Printf("VID_Shutdown\n");
+#if EDGE_COORDINATES_64BIT
+	if (d_pzbuffer)
+	{
+		D_FlushCaches ();
+		free (d_pzbuffer);
+		d_pzbuffer = NULL;
+		vid_surfcache = NULL;
+	}
+#endif
 	XAutoRepeatOn(x_disp);
 	XCloseDisplay(x_disp);
 }
@@ -964,6 +967,14 @@ void	VID_Update (vrect_t *rects)
 	{
 		fprintf(stderr, "config notify\n");
 		config_notify = 0;
+		if (config_notify_width > MAXWIDTH ||
+			config_notify_height > MAXHEIGHT)
+		{
+			fprintf(stderr, "VID: maximum software-renderer size is %dx%d\n",
+				MAXWIDTH, MAXHEIGHT);
+			XResizeWindow(x_disp, x_win, vid.width, vid.height);
+			return;
+		}
 		vid.width = config_notify_width & ~7;
 		vid.height = config_notify_height;
 		if (doShm)

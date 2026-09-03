@@ -27,6 +27,19 @@ typedef	int	fixed4_t;
 typedef	int	fixed8_t;
 typedef	int	fixed16_t;
 
+#if defined(__LP64__) || defined(_WIN64)
+#define EDGE_COORDINATES_64BIT 1
+typedef long long edgefixed_t;
+#else
+// The i386 assembly renderer depends on edge_t retaining this 32-bit field.
+#define EDGE_COORDINATES_64BIT 0
+typedef int edgefixed_t;
+#endif
+
+#if defined(REQUIRE_WIDE_EDGES) && !EDGE_COORDINATES_64BIT
+#error This build requires a 64-bit compiler target for wide edge coordinates
+#endif
+
 #ifndef M_PI
 #define M_PI		3.14159265358979323846	// matches value in gcc v2 math.h
 #endif

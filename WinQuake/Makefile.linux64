@@ -1,0 +1,71 @@
+#
+# Native 64-bit Linux/X11 build for the original Quake software renderer.
+#
+# This build uses the portable C rasterizer and wide edge coordinates.  The
+# historical 32-bit assembly build remains available through Makefile.linuxi386.
+#
+
+CC              ?= cc
+PKG_CONFIG      ?= pkg-config
+BUILD_ROOT      ?= build/linux64
+CONFIG          ?= release
+BUILD_DIR        = $(BUILD_ROOT)/$(CONFIG)
+TARGET           = $(BUILD_DIR)/quake.x11
+
+X11_CFLAGS      ?= $(shell $(PKG_CONFIG) --cflags x11 xext 2>/dev/null)
+X11_LIBS        ?= $(shell $(PKG_CONFIG) --libs x11 xext 2>/dev/null)
+ifeq ($(strip $(X11_LIBS)),)
+X11_LIBS         = -lX11 -lXext
+endif
+
+COMMON_CFLAGS    = -std=gnu89 -fcommon -DX11 -DREQUIRE_WIDE_EDGES \
+	-Dstricmp=strcasecmp \
+	-Dstrnicmp=strncasecmp -include strings.h \
+	-Wno-format-truncation $(X11_CFLAGS)
+release_CFLAGS   = -O2
+debug_CFLAGS     = -O0 -g
+CFLAGS           := $(COMMON_CFLAGS) $($(CONFIG)_CFLAGS) $(CFLAGS)
+unexport CFLAGS
+LDLIBS            = $(X11_LIBS) -lm
+
+SOURCES = \
+	cl_demo.c cl_input.c cl_main.c cl_parse.c cl_tent.c chase.c \
+	cmd.c common.c console.c crc.c cvar.c draw.c \
+	d_edge.c d_fill.c d_init.c d_modech.c d_part.c d_polyse.c \
+	d_scan.c d_sky.c d_sprite.c d_surf.c d_vars.c d_zpoint.c \
+	host.c host_cmd.c keys.c menu.c mathlib.c model.c \
+	net_dgrm.c net_loop.c net_main.c net_vcr.c net_udp.c net_bsd.c \
+	nonintel.c pr_cmds.c pr_edict.c pr_exec.c \
+	r_aclip.c r_alias.c r_bsp.c r_light.c r_draw.c r_efrag.c \
+	r_edge.c r_misc.c r_main.c r_sky.c r_sprite.c r_surf.c \
+	r_part.c r_vars.c screen.c sbar.c \
+	sv_main.c sv_phys.c sv_move.c sv_user.c zone.c view.c wad.c world.c \
+	cd_linux.c snd_dma.c snd_mem.c snd_mix.c snd_linux.c sys_linux.c vid_x.c
+
+OBJECTS = $(SOURCES:%.c=$(BUILD_DIR)/%.o)
+DEPS    = $(OBJECTS:.o=.d)
+
+.PHONY: all release debug clean run
+
+all: release
+
+release:
+	$(MAKE) -f Makefile.linux64 CONFIG=release $(BUILD_ROOT)/release/quake.x11
+
+debug:
+	$(MAKE) -f Makefile.linux64 CONFIG=debug $(BUILD_ROOT)/debug/quake.x11
+
+$(TARGET): $(OBJECTS)
+	$(CC) $(OBJECTS) -o $@ $(LDLIBS)
+
+$(BUILD_DIR)/%.o: %.c
+	@mkdir -p $(dir $@)
+	$(CC) $(CFLAGS) -MMD -MP -c $< -o $@
+
+run: release
+	cd .. && WinQuake/$(BUILD_ROOT)/release/quake.x11
+
+clean:
+	rm -rf $(BUILD_ROOT)
+
+-include $(DEPS)

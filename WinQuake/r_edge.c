@@ -675,7 +675,7 @@ void R_ScanEdges (void)
 
 // clear active edges to just the background edges around the whole screen
 // FIXME: most of this only needs to be set up once
-	edge_head.u = r_refdef.vrect.x << 20;
+	edge_head.u = (edgefixed_t)r_refdef.vrect.x << 20;
 	edge_head_u_shift20 = edge_head.u >> 20;
 	edge_head.u_step = 0;
 	edge_head.prev = NULL;
@@ -683,7 +683,7 @@ void R_ScanEdges (void)
 	edge_head.surfs[0] = 0;
 	edge_head.surfs[1] = 1;
 	
-	edge_tail.u = (r_refdef.vrectright << 20) + 0xFFFFF;
+	edge_tail.u = ((edgefixed_t)r_refdef.vrectright << 20) + 0xFFFFF;
 	edge_tail_u_shift20 = edge_tail.u >> 20;
 	edge_tail.u_step = 0;
 	edge_tail.prev = &edge_head;
@@ -697,7 +697,8 @@ void R_ScanEdges (void)
 	edge_aftertail.prev = &edge_tail;
 
 // FIXME: do we need this now that we clamp x in r_draw.c?
-	edge_sentinel.u = 2000 << 24;		// make sure nothing sorts past this
+	edge_sentinel.u = ((edgefixed_t)MAXWIDTH << 20) + 0xFFFFF;
+							// make sure nothing sorts past this
 	edge_sentinel.prev = &edge_aftertail;
 
 //	
@@ -770,5 +771,4 @@ void R_ScanEdges (void)
 	else
 		D_DrawSurfaces ();
 }
-
 
