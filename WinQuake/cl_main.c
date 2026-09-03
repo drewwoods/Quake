@@ -626,6 +626,92 @@ void CL_RelinkEntities (void)
 
 /*
 ===============
+CL_LerpView
+
+Re-interpolates the visible client state to an arbitrary point between the
+last two snapshots.  Rendering is paced to the display rather than to the
+simulation, so a rendered frame usually falls between two simulation steps;
+frac is how far through the current step it lands.
+
+Deliberately free of side effects.  Trails, dlights, particles, efrags and
+the visedict list are built once per simulation step by CL_RelinkEntities
+and must not be re-run per rendered frame, or their rates would follow the
+display instead of the simulation.
+
+Showing a point between two snapshots means showing the world slightly in
+the past -- up to one simulation step.  That latency is the price of the
+smoothing, and it lands on movement only: view angles come straight from
+the mouse and are not touched here.
+===============
+*/
+void CL_LerpView (float frac)
+{
+	entity_t	*ent;
+	int			i, j;
+	float		f, d;
+	vec3_t		delta;
+	float		bobjrotate;
+
+	if (frac >= 1.0)
+		return;			// already showing the newest snapshot
+	if (cl.mtime[0] == cl.mtime[1])
+		return;			// nothing to interpolate between
+
+	for (i=0 ; i<3 ; i++)
+		cl.velocity[i] = cl.mvelocity[1][i] +
+			frac * (cl.mvelocity[0][i] - cl.mvelocity[1][i]);
+
+	if (cls.demoplayback)
+	{	// live play takes angles from the mouse; only demos lerp them
+		for (j=0 ; j<3 ; j++)
+		{
+			d = cl.mviewangles[0][j] - cl.mviewangles[1][j];
+			if (d > 180)
+				d -= 360;
+			else if (d < -180)
+				d += 360;
+			cl.viewangles[j] = cl.mviewangles[1][j] + frac*d;
+		}
+	}
+
+	bobjrotate = anglemod(100*cl.time);
+
+	for (i=1,ent=cl_entities+1 ; i<cl.num_entities ; i++,ent++)
+	{
+		if (!ent->model)
+			continue;
+		if (ent->msgtime != cl.mtime[0])
+			continue;
+
+		f = frac;
+		for (j=0 ; j<3 ; j++)
+		{
+			delta[j] = ent->msg_origins[0][j] - ent->msg_origins[1][j];
+			if (delta[j] > 100 || delta[j] < -100)
+				f = 1;		// assume a teleportation, not a motion
+		}
+
+		for (j=0 ; j<3 ; j++)
+		{
+			ent->origin[j] = ent->msg_origins[1][j] + f*delta[j];
+
+			d = ent->msg_angles[0][j] - ent->msg_angles[1][j];
+			if (d > 180)
+				d -= 360;
+			else if (d < -180)
+				d += 360;
+			ent->angles[j] = ent->msg_angles[1][j] + f*d;
+		}
+
+	// CL_RelinkEntities drives these locally, so restore rather than lerp
+		if (ent->model->flags & EF_ROTATE)
+			ent->angles[1] = bobjrotate;
+	}
+}
+
+
+/*
+===============
 CL_ReadFromServer
 
 Read all incoming data from the server
