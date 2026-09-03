@@ -30,10 +30,14 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 #define MAXWORKINGVERTS	(MAXVERTS+4)	// max points in an intermediate
 										//  polygon (while processing)
 // !!! if this is changed, it must be changed in d_ifacea.h too !!!
+#if EDGE_COORDINATES_64BIT
+#define	MAXHEIGHT		8192
+#define	MAXWIDTH		8192
+#else
 #define	MAXHEIGHT		1024
-// Edge coordinates use signed 12.20 fixed point, so 2047 is the largest
-// representable screen width.
+// A signed 32-bit 12.20 edge coordinate can represent at most 2047 pixels.
 #define	MAXWIDTH		2047
+#endif
 #define MAXDIMENSION	((MAXHEIGHT > MAXWIDTH) ? MAXHEIGHT : MAXWIDTH)
 
 #define SIN_BUFFER_SIZE	(MAXDIMENSION+CYCLE)
@@ -68,7 +72,11 @@ extern	entity_t		*currententity;
 #define	MINEDGES			NUMSTACKEDGES
 #define NUMSTACKSURFACES	800
 #define MINSURFACES			NUMSTACKSURFACES
+#if EDGE_COORDINATES_64BIT
+#define	MAXSPANS			20000
+#else
 #define	MAXSPANS			5000
+#endif
 
 // !!! if this is changed, it must be changed in asm_draw.h too !!!
 typedef struct espan_s
@@ -145,8 +153,8 @@ extern int	ubasestep, errorterm, erroradjustup, erroradjustdown;
 // !!! if this is changed, it must be changed in asm_draw.h too !!!
 typedef struct edge_s
 {
-	fixed16_t		u;
-	fixed16_t		u_step;
+	edgefixed_t		u;
+	edgefixed_t		u_step;
 	struct edge_s	*prev, *next;
 	unsigned short	surfs[2];
 	struct edge_s	*nextremove;
