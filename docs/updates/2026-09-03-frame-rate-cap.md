@@ -199,7 +199,7 @@ behaviour is unchanged.
 
 - `host.c` — `cvar_t host_maxfps = {"host_maxfps","72",true};`
 - `host.c` — registered in `Host_InitLocal`
-- `host.c:507-509` — `Host_FilterTime` divides by `host_maxfps.value` when > 0
+- `host.c` — `Host_FilterTime` clamps the value to 10..1000, then divides by it
 - `quakedef.h` — `extern cvar_t host_maxfps;`
 
 **Confirmed by testing:** `host_maxfps 60` makes motion visibly smooth,
@@ -211,18 +211,38 @@ the WindowServer can drift and occasional doubled or dropped frames
 remain. It is far better than 12 discards a second; it is not a hard
 lock.
 
-**Known footguns, none currently guarded:**
+**Range clamp — implemented.** `Host_FilterTime` clamps to 10..1000 with
+a write-back, following the vanilla `Cvar_Set` idiom used for `viewsize`
+(`screen.c:234`):
 
-- `host_frametime` is still clamped to [0.001, 0.1]. A `host_maxfps`
-  above 1000 lets frames through faster than 1 ms, after which the 0.001
-  floor makes simulated time outrun wall time and **the game runs fast**.
+```c
+if (host_maxfps.value < 10 || host_maxfps.value > 1000)
+{
+    Con_Printf ("host_maxfps %g out of range, clamping to 10..1000\n",
+        host_maxfps.value);
+    if (host_maxfps.value < 10)
+        Cvar_Set ("host_maxfps", "10");
+    else
+        Cvar_Set ("host_maxfps", "1000");
+}
+```
+
+The bounds are not arbitrary — they are the reciprocals of the
+`host_frametime` clamps a few lines below in the same function. Outside
+10..1000 those clamps make simulated time diverge from wall time: above
+1000 the 0.001 s floor makes the game **run fast**, below 10 the 0.1 s
+ceiling makes it run slow. `timedemo` ignores the cap entirely, so
+benchmarking never needs it unset — which is why 0 is no longer accepted
+as "uncapped".
+
+**Remaining caveats, not guarded:**
+
 - Above ~107 fps the air-accel clamp stops always tripping (see above),
-  so raising the cap changes the mechanism, not just the frame count.
+  so raising the cap within the legal range still changes the mechanism,
+  not just the frame count.
 - The cvar is archived, and `id1/config.cfg` now carries
   `host_maxfps "60"`. **A launch with that config is not stock.** Check it
   before any comparison against reference behaviour.
-
-Clamping the accepted range would be worth doing.
 
 ---
 
@@ -409,21 +429,45 @@ Phase 4 is worth doing regardless.
 
 ## Verification
 
-1. `make -C WinQuake -f Makefile.macos` — expect exit 0.
-2. `timedemo demo1` at 800x600 — must stay ~129 fps. Timedemo bypasses
-   the cap, so this must *not* move; if it does, a change leaked into the
-   wrong path.
-3. **Default is bit-identical.** With `host_maxfps 72`, confirm the
-   presented rate is 72 and that movement is unchanged — same jump
-   distances on a known gap, same strafe-jump top speed over a fixed run.
-4. **60 does what it claims.** With `host_maxfps 60`, confirm the
-   presented rate is ~60 with steady per-second deltas and no 6:5
-   pattern, and expect movement metrics from (3) to shift — that shift is
-   the documented trade, not a bug.
-5. Any future Phase 2/3 work must move the presented rate while leaving
-   (3)'s movement metrics untouched. If a movement metric moves, the
-   rate has been disturbed and the change is wrong however smooth it
-   looks.
+Results below are from the build at the Phase 1 clamp commit.
+
+1. `make -C WinQuake -f Makefile.macos` — exit 0. The `host.c:453`
+   `-Wpointer-sign` warning is pre-existing and unrelated.
+2. **Timedemo is unmoved by the cvar**, as it must be — it bypasses the
+   cap:
+
+   | `host_maxfps` | timedemo |
+   |---|---|
+   | 72 | 123.9 fps |
+   | 60 | 129.4 fps |
+
+   Both sit on the ~129 fps baseline within run-to-run noise. If this
+   ever tracks `host_maxfps`, a change has leaked into the wrong path.
+3. **Presented rate follows the cvar** (interpose probe, `+playdemo demo1`,
+   800x600):
+
+   | `host_maxfps` | p50 interval | rate |
+   |---|---|---|
+   | 72 | 13.882 ms | 72.0 fps |
+   | 60 | 16.649 ms | 60.06 fps |
+
+4. **Clamp behaves.** 5000 → 1000, 1 → 10, 0 → 10; 60 and 72 pass
+   through untouched. The warning prints exactly **once**, not per frame,
+   confirming the write-back sticks, and the value reads back as a clean
+   `"1000"` rather than `1000.000000`.
+5. **Do not read the ">16.67 ms" column at 60.** That threshold was
+   chosen to catch missed vsyncs against a 13.9 ms production period. At
+   `host_maxfps 60` the target period *is* 16.67 ms, so roughly half the
+   intervals land just above it (42% observed) — an artifact of the
+   metric, not a regression. Compare `p50` and `sd` instead.
+6. **Movement check, still outstanding.** With `host_maxfps 72`,
+   movement should be unchanged from pre-Phase-1 — same jump distances on
+   a known gap, same strafe-jump top speed over a fixed run — and should
+   measurably shift at 60. Not yet measured in-game; the ~15% figure
+   remains modelled.
+7. Any future Phase 2/3 work must move the presented rate while leaving
+   (6)'s movement metrics untouched. If a movement metric moves, the rate
+   has been disturbed and the change is wrong however smooth it looks.
 
 Note: running the game rewrites `id1/config.cfg`, which now carries
 `host_maxfps`. Check that diff before committing.

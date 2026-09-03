@@ -55,7 +55,9 @@ byte		*host_basepal;
 byte		*host_colormap;
 
 cvar_t	host_framerate = {"host_framerate","0"};	// set for slow motion
-cvar_t	host_maxfps = {"host_maxfps","72",true};	// 0 = uncapped; GAMEPLAY cvar, see docs/updates
+cvar_t	host_maxfps = {"host_maxfps","72",true};	// GAMEPLAY cvar: sets the movement
+												// integration rate, not just the
+												// frame rate.  See docs/updates.
 cvar_t	host_speeds = {"host_speeds","0"};			// set for running times
 
 cvar_t	sys_ticrate = {"sys_ticrate","0.05"};
@@ -504,8 +506,22 @@ qboolean Host_FilterTime (float time)
 {
 	realtime += time;
 
-	if (!cls.timedemo && host_maxfps.value > 0
-		&& realtime - oldrealtime < 1.0 / host_maxfps.value)
+// host_maxfps is the rate movement is integrated at, and the host_frametime
+// clamps below can only honour 10..1000.  Above 1000 the 0.001 floor makes
+// simulated time outrun wall time and the game runs fast; below 10 the 0.1
+// ceiling makes it run slow.  timedemo ignores the cap, so benchmarking does
+// not need it unset.
+	if (host_maxfps.value < 10 || host_maxfps.value > 1000)
+	{
+		Con_Printf ("host_maxfps %g out of range, clamping to 10..1000\n",
+			host_maxfps.value);
+		if (host_maxfps.value < 10)
+			Cvar_Set ("host_maxfps", "10");
+		else
+			Cvar_Set ("host_maxfps", "1000");
+	}
+
+	if (!cls.timedemo && realtime - oldrealtime < 1.0 / host_maxfps.value)
 		return false;		// framerate is too high
 
 	host_frametime = realtime - oldrealtime;
