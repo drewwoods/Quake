@@ -30,6 +30,7 @@ static float mouseX;
 static float mouseY;
 static float oldMouseX;
 static float oldMouseY;
+static qboolean headlessMode;
 static qboolean mouseCaptured;
 static qboolean mouseCaptureAllowed;
 static qboolean suppressMouseDeltas;
@@ -81,6 +82,8 @@ static qboolean CenterMouseInWindow(void)
 
 static void SetMouseCapture(qboolean capture)
 {
+    if (headlessMode)
+        capture = false;
     if (capture == mouseCaptured)
         return;
 
@@ -115,7 +118,7 @@ static void SetMouseCapture(qboolean capture)
 static void UpdateMouseCapture(void)
 {
     SetMouseCapture(mouseCaptureAllowed && _windowed_mouse.value &&
-        mouseEngaged && key_dest == key_game &&
+        mouseEngaged && key_dest == key_game && !headlessMode &&
         quakeWindow && [quakeWindow isKeyWindow] && [NSApp isActive]);
 }
 
@@ -470,6 +473,7 @@ void VID_Init(unsigned char *palette)
     NSRect frame;
     NSWindowStyleMask style;
 
+    headlessMode = COM_CheckParm("-headless") != 0;
     mouseCaptureAllowed = true;
     mouseEngaged = true;
     renderWidth = BASEWIDTH;
@@ -490,11 +494,12 @@ void VID_Init(unsigned char *palette)
             MAXWIDTH, MAXHEIGHT);
 
     frameBuffer = calloc((size_t)renderWidth * renderHeight, 1);
-    rgbaBuffer = calloc((size_t)renderWidth * renderHeight, 4);
+    if (!headlessMode)
+        rgbaBuffer = calloc((size_t)renderWidth * renderHeight, 4);
     cacheSize = D_SurfaceCacheForRes(renderWidth, renderHeight);
     zSize = renderWidth * renderHeight * sizeof(*d_pzbuffer);
     renderMemory = malloc((size_t)zSize + cacheSize);
-    if (!frameBuffer || !rgbaBuffer || !renderMemory)
+    if (!frameBuffer || (!headlessMode && !rgbaBuffer) || !renderMemory)
         Sys_Error("VID: unable to allocate framebuffer");
 
     d_pzbuffer = renderMemory;
@@ -513,6 +518,12 @@ void VID_Init(unsigned char *palette)
     vid.direct = NULL;
     VID_SetPalette(palette);
     Cvar_RegisterVariable(&vid_scale);
+
+    if (headlessMode)
+    {
+        Con_Printf("VID: headless mode; Cocoa window and input disabled\n");
+        return;
+    }
 
     [NSApplication sharedApplication];
     [NSApp setActivationPolicy:NSApplicationActivationPolicyRegular];
@@ -543,6 +554,9 @@ void VID_Init(unsigned char *palette)
 
 void VID_Update(vrect_t *rects)
 {
+    if (headlessMode)
+        return;
+
     @autoreleasepool {
     int x, y;
     (void)rects;
@@ -606,6 +620,9 @@ void D_EndDirectRect(int x, int y, int width, int height)
 
 void Sys_SendKeyEvents(void)
 {
+    if (headlessMode)
+        return;
+
     @autoreleasepool {
     NSEvent *event;
     do
