@@ -43,6 +43,10 @@ double		realtime;				// without any filtering or bounding
 double		oldrealtime;			// last frame run
 int			host_framecount;
 
+#define	HOST_MAX_CATCHUP	8	// simulation steps before abandoning a backlog
+
+static double	host_lastrender;
+
 int			host_hunklevel;
 
 int			minimum_memory;
@@ -504,6 +508,8 @@ Returns false if the time is too short to run a frame
 */
 qboolean Host_FilterTime (float time)
 {
+	float	dt;
+
 	realtime += time;
 
 // host_maxfps is the rate movement is integrated at, and the host_frametime
@@ -521,22 +527,92 @@ qboolean Host_FilterTime (float time)
 			Cvar_Set ("host_maxfps", "1000");
 	}
 
-	if (!cls.timedemo && realtime - oldrealtime < 1.0 / host_maxfps.value)
-		return false;		// framerate is too high
-
-	host_frametime = realtime - oldrealtime;
-	oldrealtime = realtime;
-
-	if (host_framerate.value > 0)
-		host_frametime = host_framerate.value;
-	else
-	{	// don't allow really long or short frames
+	if (cls.timedemo)
+	{	// benchmark: run flat out on whatever time really elapsed
+		host_frametime = realtime - oldrealtime;
+		oldrealtime = realtime;
 		if (host_frametime > 0.1)
 			host_frametime = 0.1;
 		if (host_frametime < 0.001)
 			host_frametime = 0.001;
+		return true;
 	}
-	
+
+	dt = 1.0 / host_maxfps.value;
+
+	if (realtime - oldrealtime < dt)
+		return false;		// not time for a simulation step yet
+
+// Fixed timestep.  oldrealtime advances by exactly one step rather than
+// jumping to now, so a slow frame is made up as several steps of the same
+// length instead of one long one.  Stock Quake integrated whatever real time
+// had elapsed, which stretched a single step across a hitch.
+//
+// dt needs no clamping: host_maxfps is held to 10..1000 above, which is
+// exactly the 0.1..0.001 range the old clamp enforced here.
+	host_frametime = dt;
+	oldrealtime += dt;
+
+// Spiral guard.  If catching up costs more time than it simulates we would
+// never converge, so past a backlog of HOST_MAX_CATCHUP steps give up on the
+// lost time rather than stepping forever.
+	if (realtime - oldrealtime > dt * HOST_MAX_CATCHUP)
+		oldrealtime = realtime;
+
+	if (host_framerate.value > 0)
+		host_frametime = host_framerate.value;
+
+	return true;
+}
+
+
+/*
+===================
+Host_RefreshInterval
+
+Seconds between display refreshes, or 0 where the platform cannot say.
+===================
+*/
+static float Host_RefreshInterval (void)
+{
+#ifdef __APPLE__
+	return VID_RefreshInterval ();
+#else
+	return 0.0;
+#endif
+}
+
+
+/*
+===================
+Host_FilterRender
+
+Rendering is paced to the display rather than to the simulation, so a
+simulation step the display will never show does not pay for a frame.
+
+Returns false when no frame is due.  With no display cadence to follow --
+a dedicated server, a benchmark, or a backend that cannot report a refresh
+rate -- this falls back to stock behaviour of one render per step.
+===================
+*/
+static qboolean Host_FilterRender (qboolean stepped)
+{
+	float	interval;
+
+	if (cls.state == ca_dedicated)
+		return false;
+
+	interval = Host_RefreshInterval ();
+	if (cls.timedemo || interval <= 0)
+		return stepped;
+
+	if (realtime - host_lastrender < interval)
+		return false;
+
+	host_lastrender += interval;
+	if (realtime - host_lastrender > interval)
+		host_lastrender = realtime;	// fell behind; resync rather than burst
+
 	return true;
 }
 
@@ -642,30 +718,17 @@ void Host_ServerFrame (void)
 #endif
 
 
+
 /*
 ==================
-Host_Frame
+Host_SimFrame
 
-Runs all active servers
+One simulation step: input, console, network and the server tick.  Split
+out of _Host_Frame so rendering can be paced separately to the display.
 ==================
 */
-void _Host_Frame (float time)
+static void Host_SimFrame (void)
 {
-	static double		time1 = 0;
-	static double		time2 = 0;
-	static double		time3 = 0;
-	int			pass1, pass2, pass3;
-
-	if (setjmp (host_abortserver) )
-		return;			// something bad happened, or the server disconnected
-
-// keep the random time dependent
-	rand ();
-	
-// decide the simulation time
-	if (!Host_FilterTime (time))
-		return;			// don't run too fast, or packets will flood out
-		
 // get new key events
 	Sys_SendKeyEvents ();
 
@@ -712,6 +775,43 @@ void _Host_Frame (float time)
 		CL_ReadFromServer ();
 	}
 
+	if (cls.signon == SIGNONS)
+		CL_DecayLights ();
+
+// host_framecount counts simulation steps, not rendered frames: cl_demo.c
+// uses it to read at most one demo message per step.
+	host_framecount++;
+}
+
+/*
+==================
+Host_Frame
+
+Runs all active servers
+==================
+*/
+void _Host_Frame (float time)
+{
+	static double		time1 = 0;
+	static double		time2 = 0;
+	static double		time3 = 0;
+	int			pass1, pass2, pass3;
+	qboolean	stepped;
+
+	if (setjmp (host_abortserver) )
+		return;			// something bad happened, or the server disconnected
+
+// keep the random time dependent
+	rand ();
+	
+// decide the simulation time
+	stepped = Host_FilterTime (time);
+	if (stepped)
+		Host_SimFrame ();
+
+	if (!Host_FilterRender (stepped))
+		return;
+
 // update video
 	if (host_speeds.value)
 		time1 = Sys_FloatTime ();
@@ -721,12 +821,10 @@ void _Host_Frame (float time)
 	if (host_speeds.value)
 		time2 = Sys_FloatTime ();
 		
-// update audio
+// update audio.  Paced with the render because S_Update takes the listener
+// orientation the renderer just computed.
 	if (cls.signon == SIGNONS)
-	{
 		S_Update (r_origin, vpn, vright, vup);
-		CL_DecayLights ();
-	}
 	else
 		S_Update (vec3_origin, vec3_origin, vec3_origin, vec3_origin);
 	
@@ -741,8 +839,6 @@ void _Host_Frame (float time)
 		Con_Printf ("%3i tot %3i server %3i gfx %3i snd\n",
 					pass1+pass2+pass3, pass1, pass2, pass3);
 	}
-	
-	host_framecount++;
 }
 
 void Host_Frame (float time)
