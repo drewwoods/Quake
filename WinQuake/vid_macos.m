@@ -452,6 +452,42 @@ void VID_Update(vrect_t *rects)
     }
 }
 
+/*
+================
+VID_RefreshInterval
+
+Seconds between display refreshes, or 0 if unknown.  Sampled once: moving
+the window to a monitor with a different refresh rate will not be noticed.
+================
+*/
+float VID_RefreshInterval(void)
+{
+    static int      sampled;
+    static float    interval;
+
+    if (!sampled)
+    {
+        CGDisplayModeRef mode;
+        double           rate = 0.0;
+
+        sampled = 1;
+        interval = 0.0f;
+        if (!headlessMode)
+        {
+            mode = CGDisplayCopyDisplayMode(CGMainDisplayID());
+            if (mode)
+            {
+                rate = CGDisplayModeGetRefreshRate(mode);
+                CGDisplayModeRelease(mode);
+            }
+            // 0 is returned for variable-refresh and some external displays
+            if (rate > 0.0)
+                interval = (float)(1.0 / rate);
+        }
+    }
+    return interval;
+}
+
 void VID_Shutdown(void)
 {
     @autoreleasepool {
