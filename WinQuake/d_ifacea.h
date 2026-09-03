@@ -95,4 +95,3 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 #define atd_drawtype		28
 #define atd_seamfixupX16	32
 #define atd_size			36
-
