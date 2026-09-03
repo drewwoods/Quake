@@ -182,13 +182,17 @@ leaving both the rate and the latency alone. Three levers:
 | Lever | Cost | Status |
 |---|---|---|
 | Lower the rate (`host_maxfps 60`) | ~15% less air *gain* (~3% less speed) | implemented, confirmed smooth |
-| Interpolate (Phases 2+3, together) | ~13.9 ms movement latency, main-loop rewrite | specified, **not built** |
+| Interpolate (Phases 2+3, together) | ~7.8 ms mean movement latency | **implemented** |
 | Neither | the beat stays | Option zero |
 
-Two things that have been *measured* and should not be confused with the
-above: Finding 5 shows the **existing** 72 Hz gate is already well paced,
-and Phase 3 in isolation was built and found to be a no-op. Phase 2 as
-specified below has **not** been built or measured.
+One measurement that should not be confused with the above: Finding 5
+shows the **pre-Phase-2** 72 Hz gate was already well paced. It says
+nothing about the decoupled loop, which is a different mechanism.
+
+The latency cost came in below the prediction. This note long argued
+Phase 3 would cost "one full step, ~13.9 ms". Measured, the render lands
+mid-step far more often than at its start, so the mean is **~7.8 ms** and
+only the worst case approaches ~13.3 ms.
 
 ## Plan
 
@@ -246,7 +250,7 @@ as "uncapped".
 
 ---
 
-## Phases 2 and 3: what they actually are
+## Phases 2 and 3 — **IMPLEMENTED**
 
 Both were previously written up as verdicts without the mechanism.
 Setting that right — and noting they are not independent options, but one
@@ -269,7 +273,7 @@ _Host_Frame(time):
 Render happens once per step, 1:1, at the instant that step finishes. The
 display composites on its own 60 Hz cadence that nothing here knows about.
 
-### Phase 2 — decouple the two clocks
+### Phase 2 — decouple the two clocks (commit 5444c7d)
 
 Split the single gate in two:
 
@@ -310,7 +314,7 @@ this renderer is thread-safe, so if a display link is used at all it must
 only set a flag the main loop reads. Also handle
 `CGDisplayModeGetRefreshRate` returning 0, which it does on some displays.
 
-### Phase 3 — interpolate to the render moment
+### Phase 3 — interpolate to the render moment (commit d10a398)
 
 Once a render lands *between* steps, draw the world as it was at that
 moment, interpolating between the two states bracketing it.
@@ -357,7 +361,7 @@ lerp: frac=1.000 f=0.0139 lag=0.0ms
 `cl.time` advances by `host_frametime`, so the clocks track exactly and
 `frac` pins to 1.000. Motion was unchanged. Reverted.
 
-### What building it would involve
+### What building it actually took
 
 - Restructure `_Host_Frame` into a sim step and a render step. This is
   the core loop; it is the risky part.
@@ -365,26 +369,37 @@ lerp: frac=1.000 f=0.0139 lag=0.0ms
 - Two client snapshots: largely present already as `msg_origins[0]/[1]`,
   `mvelocity[0]/[1]`, `mtime[0]/[1]`.
 - Decide where `S_Update` belongs — per step or per render.
-- **Audit `cl.time`'s other consumers.** It is not only a lerp input:
-  `CL_DecayLights` (`cl_main.c:362`, called from `host.c:712`), particle
-  updates, water warp, alias skin cycling, view bob, idle sway and face
-  animation all read it. Turning it into a lagged render clock shifts
-  every one of them.
+- **`cl.time` was left alone.** The original sketch made it a lagged
+  render clock, but it feeds `CL_DecayLights`, particles, water warp,
+  alias skin cycling, view bob, idle sway and face animation. Rather than
+  shift all of them, the interpolation fraction is passed explicitly to
+  `CL_LerpView` and `cl.time` keeps its simulation meaning. This removed
+  the largest source of risk in the change.
 - Entity culling compares `ent->msgtime != cl.mtime[0]`; a lagged clock
   needs that revisited.
 - The accumulator must stay pinned to `host_maxfps`. If it drifts with
   the render rate the feel changes and the exercise defeats itself.
 
-### Verdict
+### Result
 
-Still not recommended, but for a sharper reason: it is the *only* route
-to smooth motion at an unchanged 72 Hz rate, and it costs ~13.9 ms of
-movement latency plus a main-loop rewrite. Against that, `host_maxfps 60`
-buys the same smoothness today for ~15% less air gain and one cvar.
+Built and measured. With simulation at 72 and the panel at 60:
 
-Which is the better trade depends on whether authentic movement or
-authentic responsiveness matters more. Both cannot be kept on a 60 Hz
-panel.
+| | before | after |
+|---|---|---|
+| presented rate | 72.0 fps (13.882 ms) | 60.2 fps (16.607 ms) |
+| interpolation fraction | pinned 1.000 | sweeps 0.041..0.841, mean 0.441 |
+| movement latency | 0 | ~7.8 ms mean, ~13.3 ms worst |
+| timedemo | ~129 fps | 130.3 fps (unaffected) |
+
+The fraction lands on exactly five values — 0.041, 0.241, 0.441, 0.641,
+0.841 — which is the 5:6 beat of 60 into 72. Those are the same five
+phases that used to be *snapped* to and produced the judder; they are now
+interpolated across.
+
+There is still a real cost, and it is a movement-feel cost, so it is
+toggleable: `host_interpolate 0` restores stock snapping. The honest
+comparison against `host_maxfps 60` is ~7.8 ms of movement latency versus
+~15% less air gain. Neither is free.
 
 ---
 
@@ -417,13 +432,16 @@ jitter probe after and treat any widening of `sd` as a regression.
 hardware, and what the feel was calibrated against. It is the only option
 costing neither feel nor latency.
 
-No longer the automatic recommendation, since `host_maxfps 60` was tested
-and the gain is real. The choice is open:
+No longer the automatic recommendation. Both other levers now exist and
+both work, so the choice is a real one:
 
-- **Authentic movement matters most** → stay at 72, accept the beat.
-- **Smoothness matters most** → `host_maxfps 60`, accept ~15% less air
-  gain. One cvar, reversible, no code risk.
-- **Both matter and latency does not** → build Phases 2+3 together.
+- **Authentic movement above all** → `host_interpolate 0` at
+  `host_maxfps 72`. Stock feel, and the beat comes back.
+- **Smooth, and latency matters more than air control** →
+  `host_maxfps 60`, interpolation off. ~15% less air gain, zero added
+  latency.
+- **Smooth, and air control matters more than latency** → the default:
+  72 with interpolation. Stock movement rate, ~7.8 ms mean latency.
 
 Phase 4 is worth doing regardless.
 
@@ -465,9 +483,19 @@ Results below are from the build at the Phase 1 clamp commit.
    a known gap, same strafe-jump top speed over a fixed run — and should
    measurably shift at 60. Not yet measured in-game; the ~15% figure
    remains modelled.
-7. Any future Phase 2/3 work must move the presented rate while leaving
-   (6)'s movement metrics untouched. If a movement metric moves, the rate
-   has been disturbed and the change is wrong however smooth it looks.
+7. **Phases 2 and 3.** Presented rate must follow the *display*, not
+   `host_maxfps`: at `host_maxfps 72` on a 60 Hz panel expect p50
+   ~16.6 ms, not 13.9 ms. `host_interpolate 0` must restore stock
+   snapping, and timedemo must stay ~129 fps in both cases.
+8. **Still unverified: that the simulation rate is untouched by Phases
+   2/3.** The whole design rests on movement being unchanged at
+   `host_maxfps 72`, and that has been argued from the code, not
+   measured. Same jump distances and strafe-jump top speed as
+   pre-Phase-2 is the check that matters most and has not been run.
+9. **Phase 2's fixed timestep changes hitch behaviour by design.** A
+   stall that used to be one long integration step is now several steps
+   of equal length. Do not treat a difference in stall behaviour as a
+   regression; do treat a difference in steady-state movement as one.
 
 Note: running the game rewrites `id1/config.cfg`, which now carries
 `host_maxfps`. Check that diff before committing.
