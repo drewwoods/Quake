@@ -55,6 +55,7 @@ byte		*host_basepal;
 byte		*host_colormap;
 
 cvar_t	host_framerate = {"host_framerate","0"};	// set for slow motion
+cvar_t	host_maxfps = {"host_maxfps","72",true};	// 0 = uncapped; GAMEPLAY cvar, see docs/updates
 cvar_t	host_speeds = {"host_speeds","0"};			// set for running times
 
 cvar_t	sys_ticrate = {"sys_ticrate","0.05"};
@@ -211,6 +212,7 @@ void Host_InitLocal (void)
 	Host_InitCommands ();
 	
 	Cvar_RegisterVariable (&host_framerate);
+	Cvar_RegisterVariable (&host_maxfps);
 	Cvar_RegisterVariable (&host_speeds);
 
 	Cvar_RegisterVariable (&sys_ticrate);
@@ -502,7 +504,8 @@ qboolean Host_FilterTime (float time)
 {
 	realtime += time;
 
-	if (!cls.timedemo && realtime - oldrealtime < 1.0/72.0)
+	if (!cls.timedemo && host_maxfps.value > 0
+		&& realtime - oldrealtime < 1.0 / host_maxfps.value)
 		return false;		// framerate is too high
 
 	host_frametime = realtime - oldrealtime;
