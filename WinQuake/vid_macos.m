@@ -30,6 +30,10 @@ static float mouseX;
 static float mouseY;
 static float oldMouseX;
 static float oldMouseY;
+static qboolean mouseCaptured;
+static qboolean mouseCaptureAllowed;
+static qboolean suppressMouseDeltas;
+static CGFloat wheelAccum;
 
 cvar_t _windowed_mouse = {"_windowed_mouse", "1", true};
 cvar_t m_filter = {"m_filter", "0", true};
@@ -39,6 +43,67 @@ cvar_t m_filter = {"m_filter", "0", true};
 
 @interface QuakeWindowDelegate : NSObject <NSWindowDelegate>
 @end
+
+static qboolean CenterMouseInWindow(void)
+{
+    NSRect contentFrame;
+    NSRect screenFrame;
+    NSPoint center;
+    NSScreen *screen;
+    NSNumber *screenNumber;
+    CGDirectDisplayID display;
+    CGPoint displayPoint;
+
+    screen = [quakeWindow screen];
+    screenNumber = [[screen deviceDescription] objectForKey:@"NSScreenNumber"];
+    if (!screen || !screenNumber)
+        return false;
+
+    contentFrame = [quakeWindow contentRectForFrameRect:[quakeWindow frame]];
+    screenFrame = [screen frame];
+    center = NSMakePoint(NSMidX(contentFrame), NSMidY(contentFrame));
+    display = (CGDirectDisplayID)[screenNumber unsignedIntValue];
+    displayPoint = CGPointMake(center.x - NSMinX(screenFrame),
+        NSMaxY(screenFrame) - center.y);
+
+    return CGDisplayMoveCursorToPoint(display, displayPoint) == kCGErrorSuccess;
+}
+
+static void SetMouseCapture(qboolean capture)
+{
+    if (capture == mouseCaptured)
+        return;
+
+    if (capture)
+    {
+        if (CGAssociateMouseAndMouseCursorPosition(false) != kCGErrorSuccess)
+            return;
+        if (!CenterMouseInWindow())
+        {
+            CGAssociateMouseAndMouseCursorPosition(true);
+            return;
+        }
+        [NSCursor hide];
+        mouseCaptured = true;
+        suppressMouseDeltas = true;
+    }
+    else
+    {
+        CGAssociateMouseAndMouseCursorPosition(true);
+        [NSCursor unhide];
+        mouseCaptured = false;
+        suppressMouseDeltas = false;
+    }
+
+    mouseX = mouseY = 0;
+    oldMouseX = oldMouseY = 0;
+}
+
+static void UpdateMouseCapture(void)
+{
+    SetMouseCapture(mouseCaptureAllowed && _windowed_mouse.value &&
+        quakeWindow && [quakeWindow isKeyWindow] && [NSApp isActive]);
+}
 
 static int QuakeKeyForEvent(NSEvent *event)
 {
@@ -191,6 +256,8 @@ static int QuakeKeyForEvent(NSEvent *event)
 
 - (void)mouseMoved:(NSEvent *)event
 {
+    if (!mouseCaptured || suppressMouseDeltas)
+        return;
     mouseX += [event deltaX];
     mouseY += [event deltaY];
 }
@@ -201,14 +268,46 @@ static int QuakeKeyForEvent(NSEvent *event)
 
 - (void)scrollWheel:(NSEvent *)event
 {
-    int key = [event scrollingDeltaY] > 0 ? K_MWHEELUP : K_MWHEELDOWN;
-    Key_Event(key, true);
-    Key_Event(key, false);
+    CGFloat delta = [event deltaY];
+    int key;
+
+    if (delta == 0)
+        return;
+    if ((wheelAccum < 0 && delta > 0) || (wheelAccum > 0 && delta < 0))
+        wheelAccum = 0;
+    wheelAccum += delta;
+    while (wheelAccum >= 1.0)
+    {
+        key = K_MWHEELUP;
+        Key_Event(key, true);
+        Key_Event(key, false);
+        wheelAccum -= 1.0;
+    }
+    while (wheelAccum <= -1.0)
+    {
+        key = K_MWHEELDOWN;
+        Key_Event(key, true);
+        Key_Event(key, false);
+        wheelAccum += 1.0;
+    }
 }
 
 @end
 
 @implementation QuakeWindowDelegate
+- (void)windowDidBecomeKey:(NSNotification *)notification
+{
+    (void)notification;
+    UpdateMouseCapture();
+}
+
+- (void)windowDidResignKey:(NSNotification *)notification
+{
+    (void)notification;
+    SetMouseCapture(false);
+    Key_ClearStates();
+}
+
 - (BOOL)windowShouldClose:(NSWindow *)sender
 {
     (void)sender;
@@ -248,6 +347,7 @@ void VID_Init(unsigned char *palette)
     NSRect frame;
     NSWindowStyleMask style;
 
+    mouseCaptureAllowed = true;
     renderWidth = BASEWIDTH;
     renderHeight = BASEHEIGHT;
     if ((pnum = COM_CheckParm("-winsize")) && pnum < com_argc - 2)
@@ -306,6 +406,7 @@ void VID_Init(unsigned char *palette)
     [quakeWindow center];
     [quakeWindow makeKeyAndOrderFront:nil];
     [NSApp activateIgnoringOtherApps:YES];
+    UpdateMouseCapture();
     }
 }
 
@@ -336,6 +437,7 @@ void VID_Update(vrect_t *rects)
 void VID_Shutdown(void)
 {
     @autoreleasepool {
+    SetMouseCapture(false);
     [quakeWindow orderOut:nil];
     quakeView = nil;
     quakeWindow = nil;
@@ -352,7 +454,8 @@ void VID_Shutdown(void)
 
 void VID_HandlePause(qboolean pause)
 {
-    (void)pause;
+    mouseCaptureAllowed = !pause;
+    UpdateMouseCapture();
 }
 
 void D_BeginDirectRect(int x, int y, byte *bitmap, int width, int height)
@@ -377,6 +480,7 @@ void Sys_SendKeyEvents(void)
         if (event)
             [NSApp sendEvent:event];
     } while (event);
+    suppressMouseDeltas = false;
     }
 }
 
@@ -388,10 +492,12 @@ void IN_Init(void)
 
 void IN_Shutdown(void)
 {
+    SetMouseCapture(false);
 }
 
 void IN_Commands(void)
 {
+    UpdateMouseCapture();
 }
 
 void IN_Move(usercmd_t *cmd)
@@ -399,6 +505,9 @@ void IN_Move(usercmd_t *cmd)
     float dx = mouseX;
     float dy = mouseY;
     mouseX = mouseY = 0;
+
+    if (!mouseCaptured)
+        return;
 
     if (m_filter.value)
     {
