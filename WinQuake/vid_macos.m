@@ -485,6 +485,9 @@ void VID_Init(unsigned char *palette)
         renderHeight = Q_atoi(com_argv[pnum + 1]);
     if (renderWidth < 320 || renderHeight < 200)
         Sys_Error("VID: minimum window size is 320x200");
+    if (renderWidth > MAXWIDTH || renderHeight > MAXHEIGHT)
+        Sys_Error("VID: maximum software-renderer size is %dx%d",
+            MAXWIDTH, MAXHEIGHT);
 
     frameBuffer = calloc((size_t)renderWidth * renderHeight, 1);
     rgbaBuffer = calloc((size_t)renderWidth * renderHeight, 4);
