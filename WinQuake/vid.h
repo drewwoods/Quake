@@ -71,6 +71,13 @@ void	VID_Init (unsigned char *palette);
 // the video driver will need it again
 
 void	VID_Shutdown (void);
+
+#ifdef __APPLE__
+// seconds between display refreshes, 0 if unknown.  macOS only; other
+// backends have no equivalent and the caller falls back to rendering once
+// per simulation step.
+float	VID_RefreshInterval (void);
+#endif
 // Called at shutdown
 
 void	VID_Update (vrect_t *rects);
