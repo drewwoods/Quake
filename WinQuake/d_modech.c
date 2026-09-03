@@ -77,22 +77,25 @@ void D_ViewChanged (void)
 	d_zrowbytes = vid.width * 2;
 	d_zwidth = vid.width;
 
-// A particle is a pix*pix screen square, pix falling off as 1/z.  Sizes are
-// defined for a 320-wide view (PARTICLE_BASE_SIZE / z pixels, clamped to
-// 1..4) and scaled linearly with the viewport so a particle keeps the same
-// angular size at any resolution.
+// A particle is a pix*pix screen square, pix falling off as 1/z.  The near
+// size is defined for a 320-wide view (PARTICLE_BASE_SIZE / z pixels) and
+// scales linearly with the viewport, so a particle keeps the same angular
+// size at any resolution.
 //
 // The original code computed pix as izi >> d_pix_shift, which quantizes the
 // scale to powers of two: at 1600 wide it came out 3.2x too big, so nearby
 // particles sat pinned at d_pix_max and never shrank with distance.
 // d_pix_shift survives only for the i386 assembly path.
+//
+// The floor stays at one pixel rather than scaling with the viewport: a
+// proportional floor (5 px at 1600 wide) froze the size at z > 256, while
+// one pixel lets the falloff run to z = 1280 -- more resolution buys more
+// distance before a particle stops shrinking.
 	pixscale = (float)r_refdef.vrect.width / PARTICLE_BASE_WIDTH;
 
 	d_particle_scale = PARTICLE_BASE_SIZE * pixscale;
 
-	d_pix_min = (int)pixscale;
-	if (d_pix_min < 1)
-		d_pix_min = 1;
+	d_pix_min = 1;
 
 	d_pix_max = (int)(4.0 * pixscale + 0.5);
 	if (d_pix_max < 1)
