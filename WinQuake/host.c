@@ -62,6 +62,9 @@ cvar_t	host_framerate = {"host_framerate","0"};	// set for slow motion
 cvar_t	host_maxfps = {"host_maxfps","72",true};	// GAMEPLAY cvar: sets the movement
 												// integration rate, not just the
 												// frame rate.  See docs/updates.
+cvar_t	host_interpolate = {"host_interpolate","1",true};	// smooth motion between
+												// simulation steps, at the cost of
+												// up to one step of movement latency
 cvar_t	host_speeds = {"host_speeds","0"};			// set for running times
 
 cvar_t	sys_ticrate = {"sys_ticrate","0.05"};
@@ -219,6 +222,7 @@ void Host_InitLocal (void)
 	
 	Cvar_RegisterVariable (&host_framerate);
 	Cvar_RegisterVariable (&host_maxfps);
+	Cvar_RegisterVariable (&host_interpolate);
 	Cvar_RegisterVariable (&host_speeds);
 
 	Cvar_RegisterVariable (&sys_ticrate);
@@ -619,6 +623,34 @@ static qboolean Host_FilterRender (qboolean stepped)
 
 /*
 ===================
+Host_LerpFrac
+
+How far the frame about to be rendered falls through the current
+simulation step, 0..1.  1 means show the newest state, which is what stock
+Quake always did.
+===================
+*/
+static float Host_LerpFrac (void)
+{
+	float	dt, frac;
+
+	if (cls.timedemo || !host_interpolate.value)
+		return 1.0;
+
+	dt = 1.0 / host_maxfps.value;
+	frac = (realtime - oldrealtime) / dt;
+
+	if (frac < 0)
+		frac = 0;
+	if (frac > 1)
+		frac = 1;
+
+	return frac;
+}
+
+
+/*
+===================
 Host_GetConsoleCommands
 
 Add them exactly as if they had been typed at the console
@@ -815,7 +847,9 @@ void _Host_Frame (float time)
 // update video
 	if (host_speeds.value)
 		time1 = Sys_FloatTime ();
-		
+
+	CL_LerpView (Host_LerpFrac ());
+
 	SCR_UpdateScreen ();
 
 	if (host_speeds.value)

@@ -295,6 +295,7 @@ extern	cvar_t		sys_ticrate;
 extern	cvar_t		sys_nostdout;
 extern	cvar_t		developer;
 extern	cvar_t		host_maxfps;
+extern	cvar_t		host_interpolate;
 
 extern	qboolean	host_initialized;		// true if into command execution
 extern	double		host_frametime;
