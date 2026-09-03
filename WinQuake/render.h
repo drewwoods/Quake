@@ -81,8 +81,8 @@ typedef struct
 										//  for use in edge list
 	float		fvrectx, fvrecty;		// for floating-point compares
 	float		fvrectx_adj, fvrecty_adj; // left and top edges, for clamping
-	int			vrect_x_adj_shift20;	// (vrect.x + 0.5 - epsilon) << 20
-	int			vrectright_adj_shift20;	// (vrectright + 0.5 - epsilon) << 20
+	edgefixed_t	vrect_x_adj_shift20;	// (vrect.x + 0.5 - epsilon) << 20
+	edgefixed_t	vrectright_adj_shift20;	// (vrectright + 0.5 - epsilon) << 20
 	float		fvrectright_adj, fvrectbottom_adj;
 										// right and bottom edges, for clamping
 	float		fvrectright;			// rightmost edge, for Alias clamping
@@ -159,4 +159,3 @@ void D_FlushCaches (void);
 void D_DeleteSurfaceCache (void);
 void D_InitCaches (void *buffer, int size);
 void R_SetVrect (vrect_t *pvrect, vrect_t *pvrectin, int lineadj);
-
