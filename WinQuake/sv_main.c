@@ -1157,7 +1157,7 @@ void SV_SpawnServer (char *server)
 	ent = EDICT_NUM(0);
 	memset (&ent->v, 0, progs->entityfields * 4);
 	ent->free = false;
-	ent->v.model = sv.worldmodel->name - pr_strings;
+	ent->v.model = ED_NewStringOffset (sv.worldmodel->name);
 	ent->v.modelindex = 1;		// world model
 	ent->v.solid = SOLID_BSP;
 	ent->v.movetype = MOVETYPE_PUSH;
@@ -1167,9 +1167,9 @@ void SV_SpawnServer (char *server)
 	else
 		pr_global_struct->deathmatch = deathmatch.value;
 
-	pr_global_struct->mapname = sv.name - pr_strings;
+	pr_global_struct->mapname = ED_NewStringOffset (sv.name);
 #ifdef QUAKE2
-	pr_global_struct->startspot = sv.startspot - pr_strings;
+	pr_global_struct->startspot = ED_NewStringOffset (sv.startspot);
 #endif
 
 // serverflags are for cross level information (sigils)
@@ -1197,4 +1197,3 @@ void SV_SpawnServer (char *server)
 	
 	Con_DPrintf ("Server spawned.\n");
 }
-
