@@ -134,6 +134,9 @@ C(D_DrawParticle):
 	fxch	%st(1)			// u | v | 1/z
 	fadds	float_point5	// u | v | 1/z
 	fxch	%st(2)			// 1/z | v | u
+	fld		%st(0)			// 1/z | 1/z | v | u
+	fmuls	C(d_particle_scale)	// pix | 1/z | v | u
+	fistpl	DP_Pix			// 1/z | v | u
 	fmuls	DP_32768		// 1/z * 0x8000 | v | u
 	fxch	%st(2)			// u | v | 1/z * 0x8000
 
@@ -186,11 +189,8 @@ C(D_DrawParticle):
 	addl	%ebx,%edi
 	addl	%eax,%edx
 
-// pix = izi >> d_pix_shift;
-
-	movl	izi,%eax
-	movl	C(d_pix_shift),%ecx
-	shrl	%cl,%eax
+// pix = (int)(d_particle_scale * zi);
+	movl	DP_Pix,%eax
 	movl	izi,%ebp
 
 // if (pix < d_pix_min)

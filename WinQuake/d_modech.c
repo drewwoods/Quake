@@ -22,9 +22,15 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 #include "quakedef.h"
 #include "d_local.h"
 
+#define PARTICLE_BASE_WIDTH	320.0	// view width the particle sizes below assume
+#define PARTICLE_BASE_SIZE	256.0	// resulting pix at z == 1
+#define PARTICLE_MIN_SIZE	1
+#define PARTICLE_MAX_SIZE	4.0
+
 int	d_vrectx, d_vrecty, d_vrectright_particle, d_vrectbottom_particle;
 
-int	d_y_aspect_shift, d_pix_min, d_pix_max, d_pix_shift;
+int	d_y_aspect_shift, d_pix_min, d_pix_max;
+float	d_particle_scale;
 
 int		d_scantable[MAXHEIGHT];
 short	*zspantable[MAXHEIGHT]; 
@@ -59,6 +65,7 @@ D_ViewChanged
 void D_ViewChanged (void)
 {
 	int rowbytes;
+	float pixscale;
 
 	if (r_dowarp)
 		rowbytes = WARP_WIDTH;
@@ -72,14 +79,17 @@ void D_ViewChanged (void)
 	d_zrowbytes = vid.width * 2;
 	d_zwidth = vid.width;
 
-	d_pix_min = r_refdef.vrect.width / 320;
-	if (d_pix_min < 1)
-		d_pix_min = 1;
+// Scale the 320-wide 1/z curve with the viewport to preserve angular size.
+// A one-pixel floor extends its distance falloff at higher resolutions.
+	pixscale = (float)r_refdef.vrect.width / PARTICLE_BASE_WIDTH;
 
-	d_pix_max = (int)((float)r_refdef.vrect.width / (320.0 / 4.0) + 0.5);
-	d_pix_shift = 8 - (int)((float)r_refdef.vrect.width / 320.0 + 0.5);
-	if (d_pix_max < 1)
-		d_pix_max = 1;
+	d_particle_scale = PARTICLE_BASE_SIZE * pixscale;
+
+	d_pix_min = PARTICLE_MIN_SIZE;
+
+	d_pix_max = (int)(PARTICLE_MAX_SIZE * pixscale + 0.5);
+	if (d_pix_max < PARTICLE_MIN_SIZE)
+		d_pix_max = PARTICLE_MIN_SIZE;
 
 	if (pixelAspect > 1.4)
 		d_y_aspect_shift = 1;
@@ -104,4 +114,3 @@ void D_ViewChanged (void)
 
 	D_Patch ();
 }
-
