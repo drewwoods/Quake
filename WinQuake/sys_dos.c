@@ -58,7 +58,7 @@ static double		curtime = 0.0;
 static double		lastcurtime = 0.0;
 static double		oldtime = 0.0;
 
-static qboolean		isDedicated;
+qboolean			isDedicated;
 
 static int			minmem;
 
@@ -566,7 +566,7 @@ void Sys_Quit (void)
 {
 	byte	screen[80*25*2];
 	byte	*d;
-	char			ver[6];
+	char			ver[7];
 	int			i;
 	
 
@@ -949,5 +949,3 @@ int main (int c, char **v)
 		oldtime = newtime;
 	}
 }
-
-

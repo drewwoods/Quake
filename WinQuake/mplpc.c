@@ -223,6 +223,7 @@ int MGenMCount(unsigned lowerOrderBits, unsigned upperOrderBits);
 int MGenSanityCheck(void);
 
 #include <stdio.h>
+#include <stdlib.h>
 #include <sys/farptr.h>
 
 extern short flat_selector;
