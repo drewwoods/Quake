@@ -88,7 +88,7 @@ void D_DrawParticle (particle_t *pparticle)
 	pdest = d_viewbuffer + d_scantable[v] + u;
 	izi = (int)(zi * 0x8000);
 
-	pix = izi >> d_pix_shift;
+	pix = (int)(d_particle_scale * zi);
 
 	if (pix < d_pix_min)
 		pix = d_pix_min;
