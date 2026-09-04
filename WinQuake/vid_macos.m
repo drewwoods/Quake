@@ -4,12 +4,17 @@
 
 #import <Cocoa/Cocoa.h>
 #import <CoreGraphics/CoreGraphics.h>
+#import <QuartzCore/QuartzCore.h>
 
 #include "quakedef.h"
 #include "d_local.h"
 
 #define BASEWIDTH  320
 #define BASEHEIGHT 200
+
+// CoreAnimation reads the image handed to it well after VID_Update returns, so
+// the next frame must not scribble on the buffer it is still showing.
+#define RGBA_BUFFER_COUNT 2
 
 viddef_t vid;
 unsigned short d_8to16table[256];
@@ -21,7 +26,9 @@ void (*vid_menukeyfn)(int key);
 static NSWindow *quakeWindow;
 static NSView *quakeView;
 static byte *frameBuffer;
-static byte *rgbaBuffer;
+static byte *rgbaBuffers[RGBA_BUFFER_COUNT];
+static int rgbaBufferIndex;
+static CGColorSpaceRef rgbColorSpace;
 static byte currentPalette[768];
 static void *renderMemory;
 static int renderWidth;
@@ -164,43 +171,6 @@ static int QuakeKeyForEvent(NSEvent *event)
 - (BOOL)acceptsFirstResponder
 {
     return YES;
-}
-
-- (BOOL)isFlipped
-{
-    return YES;
-}
-
-- (void)drawRect:(NSRect)dirtyRect
-{
-    CGContextRef context;
-    CGColorSpaceRef colorSpace;
-    CGDataProviderRef provider;
-    CGImageRef image;
-
-    (void)dirtyRect;
-    if (!rgbaBuffer)
-        return;
-
-    colorSpace = CGColorSpaceCreateDeviceRGB();
-    provider = CGDataProviderCreateWithData(NULL, rgbaBuffer,
-        (size_t)renderWidth * renderHeight * 4, NULL);
-    image = CGImageCreate(renderWidth, renderHeight, 8, 32,
-        (size_t)renderWidth * 4, colorSpace,
-        kCGBitmapByteOrderDefault | kCGImageAlphaNoneSkipLast,
-        provider, NULL, false, kCGRenderingIntentDefault);
-
-    context = [[NSGraphicsContext currentContext] CGContext];
-    CGContextSetInterpolationQuality(context, kCGInterpolationNone);
-    CGContextSaveGState(context);
-    CGContextTranslateCTM(context, 0, NSHeight([self bounds]));
-    CGContextScaleCTM(context, 1, -1);
-    CGContextDrawImage(context, NSRectToCGRect([self bounds]), image);
-    CGContextRestoreGState(context);
-
-    CGImageRelease(image);
-    CGDataProviderRelease(provider);
-    CGColorSpaceRelease(colorSpace);
 }
 
 - (void)keyDown:(NSEvent *)event
@@ -465,6 +435,7 @@ void VID_Init(unsigned char *palette)
 {
     @autoreleasepool {
     int pnum;
+    int i;
     int cacheSize;
     int zSize;
     NSRect frame;
@@ -487,11 +458,13 @@ void VID_Init(unsigned char *palette)
         Sys_Error("VID: minimum window size is 320x200");
 
     frameBuffer = calloc((size_t)renderWidth * renderHeight, 1);
-    rgbaBuffer = calloc((size_t)renderWidth * renderHeight, 4);
+    for (i = 0; i < RGBA_BUFFER_COUNT; ++i)
+        rgbaBuffers[i] = calloc((size_t)renderWidth * renderHeight, 4);
+    rgbColorSpace = CGColorSpaceCreateWithName(kCGColorSpaceSRGB);
     cacheSize = D_SurfaceCacheForRes(renderWidth, renderHeight);
     zSize = renderWidth * renderHeight * sizeof(*d_pzbuffer);
     renderMemory = malloc((size_t)zSize + cacheSize);
-    if (!frameBuffer || !rgbaBuffer || !renderMemory)
+    if (!frameBuffer || !rgbaBuffers[RGBA_BUFFER_COUNT - 1] || !renderMemory)
         Sys_Error("VID: unable to allocate framebuffer");
 
     d_pzbuffer = renderMemory;
@@ -528,6 +501,16 @@ void VID_Init(unsigned char *palette)
     [quakeWindow setTitle:@"Quake"];
     [quakeWindow setContentAspectRatio:NSMakeSize(renderWidth, renderHeight)];
     [quakeWindow setAcceptsMouseMovedEvents:YES];
+// Nearest-neighbour so the image scales with hard pixel edges, resize gravity
+// so it fills the window at any size.  The layer takes 8-bit sRGB and the
+// window is put in the same space: left in its default float16 wide gamut the
+// compositor colour-converts every pixel handed to it, which at 4000x2000 costs
+// more than the renderer that produced them.
+    [quakeView setWantsLayer:YES];
+    [[quakeView layer] setMagnificationFilter:kCAFilterNearest];
+    [[quakeView layer] setContentsGravity:kCAGravityResize];
+    [[quakeView layer] setContentsFormat:kCAContentsFormatRGBA8Uint];
+    [quakeWindow setColorSpace:[NSColorSpace sRGBColorSpace]];
     [quakeWindow setContentView:quakeView];
     [quakeWindow makeFirstResponder:quakeView];
     ApplyWindowScale();
@@ -538,16 +521,36 @@ void VID_Init(unsigned char *palette)
     }
 }
 
+/*
+================
+VID_Update
+
+Expands the 8-bit frame to RGBA and hands it to the compositor as the layer's
+contents.  The GPU scales it, so the only per-frame cost here is the expansion.
+
+Drawing through -drawRect: instead would scale on the CPU, at destination
+rather than framebuffer resolution, and would do it inside the CoreAnimation
+commit -- which runs on a runloop turn, charging the work to Sys_SendKeyEvents
+rather than to video.  The layer format VID_Init declares matches these pixels,
+so nothing colour-converts them on the way in either.
+
+The image borrows the buffer rather than copying it, so frames alternate
+between two: the compositor is still reading the one handed over last.
+================
+*/
 void VID_Update(vrect_t *rects)
 {
     @autoreleasepool {
     int x, y;
+    byte *rgba = rgbaBuffers[rgbaBufferIndex];
+    byte *dst = rgba;
+    CGDataProviderRef provider;
+    CGImageRef image;
     (void)rects;
 
     for (y = 0; y < renderHeight; ++y)
     {
         const byte *src = frameBuffer + y * renderWidth;
-        byte *dst = rgbaBuffer + (size_t)y * renderWidth * 4;
         for (x = 0; x < renderWidth; ++x)
         {
             int color = src[x] * 3;
@@ -562,24 +565,43 @@ void VID_Update(vrect_t *rects)
         lastScaleRequest = vid_scale.value;
         ApplyWindowScale();
     }
-    [quakeView setNeedsDisplay:YES];
-    [quakeView displayIfNeeded];
+    rgbaBufferIndex = (rgbaBufferIndex + 1) % RGBA_BUFFER_COUNT;
+
+    provider = CGDataProviderCreateWithData(NULL, rgba,
+        (size_t)renderWidth * renderHeight * 4, NULL);
+    image = CGImageCreate(renderWidth, renderHeight, 8, 32,
+        (size_t)renderWidth * 4, rgbColorSpace,
+        kCGBitmapByteOrderDefault | kCGImageAlphaNoneSkipLast,
+        provider, NULL, false, kCGRenderingIntentDefault);
+    [[quakeView layer] setContents:(__bridge id)image];
+    CGImageRelease(image);
+    CGDataProviderRelease(provider);
     }
 }
 
 void VID_Shutdown(void)
 {
     @autoreleasepool {
+    int i;
+
     SetMouseCapture(false);
     [quakeWindow orderOut:nil];
     quakeView = nil;
     quakeWindow = nil;
     quakeDelegate = nil;
     free(frameBuffer);
-    free(rgbaBuffer);
+    for (i = 0; i < RGBA_BUFFER_COUNT; ++i)
+    {
+        free(rgbaBuffers[i]);
+        rgbaBuffers[i] = NULL;
+    }
+    if (rgbColorSpace)
+    {
+        CGColorSpaceRelease(rgbColorSpace);
+        rgbColorSpace = NULL;
+    }
     free(renderMemory);
     frameBuffer = NULL;
-    rgbaBuffer = NULL;
     renderMemory = NULL;
     d_pzbuffer = NULL;
     }

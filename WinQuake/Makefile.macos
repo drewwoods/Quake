@@ -20,7 +20,7 @@ CFLAGS           := $(COMMON_CFLAGS) $($(CONFIG)_CFLAGS) $(CFLAGS)
 OBJCFLAGS        := $(CFLAGS) -fobjc-arc $(OBJCFLAGS)
 unexport CFLAGS OBJCFLAGS
 LDLIBS            = -framework Cocoa -framework CoreGraphics \
-	-framework AudioUnit -framework AudioToolbox -framework CoreAudio -lm
+	-framework AudioUnit -framework AudioToolbox -framework CoreAudio -framework QuartzCore -lm
 
 SOURCES = \
 	cl_demo.c cl_input.c cl_main.c cl_parse.c cl_tent.c chase.c \
