@@ -20,7 +20,12 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 
 #include "quakedef.h"
 
+#if defined(__APPLE__) || defined(__unix__)
+#include <sys/resource.h>
+#endif
+
 void CL_FinishTimeDemo (void);
+static double CL_CPUTime (void);
 
 /*
 ==============================================================================
@@ -105,7 +110,10 @@ int CL_GetMessage (void)
 			// if this is the second frame, grab the real td_starttime
 			// so the bogus time on the first frame doesn't count
 				if (host_framecount == cls.td_startframe + 1)
+				{
 					cls.td_starttime = realtime;
+					cls.td_startcpu = CL_CPUTime ();
+				}
 			}
 			else if ( /* cl.time > 0 && */ cl.time <= cl.mtime[0])
 			{
@@ -318,6 +326,28 @@ void CL_PlayDemo_f (void)
 
 /*
 ====================
+CL_CPUTime
+
+Process CPU seconds, user plus system, or 0 where the platform cannot say.
+====================
+*/
+static double CL_CPUTime (void)
+{
+#if defined(__APPLE__) || defined(__unix__)
+	struct rusage	ru;
+
+	if (getrusage (RUSAGE_SELF, &ru) != 0)
+		return 0;
+
+	return ru.ru_utime.tv_sec + ru.ru_utime.tv_usec / 1000000.0
+		 + ru.ru_stime.tv_sec + ru.ru_stime.tv_usec / 1000000.0;
+#else
+	return 0;
+#endif
+}
+
+/*
+====================
 CL_FinishTimeDemo
 
 ====================
@@ -326,6 +356,7 @@ void CL_FinishTimeDemo (void)
 {
 	int		frames;
 	float	time;
+	double	cpu, blocked;
 	
 	cls.timedemo = false;
 	
@@ -335,6 +366,19 @@ void CL_FinishTimeDemo (void)
 	if (!time)
 		time = 1;
 	Con_Printf ("%i frames %5.1f seconds %5.1f fps\n", frames, time, frames/time);
+
+// Wall time the process was not running.  A software renderer should be busy
+// close to 100%: what is missing is time blocked in the frame loop, nearly all
+// of it the window server making us wait to hand over a frame.  Headless has
+// nothing to wait for, so a windowed run that reports 60% busy is spending the
+// other 40% queueing behind the compositor, not rendering.
+	cpu = CL_CPUTime () - cls.td_startcpu;
+	blocked = time - cpu;
+	if (blocked < 0)
+		blocked = 0;		// rusage granularity, not negative waiting
+	if (cpu > 0)
+		Con_Printf ("%5.2f cpu seconds, %3.0f%% busy, %5.2f blocked\n",
+			cpu, 100.0 * cpu / time, blocked);
 }
 
 /*
