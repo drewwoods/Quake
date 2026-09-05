@@ -37,6 +37,12 @@ static CGFloat wheelAccum;
 
 cvar_t _windowed_mouse = {"_windowed_mouse", "1", true};
 cvar_t m_filter = {"m_filter", "0", true};
+// Points per rendered pixel, so apparent size does not change with DPI.
+// Retina draws twice that in physical pixels; 0.5 there is 1:1.
+cvar_t vid_scale = {"vid_scale", "2", true};
+
+static int appliedPixels;
+static float lastScaleRequest = -1;
 
 @interface QuakeView : NSView
 @end
@@ -338,6 +344,57 @@ void VID_ShiftPalette(unsigned char *palette)
     VID_SetPalette(palette);
 }
 
+/*
+================
+ApplyWindowScale
+
+Sizes the window to vid_scale points per rendered pixel, clamped to the screen.
+
+The window is driven in physical pixels: rounding vid_scale * backingScale to a
+whole number keeps the nearest-neighbour blit on pixel boundaries, so half
+steps are meaningful on Retina (0.5 -> 1 pixel, 1 -> 2).
+================
+*/
+static void ApplyWindowScale(void)
+{
+    NSScreen *screen;
+    NSRect content, frame, visible;
+    CGFloat backing, titleBar;
+    int pixels, maxPixels, fitHeight;
+
+    screen = [quakeWindow screen];
+    if (!screen)
+        screen = [NSScreen mainScreen];
+    backing = [screen backingScaleFactor];
+    visible = [screen visibleFrame];
+    // visibleFrame excludes the menu bar and Dock but not our own title bar.
+    titleBar = NSHeight([quakeWindow frameRectForContentRect:NSZeroRect]);
+
+    maxPixels = (int)(NSWidth(visible) * backing) / renderWidth;
+    fitHeight = (int)((NSHeight(visible) - titleBar) * backing) / renderHeight;
+    if (fitHeight < maxPixels)
+        maxPixels = fitHeight;
+    if (maxPixels < 1)
+        maxPixels = 1;
+
+    pixels = (int)(vid_scale.value * backing + 0.5);
+    if (pixels < 1)
+        pixels = 1;
+    if (pixels > maxPixels)
+        pixels = maxPixels;
+    if (pixels == appliedPixels)
+        return;
+    appliedPixels = pixels;
+
+    content = NSMakeRect(0, 0, renderWidth * pixels / backing,
+        renderHeight * pixels / backing);
+    frame = [quakeWindow frameRectForContentRect:content];
+    // Grow about the title bar so the window does not walk down the screen.
+    frame.origin.x = NSMinX([quakeWindow frame]);
+    frame.origin.y = NSMaxY([quakeWindow frame]) - NSHeight(frame);
+    [quakeWindow setFrame:frame display:YES];
+}
+
 void VID_Init(unsigned char *palette)
 {
     @autoreleasepool {
@@ -385,12 +442,13 @@ void VID_Init(unsigned char *palette)
     vid.rowbytes = vid.conrowbytes = renderWidth;
     vid.direct = NULL;
     VID_SetPalette(palette);
+    Cvar_RegisterVariable(&vid_scale);
 
     [NSApplication sharedApplication];
     [NSApp setActivationPolicy:NSApplicationActivationPolicyRegular];
     [NSApp finishLaunching];
 
-    frame = NSMakeRect(0, 0, renderWidth * 2, renderHeight * 2);
+    frame = NSMakeRect(0, 0, renderWidth, renderHeight);
     style = NSWindowStyleMaskTitled | NSWindowStyleMaskClosable |
         NSWindowStyleMaskMiniaturizable | NSWindowStyleMaskResizable;
     quakeWindow = [[NSWindow alloc] initWithContentRect:frame
@@ -403,6 +461,7 @@ void VID_Init(unsigned char *palette)
     [quakeWindow setAcceptsMouseMovedEvents:YES];
     [quakeWindow setContentView:quakeView];
     [quakeWindow makeFirstResponder:quakeView];
+    ApplyWindowScale();
     [quakeWindow center];
     [quakeWindow makeKeyAndOrderFront:nil];
     [NSApp activateIgnoringOtherApps:YES];
@@ -428,6 +487,11 @@ void VID_Update(vrect_t *rects)
             *dst++ = currentPalette[color + 2];
             *dst++ = 255;
         }
+    }
+    if (vid_scale.value != lastScaleRequest)
+    {
+        lastScaleRequest = vid_scale.value;
+        ApplyWindowScale();
     }
     [quakeView setNeedsDisplay:YES];
     [quakeView displayIfNeeded];
