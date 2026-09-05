@@ -602,16 +602,23 @@ Returns false when the harness is off, so the caller keeps stock behaviour.
 #define QJ_SETTLE_SECONDS	6	// let the demo finish loading first
 
 extern int QJ_VsyncGate (double now, double phase_s);
+extern void QJ_MarkGate (void);
 
 static qboolean QJ_Render (float interval, qboolean *render)
 {
 	static double	seg_start;
 	static int	seg = -1;
-	const char	*sweep, *pin;
+	static const char *pin, *sweep;
+	static qboolean	read_env;
 	double		phase;
 
-	pin = getenv ("QJ_PHASE");
-	sweep = getenv ("QJ_SWEEP");
+// cached once: getenv takes a lock, and the probe dumps from a signal handler
+	if (!read_env)
+	{
+		pin = getenv ("QJ_PHASE");
+		sweep = getenv ("QJ_SWEEP");
+		read_env = true;
+	}
 	if (!pin && !sweep)
 		return false;
 
@@ -900,6 +907,10 @@ void _Host_Frame (float time)
 
 	if (!Host_FilterRender (stepped))
 		return;
+
+#ifdef QJPROBE
+	QJ_MarkGate ();
+#endif
 
 // update video
 	if (host_speeds.value)

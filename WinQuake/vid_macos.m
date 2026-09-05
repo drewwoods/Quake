@@ -23,13 +23,20 @@
 #define QJ_MAX 400000
 
 static volatile uint64_t qj_produced;       // VID_Update completions
-static double            qj_prodtime[QJ_MAX];
+static double            qj_gate;           // render gate fired
+static double            qj_vidin;          // VID_Update entry
+static double            qj_prodtime[QJ_MAX][3];  // gate, vid in, vid out
 static int               qj_nprod;
+static double            qj_evtime[QJ_MAX]; // Sys_SendKeyEvents returns
+static int               qj_nev;
 static double            qj_vsynctime[QJ_MAX];
 static uint64_t          qj_vsyncprod[QJ_MAX];
 static int               qj_nvsync;
 static CVDisplayLinkRef  qj_link;
 static double            qj_ticks_to_s;
+// Cached at init.  The dump runs from a signal handler and getenv takes a
+// lock the interrupted frame may already be holding.
+static const char       *qj_logpath;
 static double            QJ_Now(void);
 static double            qj_mach_base;      // mach clock at QJ_Init
 static double            qj_rt_base;        // Sys_FloatTime at QJ_Init
@@ -97,16 +104,16 @@ static void QJ_Dump(void)
 {
     FILE *f;
     int i;
-    const char *path = getenv("QJ_LOG");
 
-    if (!path)
-        path = "/tmp/qj.log";
-    f = fopen(path, "w");
+    f = fopen(qj_logpath, "w");
     if (!f)
         return;
     fprintf(f, "# interval_sampled %.9f\n", VID_RefreshInterval());
     for (i = 0; i < qj_nprod; i++)
-        fprintf(f, "P %.9f\n", qj_prodtime[i]);
+        fprintf(f, "P %.9f %.9f %.9f\n", qj_prodtime[i][0],
+            qj_prodtime[i][1], qj_prodtime[i][2]);
+    for (i = 0; i < qj_nev; i++)
+        fprintf(f, "E %.9f\n", qj_evtime[i]);
     for (i = 0; i < qj_nvsync; i++)
         fprintf(f, "V %.9f %llu\n", qj_vsynctime[i],
             (unsigned long long)qj_vsyncprod[i]);
@@ -123,6 +130,10 @@ static void QJ_Signal(int sig)
 static void QJ_Init(void)
 {
     mach_timebase_info_data_t tb;
+
+    qj_logpath = getenv("QJ_LOG");
+    if (!qj_logpath)
+        qj_logpath = "/tmp/qj.log";
 
     mach_timebase_info(&tb);
     qj_ticks_to_s = (double)tb.numer / tb.denom / 1e9;
@@ -689,10 +700,21 @@ The image borrows the buffer rather than copying it, so frames alternate
 between two: the compositor is still reading the one handed over last.
 ================
 */
+#ifdef QJPROBE
+// Called from _Host_Frame the instant the render gate opens.
+void QJ_MarkGate(void)
+{
+    qj_gate = QJ_Now();
+}
+#endif
+
 void VID_Update(vrect_t *rects)
 {
     if (headlessMode)
         return;
+#ifdef QJPROBE
+    qj_vidin = QJ_Now();
+#endif
 
     @autoreleasepool {
     int x, y;
@@ -732,7 +754,12 @@ void VID_Update(vrect_t *rects)
     CGDataProviderRelease(provider);
 #ifdef QJPROBE
     if (qj_nprod < QJ_MAX)
-        qj_prodtime[qj_nprod++] = QJ_Now();
+    {
+        qj_prodtime[qj_nprod][0] = qj_gate;
+        qj_prodtime[qj_nprod][1] = qj_vidin;
+        qj_prodtime[qj_nprod][2] = QJ_Now();
+        qj_nprod++;
+    }
     qj_produced++;
 #endif
     }
@@ -835,6 +862,10 @@ void Sys_SendKeyEvents(void)
     } while (event);
     suppressMouseDeltas = false;
     }
+#ifdef QJPROBE
+    if (qj_nev < QJ_MAX)
+        qj_evtime[qj_nev++] = QJ_Now();
+#endif
 }
 
 void IN_Init(void)
