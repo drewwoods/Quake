@@ -195,8 +195,9 @@ mid-step far more often than at its start, so the mean is **~7.8 ms** and
 only the worst case approaches ~13.3 ms.
 
 Both levers are also smaller than they look next to a cost this note had
-never counted: the compositor holds a finished frame ~24 ms before it is
-on the panel (Finding 8). No lever here touches that.
+never counted: the compositor holds a finished frame up to ~24 ms before it
+is on the panel. No lever here touches that, and it changes how the
+interpolation trade-off should be stated — see the ledger under Finding 8.
 
 ## Plan
 
@@ -411,6 +412,12 @@ toggleable: `host_interpolate 0` restores stock snapping. The honest
 comparison against `host_maxfps 60` is ~7.8 ms of movement latency versus
 ~15% less air gain. Neither is free.
 
+**Read that "0" carefully.** It is against *stock*, where the render was 1:1
+with the step and landed on it. Today's alternative is not stock: Phase 2
+decoupled the clocks, so `host_interpolate 0` renders at an arbitrary point in
+the step and the age varies from 0 to a full step rather than sitting at 0.
+The ledger under Finding 8 states it properly.
+
 ---
 
 ## Phase 5 — pace on the display, hand the frame over at once — **IMPLEMENTED** (5-6 Sep)
@@ -560,10 +567,55 @@ which overshoots on every collision and direction change. That is a
 movement-feel change of the kind Phase 3 deliberately refused, and a separate
 piece of work — not a tweak to the lerp fraction.
 
-**What it does settle** is the size of the latency argument. Phase 3 was
-weighed at ~7.8 ms mean movement latency against `host_maxfps 60`'s ~15% less
-air gain. The compositor adds ~24 ms of display latency underneath both, which
-this note had never counted and no lever here touches.
+### What the 24 ms settles: the latency ledger, and what `host_interpolate 0` really buys
+
+This note has been quoting Phase 3's cost as "~7.8 ms mean movement latency",
+as though turning interpolation off returned that 7.8 ms and nothing else
+moved. Both halves of that are wrong, and the pipeline number is what exposes
+it.
+
+Write `dt` for the simulation step (13.888 ms at 72) and `alpha` for the
+fraction of a step the render lands at. `CL_LerpPoint` returns 1 and pins
+`cl.time = cl.mtime[0]` whenever `sv.active`, so interpolation *off* draws the
+newest simulation state, and interpolation *on* draws `(1 - alpha) * dt`
+before it. Against the render moment at `oldrealtime + alpha * dt`:
+
+| | content age at render | + pipeline | total |
+|---|---|---|---|
+| `host_interpolate 1` | `alpha*dt + (1-alpha)*dt` = **13.9 ms, constant** | 24.22 | **38.1 ms, constant** |
+| `host_interpolate 0` | `alpha*dt` = **0 – 13.9 ms, mean 6.9** | 24.22 | **24.2 – 38.1 ms, mean 31.2** |
+
+`alpha` measured mean 0.500 in a local game, 0.458 on demo playback.
+
+Two corrections fall out.
+
+**The saving is real but variable.** Turning interpolation off buys ~6.9 ms of
+*mean* latency, not a flat 7.8, and it buys it as a figure that swings across
+a whole 13.9 ms step from frame to frame. **That swing is the snapping.** The
+right way to state interpolation's cost is not "7.8 ms slower" but "pays the
+worst case on every frame so that the age is the same on every frame" — and a
+constant age is what smooth motion is.
+
+**The choice moves less than the pipeline does.** The two settings differ by
+~6.9 ms of mean total latency, out of 31 to 38 ms — about a fifth of what the
+player actually waits. The rest is the compositor holding the finished frame,
+and no lever in this note touches it. Pick between them on *feel*, which is
+what they genuinely differ on; do not pick between them expecting a
+latency win worth the name.
+
+**Caveat on the 24.22 itself.** It is CoreVideo's prediction for a frame
+*started* at that callback, sized for a renderer that spends most of the
+interval. This one commits 1.6 ms in and may well make an earlier vsync than
+predicted. That cannot be checked from inside the process — end-to-end latency
+needs an external observation, a high-speed camera or a capture with known
+timing. Treat 24.22 ms as the upper bound and ~7.5 ms, one vsync after the
+commit, as the floor. The table's *comparison* holds at either end, because
+the pipeline term is identical in both rows.
+
+What would move it is the present path rather than the pacing: a
+`CAMetalLayer` with `presentsWithTransaction` and a shallower drawable queue,
+or a fullscreen direct-display path. Both are real work, neither is in scope
+here, and neither is worth starting before the floor above is measured.
 
 ---
 
@@ -605,7 +657,9 @@ both work, so the choice is a real one:
   `host_maxfps 60`, interpolation off. ~15% less air gain, zero added
   latency.
 - **Smooth, and air control matters more than latency** → the default:
-  72 with interpolation. Stock movement rate, ~7.8 ms mean latency.
+  72 with interpolation. Stock movement rate, and a *constant* content age
+  rather than a lower mean one — see the ledger under Finding 8, which also
+  puts all three of these against the ~24 ms the compositor adds underneath.
 
 Phase 4 is worth doing regardless.
 
