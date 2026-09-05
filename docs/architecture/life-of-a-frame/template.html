@@ -1,3 +1,4 @@
+<meta charset="utf-8">
 <title>Quake: Life of a Frame</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -219,6 +220,12 @@ figure.pipeline {
 }
 .modeswitch button:first-child { border-left: 0; }
 .modeswitch button[aria-pressed="true"] { background: var(--ink); color: var(--bg-grain); font-weight: 600; }
+.foldall-btn {
+  font-family: var(--f-mono); font-size: 11px; letter-spacing: 0.08em; text-transform: uppercase;
+  padding: 7px 13px; border: 1px solid var(--rule); border-radius: 2px;
+  background: var(--surface); color: var(--muted); cursor: pointer;
+}
+.foldall-btn[aria-pressed="true"] { background: var(--ink); color: var(--bg-grain); font-weight: 600; }
 .svg-scroll { overflow-x: auto; }
 svg.pipe { display: block; width: 100%; min-width: 720px; height: auto; color: var(--ink); }
 svg.pipe text { font-family: var(--f-mono); fill: currentColor; }
@@ -346,6 +353,14 @@ details.code > summary a.ref { color: var(--code-typ); border-bottom-color: var(
 .code-ref { font-family: var(--f-mono); font-size: 11.5px; color: var(--code-dim); }
 .code-ref a.ref { color: var(--code-typ); border-bottom-color: rgba(111,177,184,0.5); }
 .code-scroll { overflow-x: auto; }
+figure.code > .code-bar { cursor: pointer; justify-content: flex-start; gap: 10px; }
+figure.code > .code-bar > .code-ref { margin-left: auto; text-align: right; }
+figure.code > .code-bar .code-fold-toggle {
+  color: var(--code-kw); font-size: 10px; display: inline-block; width: 1em;
+}
+figure.code > .code-bar .code-fold-toggle::before { content: "▾"; }
+figure.code.collapsed > .code-bar .code-fold-toggle::before { content: "▸"; }
+figure.code.collapsed > .code-scroll { display: none; }
 pre { margin: 0; padding: 14px 16px 16px; }
 pre code {
   font-family: var(--f-mono); font-size: 12.5px; line-height: 1.55;
@@ -485,6 +500,7 @@ html { scroll-behavior: smooth; }
           <button type="button" data-mode="dedicated" aria-pressed="false">Dedicated</button>
           <button type="button" data-mode="remote" aria-pressed="false">Remote client</button>
         </div>
+        <button type="button" id="fold-all-btn" class="foldall-btn" aria-pressed="false">Collapse all code</button>
       </div>
       <div class="pipe-legend" aria-hidden="false">
         <span class="lg-cl"><i></i>client half</span>
@@ -663,6 +679,70 @@ html { scroll-behavior: smooth; }
     while (pending.length && Date.now() - t0 < 40) highlight(pending.shift());
     if (pending.length) setTimeout(chunk, 0);
   })();
+
+  /* ---------------------------------------------------- code fold */
+  var FOLD_ALL_KEY = "lof-fold-all";
+
+  function loadPref(key, fallback) {
+    try {
+      var v = localStorage.getItem(key);
+      return v === null ? fallback : v === "1";
+    } catch (e) { return fallback; }
+  }
+  function savePref(key, val) {
+    try { localStorage.setItem(key, val ? "1" : "0"); } catch (e) {}
+  }
+
+  var codeFigs = [].slice.call(document.querySelectorAll("figure.code"));
+  var globalFoldDefault = loadPref(FOLD_ALL_KEY, false);
+
+  function setCollapsed(fig, bar, collapsed) {
+    fig.classList.toggle("collapsed", collapsed);
+    bar.setAttribute("aria-expanded", String(!collapsed));
+  }
+
+  codeFigs.forEach(function (fig) {
+    var bar = fig.querySelector(".code-bar");
+    if (!bar) return;
+    var id = fig.dataset.foldId;
+    var collapsed = loadPref(id ? "lof-fold-" + id : FOLD_ALL_KEY, globalFoldDefault);
+    bar.setAttribute("role", "button");
+    bar.setAttribute("tabindex", "0");
+    setCollapsed(fig, bar, collapsed);
+    function toggle() {
+      var next = !fig.classList.contains("collapsed");
+      setCollapsed(fig, bar, next);
+      if (id) savePref("lof-fold-" + id, next);
+    }
+    bar.addEventListener("click", function (e) {
+      // the file:line ref in the bar is a link out to GitHub; following it
+      // must not also fold the snippet behind you
+      if (e.target.closest && e.target.closest("a")) return;
+      toggle();
+    });
+    bar.addEventListener("keydown", function (e) {
+      if (e.key === "Enter" || e.key === " ") { e.preventDefault(); toggle(); }
+    });
+  });
+
+  var foldAllBtn = document.getElementById("fold-all-btn");
+  if (foldAllBtn) {
+    foldAllBtn.setAttribute("aria-pressed", String(globalFoldDefault));
+    foldAllBtn.textContent = globalFoldDefault ? "Expand all code" : "Collapse all code";
+    foldAllBtn.addEventListener("click", function () {
+      var next = foldAllBtn.getAttribute("aria-pressed") !== "true";
+      codeFigs.forEach(function (fig) {
+        var bar = fig.querySelector(".code-bar");
+        if (!bar) return;
+        setCollapsed(fig, bar, next);
+        var id = fig.dataset.foldId;
+        if (id) savePref("lof-fold-" + id, next);
+      });
+      savePref(FOLD_ALL_KEY, next);
+      foldAllBtn.setAttribute("aria-pressed", String(next));
+      foldAllBtn.textContent = next ? "Expand all code" : "Collapse all code";
+    });
+  }
 
   /* ---------------------------------------------------- nav filter */
   var search = document.getElementById("nav-search");

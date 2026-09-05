@@ -152,10 +152,14 @@ def slugify(text):
 
 # ---------------------------------------------------------------- blocks
 
+_code_seq = [0]
+
+
 def render_code(code, lang, ref, folded=False, idx=0):
     label = ref_link_html(ref) if ref else html.escape(lang or "listing")
     tag = "C" if lang == "c" else "TEXT"
-    body = ('<div class="code-bar"><span class="code-lang">%s</span>'
+    body = ('<div class="code-bar"><span class="code-fold-toggle" aria-hidden="true"></span>'
+            '<span class="code-lang">%s</span>'
             '<span class="code-ref">%s</span></div>'
             '<div class="code-scroll"><pre><code class="lang-%s">%s</code></pre></div>'
             % (tag, label, lang or "text", html.escape(code)))
@@ -163,7 +167,9 @@ def render_code(code, lang, ref, folded=False, idx=0):
         summary = ref_link_html(ref) if ref else "further excerpt"
         return ('<details class="code fold"><summary><span class="fold-label">'
                 'Excerpt</span> %s</summary>%s</details>' % (summary, body))
-    return '<figure class="code">%s</figure>' % body
+    _code_seq[0] += 1
+    return ('<figure class="code" data-fold-id="c%d">%s</figure>'
+             % (_code_seq[0], body))
 
 
 def render_calltree(code):
