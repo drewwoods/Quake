@@ -160,7 +160,7 @@ typedef struct ComPort_s
 	byte					lineControl;
 	byte					portNumber;
 	char					dialType;
-	char					name[4];
+	char					name[5];
 } ComPort;
 
 ComPort *portList = NULL;

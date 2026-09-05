@@ -1,0 +1,64 @@
+# Quake Makefile for 32-bit DOS (DJGPP)
+
+CROSS_COMPILE ?= i586-pc-msdosdjgpp-
+CC = $(CROSS_COMPILE)gcc
+STRIP = $(CROSS_COMPILE)strip
+
+BUILD_DIR ?= build/dos
+TARGET ?= $(BUILD_DIR)/quake.exe
+
+DOS_CPPFLAGS ?= -I.
+DOS_CFLAGS ?= -O2 -DNDEBUG -std=gnu90 -Wall \
+	-fcommon -fno-strict-aliasing -fomit-frame-pointer
+DOS_LDFLAGS ?=
+DOS_LDLIBS ?= -lm
+
+C_SOURCES = \
+	cd_audio.c chase.c cl_demo.c cl_input.c cl_main.c cl_parse.c cl_tent.c \
+	cmd.c common.c console.c crc.c cvar.c \
+	d_edge.c d_fill.c d_init.c d_modech.c d_part.c d_polyse.c d_scan.c \
+	d_sky.c d_sprite.c d_surf.c d_vars.c d_zpoint.c draw.c \
+	dos_v2.c host.c host_cmd.c in_dos.c keys.c mathlib.c menu.c model.c \
+	net_bw.c net_dgrm.c net_dos.c net_ipx.c net_loop.c \
+	net_main.c net_mp.c net_ser.c net_vcr.c mplib.c mplpc.c nonintel.c \
+	pr_cmds.c pr_edict.c pr_exec.c \
+	r_aclip.c r_alias.c r_bsp.c r_draw.c r_edge.c r_efrag.c r_light.c \
+	r_main.c r_misc.c r_part.c r_sky.c r_sprite.c r_surf.c r_vars.c \
+	sbar.c screen.c snd_dma.c snd_dos.c snd_gus.c snd_mem.c snd_mix.c \
+	sv_main.c sv_move.c sv_phys.c sv_user.c sys_dos.c \
+	vid_dos.c vid_ext.c vid_vga.c view.c vregset.c wad.c world.c zone.c
+
+ASM_SOURCES = \
+	d_copy.s d_draw.s d_draw16.s d_parta.s d_polysa.s d_scana.s \
+	d_spr8.s d_varsa.s math.s r_aclipa.s r_aliasa.s r_drawa.s \
+	r_edgea.s r_varsa.s snd_mixa.s surf16.s surf8.s sys_dosa.s worlda.s
+
+OBJECTS = \
+	$(C_SOURCES:%.c=$(BUILD_DIR)/%.o) \
+	$(ASM_SOURCES:%.s=$(BUILD_DIR)/%.o)
+DEPS = $(C_SOURCES:%.c=$(BUILD_DIR)/%.d)
+
+.PHONY: all clean dist
+
+all: $(TARGET)
+
+$(TARGET): $(OBJECTS)
+	$(CC) $(DOS_LDFLAGS) -o $@ $(OBJECTS) $(DOS_LDLIBS)
+	$(STRIP) $@
+
+$(BUILD_DIR)/%.o: %.c
+	@mkdir -p $(@D)
+	$(CC) $(DOS_CPPFLAGS) $(DOS_CFLAGS) -MMD -MP -c -o $@ $<
+
+$(BUILD_DIR)/%.o: %.s
+	@mkdir -p $(@D)
+	$(CC) $(DOS_CPPFLAGS) $(DOS_CFLAGS) -x assembler-with-cpp -c -o $@ $<
+
+dist: $(TARGET) cwsdpmi.exe
+	@mkdir -p $(BUILD_DIR)/dist
+	cp $(TARGET) cwsdpmi.exe $(BUILD_DIR)/dist/
+
+clean:
+	rm -rf $(BUILD_DIR)
+
+-include $(DEPS)

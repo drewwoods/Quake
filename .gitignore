@@ -1,0 +1,5 @@
+id1/*.cfg
+.DS_Store
+WinQuake/build
+*.swp
+compile_commands.json

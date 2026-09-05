@@ -24,6 +24,33 @@ make -C WinQuake/ -f Makefile.linuxi386
 make -C QW/ -f Makefile.Linux
 ```
 
+### DOS Quake
+
+Install a DJGPP cross-compiler that provides
+`i586-pc-msdosdjgpp-gcc`, then run:
+
+```sh
+make -C WinQuake -f Makefile.dos
+make -C WinQuake -f Makefile.dos dist
+```
+
+The first command builds `WinQuake/build/dos/quake.exe`. The second also
+places `quake.exe` and the required `cwsdpmi.exe` DPMI host in
+`WinQuake/build/dos/dist/`.
+
+To use a toolchain with a different prefix or location, set
+`CROSS_COMPILE`, including its trailing dash:
+
+```sh
+make -C WinQuake -f Makefile.dos \
+  CROSS_COMPILE=/opt/djgpp/bin/i586-pc-msdosdjgpp-
+```
+
+The cross-platform DJGPP build scripts and binary releases are available
+from [build-djgpp](https://github.com/andrewwutw/build-djgpp). To run the
+result, use DOS or FreeDOS with `quake.exe`, `cwsdpmi.exe`, and an `id1`
+directory containing licensed Quake game data.
+
 ## Running
 
 ### Shareware (included)
