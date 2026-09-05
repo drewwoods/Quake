@@ -33,6 +33,10 @@ static float oldMouseY;
 static qboolean mouseCaptured;
 static qboolean mouseCaptureAllowed;
 static qboolean suppressMouseDeltas;
+// Cleared when the window loses focus, so re-focusing Quake leaves the cursor
+// free (drag the title bar, hit the close box) until a click inside the view.
+static qboolean mouseEngaged;
+static qboolean swallowMouseUp;
 static CGFloat wheelAccum;
 
 cvar_t _windowed_mouse = {"_windowed_mouse", "1", true};
@@ -105,9 +109,13 @@ static void SetMouseCapture(qboolean capture)
     oldMouseX = oldMouseY = 0;
 }
 
+// Grab the cursor only while the game itself is reading it. The menu (Esc)
+// and the console (~) hand it back, so the window can then be moved, resized
+// or closed without switching applications.
 static void UpdateMouseCapture(void)
 {
     SetMouseCapture(mouseCaptureAllowed && _windowed_mouse.value &&
+        mouseEngaged && key_dest == key_game &&
         quakeWindow && [quakeWindow isKeyWindow] && [NSApp isActive]);
 }
 
@@ -227,12 +235,25 @@ static int QuakeKeyForEvent(NSEvent *event)
 - (void)mouseDown:(NSEvent *)event
 {
     (void)event;
+    // The click that re-grabs the cursor is consumed, not fired as attack.
+    if (!mouseEngaged)
+    {
+        mouseEngaged = true;
+        swallowMouseUp = true;
+        UpdateMouseCapture();
+        return;
+    }
     Key_Event(K_MOUSE1, true);
 }
 
 - (void)mouseUp:(NSEvent *)event
 {
     (void)event;
+    if (swallowMouseUp)
+    {
+        swallowMouseUp = false;
+        return;
+    }
     Key_Event(K_MOUSE1, false);
 }
 
@@ -310,6 +331,7 @@ static int QuakeKeyForEvent(NSEvent *event)
 - (void)windowDidResignKey:(NSNotification *)notification
 {
     (void)notification;
+    mouseEngaged = false;
     SetMouseCapture(false);
     Key_ClearStates();
 }
@@ -405,6 +427,7 @@ void VID_Init(unsigned char *palette)
     NSWindowStyleMask style;
 
     mouseCaptureAllowed = true;
+    mouseEngaged = true;
     renderWidth = BASEWIDTH;
     renderHeight = BASEHEIGHT;
     if ((pnum = COM_CheckParm("-winsize")) && pnum < com_argc - 2)
