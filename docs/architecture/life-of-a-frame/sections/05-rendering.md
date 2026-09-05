@@ -4,6 +4,8 @@ Rendering starts with the client’s view of the world and a camera. Quake’s s
 
 > **First pass.** Choose one path for your first read: **software** if you want to understand how a CPU paints the world, **GL** if you want to follow polygon submission to graphics hardware. In both, view setup precedes rendering and HUD drawing follows it. World surfaces and animated model entities take different drawing paths. Source: `WinQuake/screen.c:893-932`, `WinQuake/gl_screen.c:874-921`, `WinQuake/r_main.c:876-1030`. [Next: sound and plumbing →](#sec-7)
 
+After the software pipeline, the [assembly walkthrough](#assembly-walkthrough-where-the-pentium-speedup-comes-from) follows the actual pixel-writing instructions and explains the historical performance comparison.
+
 ::: diagram rendering
 
 ## Where it sits in the frame
@@ -309,7 +311,7 @@ The cache is keyed by mip level and invalidated when the texture animates, a dyn
 
 The final step is walking each surface's horizontal spans and writing textured, lit pixels. True per-pixel perspective correction (dividing by depth for every texel) was too slow for 1996 CPUs, so Quake's span drawers compute the perspective-correct `s`/`t` texture coordinates only every *N* pixels and linearly interpolate (affine-map) the texels in between — Abrash's classic "subdivided affine" approximation. The 8-bit portable-C polygon span drawer subdivides every 8 pixels:
 ```c
-// WinQuake/d_scan.c:298-317
+// WinQuake/d_scan.c:274-290
 	do
 	{
 		pdest = (unsigned char *)((byte *)d_viewbuffer +
@@ -328,7 +330,7 @@ The final step is walking each surface's horizontal spans and writing textured, 
 
 		s = (int)(sdivz * z) + sadjust;
 ```
-(`D_DrawSpans8`, `WinQuake/d_scan.c:257-383`, guarded `#if !id386` — the shipped x86 build used a hand-tuned assembly equivalent in `d_scana.s`/`d_polysa.s` covered extensively in Abrash's Black Book chapters on perspective texture mapping.) The turbulent/underwater warp span drawer, `Turbulent8` (`WinQuake/d_scan.c:122-246`), performs the same subdivided-perspective technique but at a coarser 16-pixel granularity (cheaper per-pixel since it also has to apply the sine-wave UV distortion):
+(`D_DrawSpans8`, `WinQuake/d_scan.c:257-383`, guarded `#if !id386` — the shipped x86 build used a hand-tuned assembly equivalent in `WinQuake/d_draw.s`, traced in the [assembly walkthrough](#assembly-walkthrough-where-the-pentium-speedup-comes-from).) The turbulent/underwater warp span drawer, `Turbulent8` (`WinQuake/d_scan.c:122-246`), performs the same subdivided-perspective technique but at a coarser 16-pixel granularity (cheaper per-pixel since it also has to apply the sine-wave UV distortion):
 ```c
 // WinQuake/d_scan.c:170-199
 		do
@@ -391,6 +393,169 @@ void R_AliasDrawModel (alight_t *plighting)
 }
 ```
 This is Quake's own miniature software triangle rasterizer, entirely separate from the BSP edge-list machinery: it transforms model-space vertices, interpolates lighting per vertex (Gouraud), and rasterizes independent, self-contained affine/perspective triangles (with an optimized path, `trivial_accept == 3`, when the whole model is known to be fully on-screen and needs no clipping). `R_DrawEntitiesOnList` (`WinQuake/r_main.c:527-596`) is also where sprites are dispatched via `R_DrawSprite` for `mod_sprite` entities, and where dynamic-light contribution is folded into an entity's `alight_t` before the alias draw call. Particles are handled separately again — `R_DrawParticles` (`WinQuake/r_part.c:653`) is one function shared textually between both renderers via `#ifdef GLQUAKE` (software draws particles as software-projected quads via `D_StartParticles`/`D_DrawParticle`, GL draws camera-facing triangles with `glBegin(GL_TRIANGLES)`), reflecting that particles never interact with the BSP edge list or lightmaps at all — they are pure billboard geometry layered on top of the already-resolved scene.
+
+## Assembly walkthrough: where the Pentium speedup comes from
+
+The assembly makes most sense after surface caching and span generation: Quake has already decided which pixels survive visibility testing and has a lit texture ready to sample. Now a small routine must write those pixels millions of times. Follow **`D_DrawSpans8` in `WinQuake/d_draw.s`** alongside its C equivalent, `WinQuake/d_scan.c:257-383`. `D_DrawSurfaces` obtains the cache and calls through `d_drawspans` at `WinQuake/d_edge.c:299-307`.
+
+> **What “about 2×” measures.** In [Fabien Sanglard’s “How Michael Abrash doubled Quake framerate”](https://fabiensanglard.net/quake_asm_optimizations/index.html), his 2026 recreation on a Pentium MMX 233 MHz runs the VC++ 6 release build at **42.2 fps with assembly versus 22.7 fps with C**: about **1.86× the frame rate**. Both run `timedemo demo1` with `-wavonly +d_subdiv16 0`. Disabling 16-pixel subdivision matters because `D_DrawSpans16` has no C counterpart. This is a whole-engine comparison on period hardware, not a claim that every assembly routine is twice as fast, or a measurement of today’s compilers. His function-by-function experiment identifies `D_DrawSpans8` as the largest contributor.
+
+The selection is explicit in `WinQuake/d_init.c:148-155`: the x86 build can choose the 16-pixel drawer, while the portable path uses the 8-pixel drawer. The walkthrough below traces the repository’s 8-pixel implementation; it does not reproduce the benchmark.
+
+### 1. Keep the integer side working while division runs
+
+The C algorithm already amortizes perspective correction across eight pixels. Once it has the texture coordinates and their steps, its inner loop is tiny:
+
+```c
+// WinQuake/d_scan.c:370-375
+            do
+            {
+                *pdest++ = *(pbase + (s >> 16) + (t >> 16) * cachewidth);
+                s += sstep;
+                t += tstep;
+            } while (--spancount > 0);
+```
+
+The assembly keeps that algorithm but changes its execution schedule and its representation of the texture address. The key scheduling opportunity is that drawing the current segment needs its existing integer steps, while calculating a later segment’s endpoint needs floating-point division. Those jobs can overlap. Abrash describes this integer/FPU overlap in [Black Book chapter 68](https://www.phatcode.net/res/224/files/html/ch68/68-03.html); his quoted 7.5 cycles per pixel concerns the **16-pixel** mapper, so it should not be attached to this 8-pixel listing.
+
+These are ordinary 32-bit x86 instructions plus the **x87 floating-point stack**, not MMX vector instructions. A few reading conventions are enough: AT&T syntax writes **source, destination**; `%` marks a register, `$` an immediate constant, and `4(%edi)` memory four bytes after `%edi`. The suffixes `b` and `l` mean byte and 32-bit integer operations here. `%st(0)` is the top x87 stack register; `fxch` swaps it with another stack entry. `C(name)` is Quake’s assembler macro for platform-dependent symbol naming (`WinQuake/asm_i386.h:25-29`).
+
+In the steady path, after writing pixels 0–3, the code advances the perspective quantities to the endpoint needed **after the current segment**, starts its division, and resumes integer drawing:
+
+```asm
+// WinQuake/d_draw.s:459-478
+LSetupNotLast2:
+    fadds   zi8stepu
+    fxch    %st(2)
+    fadds   sdivz8stepu
+    fxch    %st(2)
+    flds    tdivz8stepu
+    faddp   %st(0),%st(2)
+    flds    fp_64k
+    fdiv    %st(1),%st(0)    // z = 1/1/z
+                            // this is what we've gone to all this trouble to
+                            //  overlap
+LFDIVInFlight2:
+    movl    %ecx,counttemp
+
+    addl    tstep,%edx
+    sbbl    %ecx,%ecx
+    movb    %al,4(%edi)
+    addl    %ebp,%ebx
+    movb    (%esi),%al
+    adcl    advancetable+4(,%ecx,4),%esi
+```
+
+`fp_64k` supplies 65536, so the division computes `65536 / zi`, preparing a reciprocal depth scaled for 16.16 texture coordinates. The following integer operations do not consume that result. They advance fractional coordinates, write pixel 4 and load the next texel. Pixels 5–7 and segment bookkeeping follow (`WinQuake/d_draw.s:480-509`). Only when execution returns to `LNotLastSegment` does it use the division result to multiply `s/z` and `t/z`, then convert the new endpoints to integers (`WinQuake/d_draw.s:313-330`).
+
+::: diagram asm-overlap
+
+This is one instruction stream arranged to keep different execution resources useful. Issuing the divide early creates room to hide its latency; it does not guarantee that every divide finishes before it is needed. The first segment has a separate setup: its initial division overlaps integer coordinate clamping and address preparation (`WinQuake/d_draw.s:261-311`). The short final segment has its own endpoint calculation. That setup/steady-state/tail structure explains much of the apparent complexity in the assembly.
+
+### 2. Turn texture-coordinate overflow into an address increment
+
+The C loop expresses each source address as `pbase + floor(s) + floor(t) * cachewidth`. The assembly instead **keeps a running texel pointer** in `%esi`. It splits each step into a signed integer part and a fractional part. Setup computes two possible integer pointer advances once per segment (`WinQuake/d_draw.s:361-398`):
+
+| Table entry | Stored byte advance |
+|---|---|
+| `advancetable + 4` | `base = floor(sstep) + floor(tstep) * cachewidth` |
+| `advancetable` | `base + cachewidth` — one additional texture row |
+
+Here `floor(sstep)` means the whole-texel component of the fixed-point step, not a floating-point operation in the loop. The fractions are left-justified in 32-bit registers, so wrapping past one texel sets the CPU’s carry flag. Even a negative step fits this decomposition: its integer part rounds downward and its remaining fractional part is nonnegative. A carry then supplies the extra column or row when that fraction wraps.
+
+Read one repeated pixel operation from `WinQuake/d_draw.s:400-405`:
+
+```asm
+// WinQuake/d_draw.s:400-405
+    addl    tstep,%edx
+    sbbl    %ecx,%ecx
+    movb    (%esi),%al
+    addl    %ebp,%ebx
+    movb    %al,1(%edi)
+    adcl    advancetable+4(,%ecx,4),%esi
+```
+
+| Instruction | What it does for this pixel |
+|---|---|
+| `addl tstep,%edx` | Advance the fractional `t` accumulator; carry means an extra row. |
+| `sbbl %ecx,%ecx` | Compute `ecx - ecx - carry`: zero without a carry, −1 with one. Save the row decision as a table selector. |
+| `movb (%esi),%al` | Fetch the current 8-bit texel from the already-lit surface cache. |
+| `addl %ebp,%ebx` | Advance the fractional `s` accumulator; this produces a new carry for an extra column. |
+| `movb %al,1(%edi)` | Write this pixel at a fixed offset in the unrolled segment. `mov` preserves the carry flag. |
+| `adcl advancetable+4(,%ecx,4),%esi` | Select the base or extra-row advance, then add it **plus the `s` carry** to the source pointer. |
+
+The address expression is `advancetable + 4 + ecx * 4`: `ecx = 0` selects the ordinary advance; `ecx = -1` selects the extra-row entry. The four outcomes are therefore:
+
+| `t` carry | `s` carry | Pointer advances by |
+|---|---|---|
+| 0 | 0 | `base` |
+| 0 | 1 | `base + 1` |
+| 1 | 0 | `base + cachewidth` |
+| 1 | 1 | `base + cachewidth + 1` |
+
+For example, with a 64-byte cache row and integer steps of one column and zero rows, `base` is 1. If both fractions wrap, the pointer advances **66 bytes**: two columns and one row. No per-pixel multiply, shifts to recover whole coordinates, or conditional branches for those two wrap decisions are needed. The multiplication moved into segment setup. Notice how the **flags are part of the data flow**: inserting an instruction that changes carry between the `s` add and `adc` would break the address calculation.
+
+### 3. Specialize the end of the span
+
+Eight copies of the pixel work use fixed destination offsets; the full-segment path tests the remaining count once per segment (`WinQuake/d_draw.s:400-509`). But a wall edge rarely gives a multiple of eight pixels. Drawing beyond the span would overwrite another surface, and extrapolating the texture endpoint could also reach outside the cached image.
+
+The portable code handles the last segment by evaluating perspective at its **last actual pixel**, using `spancount - 1` as the distance, and dividing the coordinate differences by that distance (`WinQuake/d_scan.c:338-367`). Assembly preserves that endpoint rule while replacing the step divisions with fixed-point reciprocal-table multiplies. Then `entryvec_table` selects a short-span handler and `jmp *jumptemp` enters the appropriate drawing path (`WinQuake/d_draw.s:514-605`). Those handlers arrange the registers and destination offset for the remaining unrolled pixel writes; a single pixel has a separate path (`WinQuake/d_draw.s:609-755`).
+
+That removes a decrement-and-branch for every tail pixel. It does **not** make branches or prediction disappear: there is still an indirect dispatch and special-case setup. The tradeoff is more code and more carefully maintained entry conditions in exchange for a shorter frequently executed path.
+
+### 4. Build lit texels with byte registers and patched instructions
+
+Now move one stage earlier, to a **surface-cache miss**. `R_DrawSurfaceBlock8_mip0` builds a block of the lit texture that the span drawer will later read. The corresponding C combines an interpolated lighting value with the source palette index and looks up the lit palette index (`WinQuake/r_surf.c:361-374`):
+
+```c
+// WinQuake/r_surf.c:368-374
+            for (b=15; b>=0; b--)
+            {
+                pix = psource[b];
+                prowdest[b] = ((unsigned char *)vid.colormap)
+                        [(light & 0xFF00) + pix];
+                light += lightstep;
+            }
+```
+
+The index is already naturally two bytes: **`0x0000LLTT`**, with light-table row `LL` above texture palette index `TT`. In `WinQuake/surf8.s:103-125`, the upper bits of `%ebx` are cleared, then `movb %dh,%bh` puts the lighting byte in the high byte and `movb 15(%esi),%bl` puts the texel in the low byte. Together `%ebx` becomes the index without a separate mask, shift and addition. `%ecx` constructs a second index alongside it.
+
+The lookup itself contains something surprising:
+
+```asm
+// WinQuake/surf8.s:121-126
+    movb    0x12345678(%ebx),%ah
+LBPatch0:
+    movb    13(%esi),%bl
+
+    movb    0x12345678(%ecx),%al
+LBPatch1:
+```
+
+**`0x12345678` is a patch location, not the real colormap address.** During `R_ViewChanged`, Quake makes the relevant code writable, assigns `colormap = vid.colormap`, and calls `R_Surf8Patch` (`WinQuake/r_main.c:467-473`). A table contains addresses such as `LBPatch0 - 4`: the four-byte displacement immediately before that label (`WinQuake/surf8.s:728-760`). The patch routine overwrites those displacements with the actual colormap base:
+
+```asm
+// WinQuake/surf8.s:769-777
+    movl    C(colormap),%eax
+    movl    $LPatchTable8,%ebx
+    movl    $32,%ecx
+LPatchLoop8:
+    movl    (%ebx),%edx
+    addl    $4,%ebx
+    movl    %eax,(%edx)
+    decl    %ecx
+    jnz     LPatchLoop8
+```
+
+The hot lookup now embeds an invariant address directly in its instruction, freeing a general-purpose register from holding the colormap base. Patching happens outside the texel loop. This is runtime specialization using self-modifying code, with an explicit writable-code setup in this engine.
+
+Finally, `%ah` and `%al` collect two lit texels; `rorl $16,%eax` moves them into the upper half, allowing the next two lookups to fill the lower half. A single `movl %eax,12(%edi)` writes four neighboring texels into the cache (`WinQuake/surf8.s:121-144`). The reverse texel order, rotation and little-endian store fit together to preserve their order in memory. This is scalar packing into one 32-bit store, not four simultaneous SIMD lookups.
+
+### What to look for when reading the rest of the assembly
+
+Follow **where a value becomes available and where it is next consumed**. In the span drawer that exposes a place to overlap division, a carry flag that replaces a coordinate calculation, and a tail whose length becomes a code-entry choice. In the surface builder it exposes a lookup index assembled through byte registers and a constant baked into the instruction stream. These are concrete changes to scheduling and representation around Quake’s renderer design; the concise C loops alone do not show them.
+
+For a source-reading session, trace `LNotLastSegment` → `LSetupNotLast2` → `LFDIVInFlight2` → `LNotLastSegment` first, with a span long enough to take the steady path. Then follow `LLastSegment`, and only afterward the clamp branches. Keep `d_scan.c` open as the algorithmic reference and `surf8.s` as the separate cache-building example.
 
 ## GL renderer: texture chains, lightmaps, and hardware rasterization
 
@@ -756,6 +921,7 @@ Host_Frame
 ## Further reading
 
 - Michael Abrash, *Graphics Programming Black Book*, chapters on Quake's renderer (edge lists, span sorting, surface caching, perspective texture mapping): https://www.jagregory.com/abrash-black-book/
+- Fabien Sanglard, "How Michael Abrash doubled Quake framerate" — benchmark setup and assembly investigation: https://fabiensanglard.net/quake_asm_optimizations/index.html
 - Fabien Sanglard, "Quake Source Code Review": https://fabiensanglard.net/quakeSource/index.php
 - Olivier Montanuy et al., "Unofficial Quake Specs": https://www.gamers.org/dEngine/quake/spec/quake-spec34/
 - Carmack .plan archive (renderer-era design notes): https://github.com/ESWAT/john-carmack-plan-archive

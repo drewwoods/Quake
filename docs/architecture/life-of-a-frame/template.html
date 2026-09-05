@@ -746,10 +746,27 @@ html { scroll-behavior: smooth; }
     el.innerHTML = out;
   }
 
-  var pending = [].slice.call(document.querySelectorAll("pre code.lang-c"));
+  function highlightAsm(el) {
+    var src = el.textContent;
+    var token = /(\/\/[^\n]*)|(%(?:st\(\d\)|[a-z][a-z0-9]*))|(\$(?:0x[0-9a-fA-F]+|\d+))|^(\s*[A-Za-z_][A-Za-z0-9_]*:)|^([ \t]+[a-z][a-z0-9]*)/gm;
+    var out = "", last = 0, m;
+    while ((m = token.exec(src)) !== null) {
+      out += esc(src.slice(last, m.index));
+      var cls = m[1] ? "tk-com" : m[2] ? "tk-typ" : m[3] ? "tk-num" : m[4] ? "tk-pp" : "tk-kw";
+      out += '<span class="' + cls + '">' + esc(m[0]) + "</span>";
+      last = m.index + m[0].length;
+    }
+    el.innerHTML = out + esc(src.slice(last));
+  }
+
+  var pending = [].slice.call(document.querySelectorAll("pre code.lang-c, pre code.lang-asm"));
   (function chunk() {
     var t0 = Date.now();
-    while (pending.length && Date.now() - t0 < 40) highlight(pending.shift());
+    while (pending.length && Date.now() - t0 < 40) {
+      var el = pending.shift();
+      if (el.classList.contains("lang-asm")) highlightAsm(el);
+      else highlight(el);
+    }
     if (pending.length) setTimeout(chunk, 0);
   })();
 

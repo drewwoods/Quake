@@ -36,10 +36,10 @@ FILES = [
 
 # ---------------------------------------------------------------- refs
 
-# WinQuake/foo.c:12-34  |  WinQuake/foo.h:12  |  WinQuake/foo.c
-REF_QUALIFIED = re.compile(r"WinQuake/([A-Za-z0-9_]+\.[ch])(?::(\d+)(?:-(\d+))?)?")
+# C/header/assembly refs: WinQuake/foo.c:12-34 | WinQuake/foo.s:12 | WinQuake/foo.h
+REF_QUALIFIED = re.compile(r"WinQuake/([A-Za-z0-9_]+\.[chs])(?::(\d+)(?:-(\d+))?)?")
 # bare foo.c:12 — only used inside call-graph trees, where it is unambiguous
-REF_BARE = re.compile(r"\b([A-Za-z0-9_]+\.[ch]):(\d+)(?:-(\d+))?")
+REF_BARE = re.compile(r"\b([A-Za-z0-9_]+\.[chs]):(\d+)(?:-(\d+))?")
 
 
 def ref_url(fname, start, end):
@@ -161,7 +161,7 @@ _code_seq = [0]
 
 def render_code(code, lang, ref, folded=False, idx=0):
     label = ref_link_html(ref) if ref else html.escape(lang or "listing")
-    tag = "C" if lang == "c" else "TEXT"
+    tag = {"c": "C", "asm": "ASM"}.get(lang, "TEXT")
     body = ('<div class="code-bar"><span class="code-fold-toggle" aria-hidden="true"></span>'
             '<span class="code-lang">%s</span>'
             '<span class="code-ref">%s</span></div>'

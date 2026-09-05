@@ -1,0 +1,43 @@
+<figure class="concept" aria-labelledby="asm-overlap-title">
+  <h3 id="asm-overlap-title">Prepare the next segment while finishing this one</h3>
+  <p>Call the current eight-pixel segment <code>k</code>. Its endpoint is boundary <code>k+1</code>; the next segment needs boundary <code>k+2</code>. Read left to right. The two rows show work in one instruction stream, not separate threads.</p>
+  <div class="svg-scroll">
+    <svg class="explain-svg" viewBox="0 0 820 365" role="img" aria-labelledby="asm-timing-title asm-timing-desc">
+      <title id="asm-timing-title">Integer pixel writes overlap an x87 division for the next segment</title>
+      <desc id="asm-timing-desc">First, use the previously issued division to finish boundary k plus 1 and derive steps for segment k. Write pixels zero through three. Next, issue the division for boundary k plus 2, then write pixels four through seven and save segment state while division can run. On returning to LNotLastSegment, consume that result to derive steps for segment k plus 1. Column widths do not represent clock cycles.</desc>
+      <text x="20" y="25" class="svg-heading">Work advances →</text>
+      <text x="245" y="57" text-anchor="middle">Current k · first half</text>
+      <text x="471" y="57" text-anchor="middle">Current k · second half</text>
+      <text x="697" y="57" text-anchor="middle">Next k+1</text>
+      <text x="20" y="112" class="svg-heading">x87</text>
+      <rect x="139" y="77" width="212" height="94" rx="5" class="solid-shape"/>
+      <text x="245" y="102" text-anchor="middle">Use prior divide</text>
+      <text x="245" y="126" text-anchor="middle">Finish boundary k+1</text>
+      <text x="245" y="150" text-anchor="middle">Convert s,t to ints</text>
+      <rect x="365" y="77" width="212" height="94" rx="5" class="client-shape"/>
+      <text x="471" y="102" text-anchor="middle">Issue FDIV</text>
+      <text x="471" y="126" text-anchor="middle">for boundary k+2</text>
+      <text x="471" y="150" text-anchor="middle">Result not used yet</text>
+      <rect x="591" y="77" width="212" height="94" rx="5" class="solid-shape"/>
+      <text x="697" y="102" text-anchor="middle">Consume result</text>
+      <text x="697" y="126" text-anchor="middle">Finish boundary k+2</text>
+      <text x="697" y="150" text-anchor="middle">Convert s,t to ints</text>
+      <path d="M351 124H365M577 124H591" class="trace-line"/>
+      <text x="20" y="235" class="svg-heading">Integer</text>
+      <rect x="139" y="198" width="212" height="94" rx="5" class="solid-shape"/>
+      <text x="245" y="230" text-anchor="middle">Steps + pixels 0–3</text>
+      <text x="245" y="255" text-anchor="middle">for segment k</text>
+      <rect x="365" y="198" width="212" height="94" rx="5" class="client-shape"/>
+      <text x="471" y="223" text-anchor="middle">Write pixels 4–7</text>
+      <text x="471" y="247" text-anchor="middle">Save segment state</text>
+      <text x="471" y="271" text-anchor="middle">Advance output</text>
+      <rect x="591" y="198" width="212" height="94" rx="5" class="solid-shape"/>
+      <text x="697" y="230" text-anchor="middle">Steps + next pixels</text>
+      <text x="697" y="255" text-anchor="middle">for segment k+1</text>
+      <path d="M471 171V198" class="trace-line" stroke-dasharray="3 3"/>
+      <path d="M365 304V313H577V304" class="trace-line"/>
+      <text x="471" y="341" text-anchor="middle">Independent work gives division time to complete</text>
+    </svg>
+  </div>
+  <figcaption><b>A dependency diagram, not a cycle-accurate timing chart.</b> In this steady path the next divide is issued after stores 0–3, then overlaps the remaining stores and bookkeeping. The first segment and final short segment use different setup paths. Source: WinQuake/d_draw.s:313-330, WinQuake/d_draw.s:400-509.</figcaption>
+</figure>
