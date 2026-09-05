@@ -587,6 +587,59 @@ static float Host_RefreshInterval (void)
 }
 
 
+#ifdef QJPROBE
+/*
+Repro harness for the render-phase judder.  Rendering is gated on a real
+vsync at a chosen offset instead of on the free-running host_lastrender, so
+the phase becomes an input rather than whatever a load stall left behind.
+
+    QJ_PHASE=<ms>          pin one phase for the whole run
+    QJ_SWEEP=<seconds>     walk every phase, holding each that long
+
+Returns false when the harness is off, so the caller keeps stock behaviour.
+*/
+#define QJ_SWEEP_STEPS		11
+#define QJ_SETTLE_SECONDS	6	// let the demo finish loading first
+
+extern int QJ_VsyncGate (double now, double phase_s);
+
+static qboolean QJ_Render (float interval, qboolean *render)
+{
+	static double	seg_start;
+	static int	seg = -1;
+	const char	*sweep, *pin;
+	double		phase;
+
+	pin = getenv ("QJ_PHASE");
+	sweep = getenv ("QJ_SWEEP");
+	if (!pin && !sweep)
+		return false;
+
+	*render = false;
+	if (realtime < QJ_SETTLE_SECONDS)
+		return true;
+
+	if (pin)
+		phase = atof (pin) / 1000.0;
+	else
+	{
+		if (seg < 0 || realtime - seg_start >= atof (sweep))
+		{
+			seg++;
+			seg_start = realtime;
+			if (seg >= QJ_SWEEP_STEPS)
+				Sys_Quit ();
+			Con_Printf ("=== SEGMENT %d : phase %.1f ms ===\n", seg,
+				1000.0 * seg * interval / QJ_SWEEP_STEPS);
+		}
+		phase = seg * interval / QJ_SWEEP_STEPS;
+	}
+
+	*render = QJ_VsyncGate (realtime, phase) ? true : false;
+	return true;
+}
+#endif
+
 /*
 ===================
 Host_FilterRender
@@ -610,6 +663,13 @@ static qboolean Host_FilterRender (qboolean stepped)
 	if (cls.timedemo || interval <= 0)
 		return stepped;
 
+#ifdef QJPROBE
+	{
+		qboolean	render;
+		if (QJ_Render (interval, &render))
+			return render;
+	}
+#endif
 	if (realtime - host_lastrender < interval)
 		return false;
 

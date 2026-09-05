@@ -9,6 +9,135 @@
 #include "quakedef.h"
 #include "d_local.h"
 
+#ifdef QJPROBE
+// ---------------------------------------------------------------------------
+// Judder probe.  Records, on every real vsync, how many frames VID_Update has
+// produced since the previous vsync.  A healthy pipeline shows 1,1,1,1,...;
+// 0 means the display repeated a frame, 2 means one was overwritten and never
+// seen.  Also logs the wall-clock spacing of the frames themselves, so a
+// production problem can be told apart from a presentation one.
+// ---------------------------------------------------------------------------
+#import <CoreVideo/CoreVideo.h>
+#import <mach/mach_time.h>
+
+#define QJ_MAX 400000
+
+static volatile uint64_t qj_produced;       // VID_Update completions
+static double            qj_prodtime[QJ_MAX];
+static int               qj_nprod;
+static double            qj_vsynctime[QJ_MAX];
+static uint64_t          qj_vsyncprod[QJ_MAX];
+static int               qj_nvsync;
+static CVDisplayLinkRef  qj_link;
+static double            qj_ticks_to_s;
+static double            QJ_Now(void);
+static double            qj_mach_base;      // mach clock at QJ_Init
+static double            qj_rt_base;        // Sys_FloatTime at QJ_Init
+static volatile double   qj_last_vsync;     // mach seconds, predicted output time
+static volatile double   qj_vsync_now;      // mach seconds, vsync that just fired
+static volatile uint64_t qj_vsync_id;       // counts real vsyncs
+
+/*
+Render gate locked to the real vsync.  Fires at most once per vsync, phase_s
+after it.  This is the experiment: sweep phase_s and the same code goes from
+perfectly smooth to visibly juddery, which is what an unlocked render clock
+wanders through by accident.
+*/
+int QJ_VsyncGate(double realtime, double phase_s)
+{
+    static uint64_t served;
+    uint64_t        id;
+    double          age, vsync_rt;
+
+    id = qj_vsync_id;
+    if (id == 0 || id == served)
+        return 0;
+
+    age = QJ_Now() - qj_vsync_now;      // how long ago that vsync was
+    vsync_rt = realtime - age;          // the same instant on the host clock
+    if (realtime < vsync_rt + phase_s)
+        return 0;
+
+    served = id;
+    return 1;
+}
+
+// Most recent vsync expressed in Sys_FloatTime seconds, or 0 before the first.
+double QJ_LastVsyncRealtime(void)
+{
+    double v = qj_last_vsync;
+    if (v == 0.0)
+        return 0.0;
+    return v - qj_mach_base + qj_rt_base;
+}
+
+static double QJ_Now(void)
+{
+    return mach_absolute_time() * qj_ticks_to_s;
+}
+
+static CVReturn QJ_VSync(CVDisplayLinkRef dl, const CVTimeStamp *now,
+    const CVTimeStamp *out, CVOptionFlags in, CVOptionFlags *fl, void *ctx)
+{
+    (void)dl;(void)now;(void)in;(void)fl;(void)ctx;
+    qj_last_vsync = out->hostTime * qj_ticks_to_s;
+    qj_vsync_now  = now->hostTime * qj_ticks_to_s;
+    qj_vsync_id++;
+    if (qj_nvsync < QJ_MAX)
+    {
+        qj_last_vsync = out->hostTime * qj_ticks_to_s;
+        qj_vsynctime[qj_nvsync] = qj_last_vsync;
+        qj_vsyncprod[qj_nvsync] = qj_produced;
+        qj_nvsync++;
+    }
+    return kCVReturnSuccess;
+}
+
+static void QJ_Dump(void)
+{
+    FILE *f;
+    int i;
+    const char *path = getenv("QJ_LOG");
+
+    if (!path)
+        path = "/tmp/qj.log";
+    f = fopen(path, "w");
+    if (!f)
+        return;
+    fprintf(f, "# interval_sampled %.9f\n", VID_RefreshInterval());
+    for (i = 0; i < qj_nprod; i++)
+        fprintf(f, "P %.9f\n", qj_prodtime[i]);
+    for (i = 0; i < qj_nvsync; i++)
+        fprintf(f, "V %.9f %llu\n", qj_vsynctime[i],
+            (unsigned long long)qj_vsyncprod[i]);
+    fclose(f);
+}
+
+static void QJ_Signal(int sig)
+{
+    (void)sig;
+    QJ_Dump();
+    _exit(0);
+}
+
+static void QJ_Init(void)
+{
+    mach_timebase_info_data_t tb;
+
+    mach_timebase_info(&tb);
+    qj_ticks_to_s = (double)tb.numer / tb.denom / 1e9;
+    qj_mach_base = QJ_Now();
+    qj_rt_base = Sys_FloatTime();
+    CVDisplayLinkCreateWithCGDisplay(CGMainDisplayID(), &qj_link);
+    CVDisplayLinkSetOutputCallback(qj_link, QJ_VSync, NULL);
+    CVDisplayLinkStart(qj_link);
+    atexit(QJ_Dump);
+    signal(SIGTERM, QJ_Signal);
+    signal(SIGINT, QJ_Signal);
+}
+#endif
+
+
 #define BASEWIDTH  320
 #define BASEHEIGHT 200
 
@@ -444,6 +573,10 @@ void VID_Init(unsigned char *palette)
     NSWindowStyleMask style;
 
     headlessMode = COM_CheckParm("-headless") != 0;
+#ifdef QJPROBE
+    if (!headlessMode)
+        QJ_Init();
+#endif
     mouseCaptureAllowed = true;
     mouseEngaged = true;
     renderWidth = BASEWIDTH;
@@ -597,6 +730,11 @@ void VID_Update(vrect_t *rects)
     [[quakeView layer] setContents:(__bridge id)image];
     CGImageRelease(image);
     CGDataProviderRelease(provider);
+#ifdef QJPROBE
+    if (qj_nprod < QJ_MAX)
+        qj_prodtime[qj_nprod++] = QJ_Now();
+    qj_produced++;
+#endif
     }
 }
 
