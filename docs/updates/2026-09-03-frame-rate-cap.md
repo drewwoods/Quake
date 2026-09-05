@@ -194,6 +194,10 @@ Phase 3 would cost "one full step, ~13.9 ms". Measured, the render lands
 mid-step far more often than at its start, so the mean is **~7.8 ms** and
 only the worst case approaches ~13.3 ms.
 
+Both levers are also smaller than they look next to a cost this note had
+never counted: the compositor holds a finished frame ~24 ms before it is
+on the panel (Finding 8). No lever here touches that.
+
 ## Plan
 
 ### Phase 1 — `host_maxfps` — **IMPLEMENTED** (commit 2e99166)
@@ -214,6 +218,9 @@ production is still a wall-clock cap with no vsync, so phase relative to
 the WindowServer can drift and occasional doubled or dropped frames
 remain. It is far better than 12 discards a second; it is not a hard
 lock.
+
+**Superseded by Phase 5.** The render clock is now locked to vsync, so
+the phase no longer drifts and the doubled and dropped frames are gone.
 
 **Range clamp — implemented.** `Host_FilterTime` clamps to 10..1000 with
 a write-back, following the vanilla `Cvar_Set` idiom used for `viewsize`
@@ -314,6 +321,9 @@ this renderer is thread-safe, so if a display link is used at all it must
 only set a flag the main loop reads. Also handle
 `CGDisplayModeGetRefreshRate` returning 0, which it does on some displays.
 
+Phase 5 built exactly that, and found the refresh *rate* is not enough on
+its own: the rate was already right, and the phase was what was wrong.
+
 ### Phase 3 — interpolate to the render moment (commit d10a398)
 
 Once a render lands *between* steps, draw the world as it was at that
@@ -400,6 +410,160 @@ There is still a real cost, and it is a movement-feel cost, so it is
 toggleable: `host_interpolate 0` restores stock snapping. The honest
 comparison against `host_maxfps 60` is ~7.8 ms of movement latency versus
 ~15% less air gain. Neither is free.
+
+---
+
+## Phase 5 — pace on the display, hand the frame over at once — **IMPLEMENTED** (5-6 Sep)
+
+Phases 2 and 3 fixed *what* each frame depicts. They left *when* it reaches
+the screen to luck, and two separate defects there put the beat back on the
+panel. Neither is in frame production: the game produced a flawless 60.00 fps
+throughout both.
+
+Reported as "smooth on some launches, juddery on others, and it stays that way
+for the whole session". Easiest to see in the console sliding shut, which
+advances a fixed amount per *rendered frame* and so reads presentation cadence
+directly, with no interpolation in the path.
+
+### The panel is not the variable
+
+| | |
+|---|---|
+| refresh | 60.0005 Hz |
+| vsync interval sd | **0.0000 ms** |
+| game render clock | `1/CGDisplayModeGetRefreshRate()` = 16.66667 ms |
+| frequency error | 0.00017 ms/frame — one slip per ~27 min |
+
+Not a 120 Hz compositor, and not a rate mismatch. The rate was already right.
+
+### Finding 6: the render phase is a lottery, drawn once per launch
+
+`Host_FilterRender` advanced `host_lastrender` by the refresh interval and
+never consulted vsync, so its phase against the compositor was undefined.
+This line set it:
+
+```c
+host_lastrender += interval;
+if (realtime - host_lastrender > interval)
+    host_lastrender = realtime;   // fell behind; resync rather than burst
+```
+
+Every stall longer than one interval reseeds the clock to whatever instant the
+game recovered at. Loading is full of them, so the last one before gameplay
+picks the phase and the session keeps it. Measured across launches, each
+stable to sd 0.25 ms for its whole run:
+
+| launch | a | b | c |
+|---|---|---|---|
+| phase | 15.89 ms | 9.72 ms | 1.57 ms |
+| verdict by eye | good | **juddery** | good |
+
+**Reproduction.** `-DQJPROBE` replaces the free-running gate with one locked
+to a real vsync at a chosen offset, so phase becomes an input rather than
+whatever a stall left behind:
+
+```
+QJ_PHASE=<ms>       pin one phase for the whole run
+QJ_SWEEP=<seconds>  walk all eleven, holding each that long
+QJ_LOG=<path>       where to write the trace
+```
+
+`QJ_PHASE=0` juddered for its whole life and `QJ_PHASE=9.1` was clean for its
+whole life, on the same demo — which separates phase from content. Sweeping
+all eleven against the eye, with the frame costing 10.7 ms of the 16.67 ms
+budget on the `drawRect` path:
+
+| frame finishes at | 10.8 ms | 12.3 | 13.8 | 15.0 | 16.5 | 1.4 – 6.4 | 7.8 | 9.2 |
+|---|---|---|---|---|---|---|---|---|
+| verdict | worst | bad | poor | mild | slight | **clean** | slight | mild |
+
+That is a compositor deadline, roughly 6 ms before the vsync a frame is for.
+Land clear of it and every frame makes its vsync; land on it and render-time
+jitter makes frames alternately make and miss — one shown twice, one dropped.
+
+### Finding 7: the handover rode the wrong runloop turn
+
+On the layer-present path (commit 9e64df6) a frame costs only 1.37 ms — 1.02
+rasterising, 0.35 in `VID_Update` — so the safe window is wide and phase
+should barely matter. It juddered anyway, and worse.
+
+Assigning `layer.contents` starts an *implicit* CATransaction, which commits
+on the next runloop turn. The only runloop turn in this loop is inside
+`Sys_SendKeyEvents`, called from `Host_SimFrame` — the simulation's 72 Hz
+grid, not the render's 60 Hz one. So a frame finished at a rock-steady phase
+(sd 0.21 ms) reached the compositor 0.18 to 12.15 ms later, at five discrete
+delays beating 6:5. Vsyncs advanced per presented frame, over 12 s:
+
+| vsyncs advanced | 0 | 1 | 2 |
+|---|---|---|---|
+| frames | **143** | 432 | **143** |
+
+20% of frames overwritten before they were ever shown, 20% shown twice — about
+12 stutters a second, with no wall clock anywhere in the mechanism.
+
+### The fix (commit 6fa5f69)
+
+**Commit the transaction where the frame is finished.** `[CATransaction
+begin]` / `commit` around the `setContents:`, costing 0.22 ms. Handover
+becomes as steady as the frame: `0:143 1:432 2:143` becomes **`1:719`**.
+
+**Take the cadence from the display.** A `CVDisplayLink` callback bumps a
+counter and does nothing else — the design Phase 2 called for.
+`VID_VsyncSerial` reports it and `Host_FilterRender` renders when it changes,
+so the frame is drawn immediately after a vsync with a full interval of slack
+and the phase is the same every launch.
+
+`HOST_VSYNC_GRACE` intervals of silence fall back to the wall clock: a display
+link stops when its display goes away, and a game rendering only on vsync
+would then stop drawing. Platforms that cannot count refreshes return 0 and
+keep the old path.
+
+**Both were needed.** With the commit fixed but the clock still free-running,
+a phase sweep found ten of eleven positions perfect and one losing 20% of
+frames — a ~6% chance per launch of a session that stutters end to end.
+
+| launch | 1 | 2 | 3 | 4 | 5 |
+|---|---|---|---|---|---|
+| gate phase | 9.14 | 9.15 | 9.09 | 9.13 | 9.12 ms |
+| bad frames | 0 | 0 | 0 | 0 | 0 |
+
+against 0.05 / 5.87 / 7.79 / 12.11 ms before. The commit now lands 5.9 ms
+clear of the boundary that failed.
+
+### Finding 8: aiming the interpolation at presentation time does not work
+
+`Host_LerpFrac` targets the render moment, so a frame depicts when it was
+drawn rather than when it is seen. Correcting that reads like a free win. It
+is not. `CVDisplayLink` reports the predicted presentation time, and the lead
+is larger than a simulation step:
+
+```
+outputTime - now: mean 24.2222 ms  min 23.8947  max 24.9921
+                  = 1.45 refresh periods = 1.74 simulation steps at 72
+```
+
+`CL_LerpView` interpolates between the last two snapshots and returns early at
+`frac >= 1.0`; it never extrapolates. Aiming 1.74 steps past the newest state
+therefore pins every frame:
+
+| | aimed at render moment | aimed at presentation |
+|---|---|---|
+| lerp fraction, demo | mean 0.458, sweeps 0.001..0.997 | **1.000, on 100% of frames** |
+| lerp fraction, local game | mean 0.500, sweeps 0.036..0.912 | **1.000, on 100% of frames** |
+| `CL_LerpView` pins, local game | 0% | **100%** |
+
+Pinned at 1.0 is stock snapping — precisely what Phase 3 was built to remove.
+Built, measured, reverted.
+
+Closing that 24 ms needs *extrapolation* across nearly two simulation steps,
+which overshoots on every collision and direction change. That is a
+movement-feel change of the kind Phase 3 deliberately refused, and a separate
+piece of work — not a tweak to the lerp fraction.
+
+**What it does settle** is the size of the latency argument. Phase 3 was
+weighed at ~7.8 ms mean movement latency against `host_maxfps 60`'s ~15% less
+air gain. The compositor adds ~24 ms of display latency underneath both, which
+this note had never counted and no lever here touches.
 
 ---
 
@@ -496,6 +660,26 @@ Results below are from the build at the Phase 1 clamp commit.
    stall that used to be one long integration step is now several steps
    of equal length. Do not treat a difference in stall behaviour as a
    regression; do treat a difference in steady-state movement as one.
+
+10. **Phase 5: one frame per vsync, and the same phase every launch.**
+    The probe's `V` lines count frames produced between vsyncs and its `P`
+    lines stamp each stage. Every interval must read `1`, and the gate phase
+    must match across launches to a few hundredths of a millisecond. Spread
+    in gate phase between launches means the display link is not driving the
+    gate and the wall clock has taken back over.
+11. **Timedemo must still bypass the render gate.** 622.2 fps, 98% busy,
+    0.03 s blocked at 800x600. If it ever tracks 60, the vsync gate has
+    leaked into the benchmark path. The busy figure is the check that
+    matters: it is the share of wall time not spent queueing behind the
+    compositor.
+12. **Headless and non-Apple are untouched.** `VID_RefreshInterval` returns
+    0 there, so `Host_FilterRender` returns `stepped` and never reaches the
+    serial. `host.c` compiles clean under GCC 14 on gracemont; the display
+    link is behind `#ifdef __APPLE__` and `Host_VsyncSerial` returns 0.
+13. **Do not read Finding 5's hitch tail against Phase 5.** That
+    distribution was measured on the `drawRect` present, where a frame cost
+    10.7 ms. It costs 1.37 ms now, so the tail must be re-measured before
+    Phase 4 uses it as a baseline.
 
 Note: running the game rewrites `id1/config.cfg`, which now carries
 `host_maxfps`. Check that diff before committing.
