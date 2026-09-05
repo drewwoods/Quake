@@ -51,7 +51,7 @@ static float lastScaleRequest = -1;
 @interface QuakeView : NSView
 @end
 
-@interface QuakeWindowDelegate : NSObject <NSWindowDelegate>
+@interface QuakeDelegate : NSObject <NSWindowDelegate, NSApplicationDelegate>
 @end
 
 static qboolean CenterMouseInWindow(void)
@@ -321,7 +321,7 @@ static int QuakeKeyForEvent(NSEvent *event)
 
 @end
 
-@implementation QuakeWindowDelegate
+@implementation QuakeDelegate
 - (void)windowDidBecomeKey:(NSNotification *)notification
 {
     (void)notification;
@@ -342,9 +342,16 @@ static int QuakeKeyForEvent(NSEvent *event)
     Sys_Quit();
     return YES;
 }
+
+- (NSApplicationTerminateReply)applicationShouldTerminate:(NSApplication *)sender
+{
+    (void)sender;
+    Sys_Quit();
+    return NSTerminateNow;
+}
 @end
 
-static QuakeWindowDelegate *windowDelegate;
+static QuakeDelegate *quakeDelegate;
 
 void VID_SetPalette(unsigned char *palette)
 {
@@ -417,6 +424,43 @@ static void ApplyWindowScale(void)
     [quakeWindow setFrame:frame display:YES];
 }
 
+// Without a menu bar macOS routes no Cmd-key equivalents to the app, leaving
+// Cmd+Q, Cmd+H and Cmd+M dead. Only the standard items are provided.
+static void CreateMenuBar(void)
+{
+    NSString *name = [[NSProcessInfo processInfo] processName];
+    NSMenu *menuBar = [[NSMenu alloc] init];
+    NSMenuItem *appItem = [[NSMenuItem alloc] init];
+    NSMenuItem *windowItem = [[NSMenuItem alloc] init];
+    NSMenu *appMenu = [[NSMenu alloc] init];
+    NSMenu *windowMenu = [[NSMenu alloc] initWithTitle:@"Window"];
+    NSMenuItem *hideOthers;
+
+    [appMenu addItemWithTitle:[@"Hide " stringByAppendingString:name]
+        action:@selector(hide:) keyEquivalent:@"h"];
+    hideOthers = [appMenu addItemWithTitle:@"Hide Others"
+        action:@selector(hideOtherApplications:) keyEquivalent:@"h"];
+    [hideOthers setKeyEquivalentModifierMask:
+        NSEventModifierFlagCommand | NSEventModifierFlagOption];
+    [appMenu addItemWithTitle:@"Show All"
+        action:@selector(unhideAllApplications:) keyEquivalent:@""];
+    [appMenu addItem:[NSMenuItem separatorItem]];
+    [appMenu addItemWithTitle:[@"Quit " stringByAppendingString:name]
+        action:@selector(terminate:) keyEquivalent:@"q"];
+
+    [windowMenu addItemWithTitle:@"Minimize"
+        action:@selector(performMiniaturize:) keyEquivalent:@"m"];
+    [windowMenu addItemWithTitle:@"Close"
+        action:@selector(performClose:) keyEquivalent:@"w"];
+
+    [appItem setSubmenu:appMenu];
+    [windowItem setSubmenu:windowMenu];
+    [menuBar addItem:appItem];
+    [menuBar addItem:windowItem];
+    [NSApp setMainMenu:menuBar];
+    [NSApp setWindowsMenu:windowMenu];
+}
+
 void VID_Init(unsigned char *palette)
 {
     @autoreleasepool {
@@ -469,6 +513,7 @@ void VID_Init(unsigned char *palette)
 
     [NSApplication sharedApplication];
     [NSApp setActivationPolicy:NSApplicationActivationPolicyRegular];
+    CreateMenuBar();
     [NSApp finishLaunching];
 
     frame = NSMakeRect(0, 0, renderWidth, renderHeight);
@@ -477,8 +522,9 @@ void VID_Init(unsigned char *palette)
     quakeWindow = [[NSWindow alloc] initWithContentRect:frame
         styleMask:style backing:NSBackingStoreBuffered defer:NO];
     quakeView = [[QuakeView alloc] initWithFrame:frame];
-    windowDelegate = [[QuakeWindowDelegate alloc] init];
-    [quakeWindow setDelegate:windowDelegate];
+    quakeDelegate = [[QuakeDelegate alloc] init];
+    [quakeWindow setDelegate:quakeDelegate];
+    [NSApp setDelegate:quakeDelegate];
     [quakeWindow setTitle:@"Quake"];
     [quakeWindow setContentAspectRatio:NSMakeSize(renderWidth, renderHeight)];
     [quakeWindow setAcceptsMouseMovedEvents:YES];
@@ -528,7 +574,7 @@ void VID_Shutdown(void)
     [quakeWindow orderOut:nil];
     quakeView = nil;
     quakeWindow = nil;
-    windowDelegate = nil;
+    quakeDelegate = nil;
     free(frameBuffer);
     free(rgbaBuffer);
     free(renderMemory);
