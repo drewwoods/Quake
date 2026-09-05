@@ -1,6 +1,10 @@
 # BSP and PVS
 
-Every Quake level is a binary-space-partitioned world baked by `qbsp`/`vis`/`light`, then converted from disk structures into flat runtime arrays. The BSP provides an ordered world walk, while the precomputed potentially-visible set (PVS) replaces per-frame portal visibility work with bitset decompression and lookup. This section covers the on-disk format, the `model.c` loader, client and server PVS use, static lightmap sampling, and dynamic-light surface marking.
+Quake does expensive preparation before a level is played. The resulting BSP file gives the engine spatial partitions, collision data, potentially visible regions and baked lighting that it can reuse each frame.
+
+> **First pass.** BSP is the spatial structure; PVS is a conservative visibility lookup built from it. The client uses PVS to skip render work, and the server uses it to skip irrelevant entity updates. Neither use is an exact line-of-sight test, and an entity outside your PVS can still think and move. Source: `WinQuake/model.c:84-160`, `WinQuake/r_main.c:491-519`, `WinQuake/sv_main.c:427-470`, `WinQuake/sv_phys.c:1507-1563`. [Next: rendering →](#sec-5)
+
+::: diagram visibility
 
 ## Where it sits in the frame
 
@@ -193,7 +197,7 @@ byte *Mod_LeafPVS (mleaf_t *leaf, model_t *model)
 
 `decompressed` is `static` — a single shared scratch buffer, which is fine because it is fully consumed (copied out or bit-tested) before the next call, and keeps the engine from allocating/freeing a `MAX_MAP_LEAFS/8` = 1024-byte buffer every leaf-crossing. If `leaf->compressed_vis` is `NULL` (no vis data compiled, `visofs == -1` in the leaf), the function fills the whole row with `0xff` — "everything visible" — matching what a level with no `vis` pass (a `-novis` qbsp compile) should behave like. `Mod_LeafPVS` special-cases leaf 0 (the shared solid leaf, `leaf == model->leafs`) by returning `mod_novis` (`WinQuake/model.c:36`, all-`0xff`, initialized in `Mod_Init` at `WinQuake/model.c:53-54`) rather than trying to decompress a vis row for a leaf that was never assigned one — the camera should never actually be inside leaf 0, but this keeps the function total.
 
-The RLE scheme buys enormous savings for typical Quake levels: PVS rows are naturally sparse (most leaves see only a small local neighborhood), and long zero runs from architecturally-separated rooms compress to two bytes each. This was a deliberate memory/CPU trade for the era — `vis.exe`'s offline flood-fill visibility computation is expensive, but it lets the runtime skip drawing (or even touching) the vast majority of a level's geometry every frame on hardware with no depth buffer to rely on. See Michael Abrash's Black Book chapters on Quake's visibility system for the design history: https://www.jagregory.com/abrash-black-book/
+The RLE scheme buys enormous savings for typical Quake levels: PVS rows are naturally sparse (most leaves see only a small local neighborhood), and long zero runs from architecturally-separated rooms compress to two bytes each. This was a deliberate memory/CPU trade for the era — `vis.exe`'s offline flood-fill visibility computation is expensive, but it lets the runtime skip drawing (or even touching) the vast majority of a level's geometry every frame before the renderer reaches per-pixel work. The software renderer does maintain a depth buffer for later entity and particle drawing. See Michael Abrash's Black Book chapters on Quake's visibility system for the design history: https://www.jagregory.com/abrash-black-book/
 
 ## R_MarkLeaves, visframe, and r_novis
 
@@ -300,7 +304,7 @@ byte *SV_FatPVS (vec3_t org)
 }
 ```
 
-The comment block right above this code in `sv_main.c` explains the "why" directly: "The PVS must include a small area around the client to allow head bobbing or other small motion on the client side. Otherwise, a bob might cause an entity that should be visible to not show up, especially when the bob crosses a waterline" (`WinQuake/sv_main.c:355-359`). Reusing `Mod_LeafPVS`/`Mod_DecompressVis` here means the server pays the same RLE-decompression cost as the client, but on `sv.worldmodel` — the server's own independently-loaded copy of the same `.bsp`.
+The comment block right above this code in `sv_main.c` explains the "why" directly: "The PVS must include a small area around the client to allow head bobbing or other small motion on the client side. Otherwise, a bob might cause an entity that should be visible to not show up, especially when the bob crosses a waterline" (`WinQuake/sv_main.c:355-359`). Reusing `Mod_LeafPVS`/`Mod_DecompressVis` here means the server pays the same RLE-decompression cost as the client, but on `sv.worldmodel`. In local play this can refer to the same loaded model as `cl.worldmodel`, through the shared `Mod_ForName` registry (`WinQuake/model.c:186-243`, `WinQuake/model.c:329-336`); a remote server has its own copy in its process.
 
 `SV_WriteEntitiesToClient` (`WinQuake/sv_main.c:427`) calls `SV_FatPVS` once per client per frame (`WinQuake/sv_main.c:438`) and then, for each edict, tests each of the up to `MAX_ENT_LEAFS` (16, `WinQuake/progs.h:34`) leaves that entity currently touches (`ent->leafnums[]`, populated by `SV_LinkEdict` in `WinQuake/world.c`) against the fat PVS bitset:
 

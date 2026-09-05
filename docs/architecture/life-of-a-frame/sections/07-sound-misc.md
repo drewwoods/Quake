@@ -1,6 +1,8 @@
 # Sound, plus misc engine plumbing
 
-Quake's audio path spatializes up to 128 channels, mixes their samples into a fixed-size integer paint buffer, then copies the result into the sound device's DMA buffer. The server sends a compact `svc_sound` event naming a precached sound and an origin; each client mixes PCM locally. This section also covers the HUD, console and command pipeline, Zone/Hunk/Cache allocators, and `setjmp`/`longjmp` error recovery.
+Sound is another client-side presentation of server events. The server names a sound and its location; the client chooses a mixer channel, computes left/right volume and mixes local sample data for the audio device.
+
+> **First pass.** Think **sound event → local sample → stereo mix → device buffer**. The server sends a sound identifier, not recorded audio. The mixer fills ahead of the playback cursor so audio can continue between frames. The console and memory allocators below support many stages; they are not extra steps after sound. Source: `WinQuake/sv_main.c:118-171`, `WinQuake/cl_parse.c:101-136`, `WinQuake/snd_dma.c:856-902`. [Return to the frame map →](#pipe)
 
 ## Where it sits in the frame
 
@@ -65,7 +67,7 @@ Channels are a flat array `channel_t channels[MAX_CHANNELS]` (`WinQuake/snd_dma.
 // MAX_DYNAMIC_CHANNELS + NUM_AMBIENTS to total_channels = static sounds
 ```
 
-`NUM_AMBIENTS` is 4 (`WinQuake/bspfile.h:209`, water/sky/slime/lava loop sounds baked per-leaf into the BSP), and `MAX_DYNAMIC_CHANNELS` is 8 (`WinQuake/sound.h:131`) — one per `entnum/entchannel` slot picked by `SND_PickChannel` (`WinQuake/snd_dma.c:354`). Everything past that is a "static" channel: a fire-and-forget looping sound baked at map load (torches, etc.) that never moves. `S_Update`'s loop at `snd_dma.c:751-784` deliberately *combines* multiple static channels that share the same `sfx` into one channel's volume accumulation ("so we don't mix five torches every frame") — a cheap way to bound mixer cost on levels with dozens of identical ambient props, at the expense of losing individual stereo separation between them.
+`NUM_AMBIENTS` is 4 (`WinQuake/bspfile.h:209`, water/sky/slime/lava loop sounds baked per-leaf into the BSP), and `MAX_DYNAMIC_CHANNELS` is 8 (`WinQuake/sound.h:131`) — one per `entnum/entchannel` slot picked by `SND_PickChannel` (`WinQuake/snd_dma.c:354`). Everything past that is a "static" channel: a fire-and-forget looping sound baked at map load (torches, etc.) that never moves. `S_Update`'s loop at `snd_dma.c:751-784` deliberately *combines* multiple static channels that share the same `sfx` into one channel's volume accumulation ("so we don't mix five torches every frame") — a cheap way to bound mixer cost on levels with dozens of identical ambient props, while preserving their summed left and right contributions. The tradeoff is that combined loops share the selected channel’s playback phase.
 
 `SND_Spatialize` (`WinQuake/snd_dma.c:398-444`) computes per-channel left/right volume from 3D geometry:
 
@@ -120,7 +122,7 @@ void SND_Spatialize(channel_t *ch)
 }
 ```
 
-This is the whole panning model: a dot product of the vector-to-source against the listener's right axis gives a `[-1,1]` pan bias, and linear distance falloff (scaled by `dist_mult`, which folds in the server's `attenuation` value) gives volume rolloff. There is no HRTF, no real-time convolution, no hardware 3D-audio dependency (Aureal A3D and EAX existed in 1996-97 but were far from universal) — id needed something that ran identically and cheaply on every sound card, down to ones with only a raw PCM DMA buffer and no mixing hardware. A dot-product pan plus linear attenuation is a handful of FPU ops per channel per frame, which is what made spatializing dozens of channels viable on a Pentium-class CPU with no dedicated DSP.
+This is the whole panning model: a dot product of the vector-to-source against the listener's right axis gives a `[-1,1]` pan bias, and linear distance falloff (scaled by `dist_mult`, which folds in the server's `attenuation` value) gives volume rolloff. There is no HRTF, no real-time convolution, no hardware 3D-audio dependency — id needed something that ran identically and cheaply on every sound card, down to ones with only a raw PCM DMA buffer and no mixing hardware. A dot-product pan plus linear attenuation is a handful of FPU ops per channel per frame, which is what made spatializing dozens of channels viable on a Pentium-class CPU with no dedicated DSP.
 
 Note the special case at the top: sounds attached to the local view entity (`cl.viewentity`, e.g. weapon fire, pain grunts) always play at full, unpanned volume — imagine your own gunshot getting quietly panned to one ear because of a floating-point epsilon in your own origin vs. listener origin.
 
@@ -161,7 +163,7 @@ Sounds loop by adjusting `ch->pos`/`ch->end` against the cached sample data's `l
 
 ## How sound events reach the client: svc_sound
 
-The server never streams PCM — it only ever tells clients *what* to play. `SV_StartSound` (`WinQuake/sv_main.c:118-171`) packs an `svc_sound` message into either a client's reliable stream or, for map-relative broadcast, `sv.datagram`:
+The server never streams PCM — it only ever tells clients *what* to play. `SV_StartSound` (`WinQuake/sv_main.c:118-171`) packs an `svc_sound` message into the shared unreliable `sv.datagram`:
 
 ```c
 // WinQuake/sv_main.c:150-171
@@ -271,7 +273,7 @@ The lookup order is fixed and significant: registered engine commands (a linked 
 
 Quake takes one large allocation from the OS at startup and layers three allocators over it, each matched to a different lifetime: the engine gets explicit control over when memory is reclaimed, plus an asset cache it can evict from under pressure.
 
-- **Zone** (`Z_Malloc`, `WinQuake/zone.c:142`) is a classic best-fit free-list allocator over a fixed-size arena (`DYNAMIC_SIZE` = 0xc000, `zone.c:24`) with block headers carrying a size/tag/id and a trash-detection sentinel (`ZONEID`, `zone.c:26`) checked by `Z_CheckHeap` (`zone.c:247-262`). It's for small, short-lived, arbitrarily-freed allocations — strings, cvar values — the doc comment says as much: "The zone calls are pretty much only used for small strings and structures, all big things are allocated on the hunk" (`zone.c:59-60`).
+- **Zone** (`Z_Malloc`, `WinQuake/zone.c:142`) is a rover-based first-fit free-list allocator over a fixed-size arena (`DYNAMIC_SIZE` = 0xc000, `zone.c:24`) with block headers carrying a size/tag/id and a trash-detection sentinel (`ZONEID`, `zone.c:26`) checked by `Z_CheckHeap` (`zone.c:247-262`). It's for small, short-lived, arbitrarily-freed allocations — strings, cvar values — the doc comment says as much: "The zone calls are pretty much only used for small strings and structures, all big things are allocated on the hunk" (`zone.c:59-60`).
 - **Hunk** (`Hunk_AllocName`, `WinQuake/zone.c:399-427`) is a two-ended bump/stack allocator over one huge arena (`hunk_base`/`hunk_size`) — permanent, load-time data (server/client game state, the current level's BSP) grows up from `hunk_low_used`, and short-lived per-frame/per-scope temp allocations grow down from the top via `hunk_high_used` (`Hunk_HighMark`/`Hunk_FreeToHighMark`, `zone.c:452-474`). There is no per-block free; you only ever roll the mark back to a previous low/high watermark, which is why it's essentially free (a pointer subtraction) and immune to fragmentation — the tradeoff is that anything on the hunk must be freed in strict LIFO order relative to what was allocated after it.
 - **Cache** (`Cache_Alloc`, `WinQuake/zone.c:871-903`) sits *inside* the hunk's free middle region (between the low and high marks) and is the one allocator in the trio that's allowed to evict its own contents on demand. This is the piece that makes a fixed-size hunk workable at all on a machine with a few dozen megabytes of RAM: it lets the engine hold onto expensive-to-regenerate resources (decompressed alias models, decoded sound effects) as long as there's room, and reclaim them transparently the moment the hunk needs to grow.
 

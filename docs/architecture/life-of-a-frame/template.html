@@ -1,4 +1,7 @@
+<!doctype html>
+<html lang="en">
 <meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
 <title>Quake: Life of a Frame</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -429,6 +432,56 @@ ul.reading li:first-child { border-top: 1px solid var(--rule-soft); }
 }
 .colophon a { color: var(--sim); }
 
+
+/* --------------------------------------------------------- learning aids */
+.scope-note { padding: 16px 20px; border-left: 3px solid var(--sim); background: var(--sim-bg); margin: 0 0 24px; max-width: 74ch; }
+.scope-note p { margin: 0; font-size: 15px; }
+.primer { margin: 30px 0; }
+.primer h2 { font: 700 25px/1.2 var(--f-display); margin: 24px 0 16px; }
+.primer .reading-route { font-size: 15.5px; }
+.primer .reading-route a { color: var(--cl); text-underline-offset: 3px; }
+.glossary { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 14px 28px; margin: 22px 0; }
+.glossary div { border-top: 1px solid var(--rule); padding-top: 10px; }
+.glossary dt { font: 600 14px var(--f-mono); }
+.glossary dd { margin: 5px 0 0; font-size: 15.5px; color: var(--ink-2); }
+.first-pass { padding: 16px 20px; margin: 18px 0 28px; border-left: 3px solid var(--cl); background: var(--cl-bg); font-size: 16px; font-style: normal; }
+.first-pass p:last-child { margin-bottom: 0; }
+.first-pass a { color: var(--cl); }
+.concept { margin: 28px 0 34px; padding: 22px 0; border-top: 1px solid var(--rule); border-bottom: 1px solid var(--rule); }
+.concept h3 { font-size: 21px; max-width: 40ch; margin: 0 0 20px; }
+.concept p { font-size: 15px; line-height: 1.55; }
+.concept figcaption { max-width: 78ch; padding-top: 16px; }
+.flow-cards, .branch-cards { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 24px; }
+main .flow-cards { list-style: none; padding: 0; margin: 0; max-width: none; }
+.flow-cards > li, .branch-cards > div { position: relative; margin: 0; padding: 16px; background: var(--surface); border: 1px solid var(--rule); }
+.flow-cards > li + li::before { content: '→'; position: absolute; left: -23px; top: 43%; color: var(--muted); font: 20px var(--f-mono); }
+.flow-cards > li > strong, .branch-cards > div > strong { display: block; font: 600 17px/1.3 var(--f-display); margin-bottom: 10px; }
+.flow-cards p, .branch-cards p { margin: 10px 0 0; }
+.flow-cards > .client, .branch-cards > .client { background: var(--cl-bg); border-color: var(--cl); }
+.flow-cards > .server, .branch-cards > .server { background: var(--sim-bg); border-color: var(--sim); }
+.step-label { display: block; font: 500 10px/1.5 var(--f-mono); letter-spacing: .08em; text-transform: uppercase; margin-bottom: 12px; }
+.branch-cards { grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 18px; }
+.branch-cards ol { font-size: 15px; margin: 0; }
+.diagram-source { padding: 14px 18px; background: var(--surface); border: 1px solid var(--rule); font-size: 15px; text-align: center; }
+.branch-stem { text-align: center; color: var(--muted); font: 22px var(--f-mono); padding: 4px; }
+.world-branches { display: grid; grid-template-columns: 1fr 2fr; gap: 18px; align-items: start; }
+.collision-branch { text-align: left; border-color: var(--sim); }
+.diagram-return { margin: 12px 0 0; color: var(--muted); }
+.explain-svg { display: block; width: 100%; min-width: 640px; height: auto; }
+.explain-svg text { fill: var(--ink-2); font: 14px var(--f-mono); }
+.explain-svg .svg-heading { font: 600 16px var(--f-display); fill: var(--ink); }
+.solid-shape { fill: var(--surface-2); stroke: var(--muted); }
+.client-shape { fill: var(--cl-bg); stroke: var(--cl); stroke-width: 2; }
+.client-dot { fill: var(--cl); }
+.expanded-shape { fill: var(--sim-bg); stroke: var(--sim); stroke-dasharray: 4 3; }
+.trace-line { stroke: var(--cl); stroke-width: 2; fill: none; }
+.divider-line { stroke: var(--rule); stroke-width: 2; fill: none; }
+.hull-boundary { stroke: var(--sim); stroke-width: 2; fill: none; }
+@media (max-width: 680px) {
+  .glossary, .flow-cards, .branch-cards, .world-branches { grid-template-columns: 1fr; }
+  .flow-cards > li + li::before { content: '↓'; left: calc(50% - 8px); top: -25px; }
+}
+
 /* ---------------------------------------------------------------- responsive */
 @media (max-width: 980px) {
   .layout { grid-template-columns: 1fr; gap: 0; padding: 0 20px 70px; }
@@ -472,29 +525,47 @@ html { scroll-behavior: smooth; }
     <button class="rail-toggle" id="rail-toggle" aria-expanded="false">☰ Contents</button>
     <div class="rail-inner">
       <div class="rail-head">Contents</div>
+      <p><a href="#start">Start here: the first pass</a></p>
       <input type="search" id="nav-search" placeholder="Filter sections…" aria-label="Filter table of contents">
       <div class="nav-empty" id="nav-empty">No heading matches.</div>
       {{NAV}}
     </div>
   </nav>
 
-  <main>
+  <main id="start">
+    <aside class="scope-note" aria-label="Which version this guide describes">
+      <p><strong>Start with original NetQuake.</strong> This guide follows the baseline at local commit <code>3ef8a7a</code>, before this branch’s frame-loop changes. Your current branch separates simulation and rendering; see the <a href="../../updates/2026-09-03-frame-rate-cap.md">frame-rate update</a> when you want to compare. <code>WinQuake/</code> contains both the software and GL versions; QuakeWorld is a separate implementation.</p>
+    </aside>
     <div class="lede">
       <p class="eyebrow">Reader's guide</p>
-      <p class="drop">Quake runs the entire game — input sampling, world simulation, the QuakeC virtual machine, collision, networking, visibility, rasterization and audio mixing — inside one function called once per frame. That function is <code>_Host_Frame</code> in <a class="ref" target="_blank" rel="noopener" href="https://github.com/id-Software/Quake/blob/master/WinQuake/host.c#L633">WinQuake/host.c:633</a>, and this document walks it end to end, then drills into each subsystem it touches.</p>
-      <p>The order of the stages is not incidental — it is the design. A listen server samples the local player's input <em>before</em> simulating the world so the player's own commands are never a frame stale; a pure client sends its intentions <em>after</em> reading the incoming packet so its movement answers the newest server state. The same executable is three different programs depending on two booleans, <code>sv.active</code> and <code>cls.state</code>:</p>
+      <p class="drop">Think of a Quake frame as one trip around a loop: collect what the player wants to do, advance the world, then show and play the result. The function that coordinates these stages is <code>_Host_Frame</code> in <a class="ref" target="_blank" rel="noopener" href="https://github.com/id-Software/Quake/blob/master/WinQuake/host.c#L633">WinQuake/host.c:633</a>. Start with the flow of data. You can learn the individual algorithms once you know who calls them and what they return.</p>
+      <p>The most useful distinction is <strong>server world versus client view</strong>. The server owns gameplay; the client turns input into requests and server results into pictures and sound. Both can run inside the same process. Two state variables, the boolean <code>sv.active</code> and the enum <code>cls.state</code>, determine which parts run:</p>
       <dl class="modes">
-        <div class="m-listen"><dt>Listen server</dt><dd>Single player or a hosted game. Server and client both run in this process and talk only through the loopback network driver — never through shared memory.</dd></div>
-        <div class="m-ded"><dt>Dedicated server</dt><dd><code>cls.state == ca_dedicated</code>. Both <code>CL_SendCmd</code> calls no-op, <code>CL_ReadFromServer</code> is skipped, and no framebuffer or sound device is ever opened.</dd></div>
-        <div class="m-rem"><dt>Remote client</dt><dd><code>sv.active == false</code>. The whole server stage is skipped; the frame is input, network, interpolation, render, sound.</dd></div>
+        <div class="m-listen"><dt>Listen server</dt><dd>Single player or a hosted game. Server and client both run here. Gameplay commands and entity updates use the loopback network driver, even for one player.</dd></div>
+        <div class="m-ded"><dt>Dedicated server</dt><dd><code>cls.state == ca_dedicated</code>. The client send path does no work, <code>CL_ReadFromServer</code> is skipped, and no framebuffer or sound device is ever opened.</dd></div>
+        <div class="m-rem"><dt>Remote client</dt><dd><code>sv.active == false</code> with a connected client. The whole server stage is skipped; the frame is input, network, interpolation, render, sound.</dd></div>
       </dl>
-      <p style="margin-top:1.2em">Read it in order for the tour: section 01 establishes the frame skeleton every other section hangs off, 02–04 are the server half (physics and the progs VM, collision hulls and traces, BSP and PVS), 05–07 the client half (both renderers, input and networking, sound and the engine's plumbing). Or click any stage in the diagram below to jump straight to the code that runs there.</p>
-      <p class="note">Every <code>WinQuake/file.c:NNN</code> reference is a link into the upstream <a target="_blank" rel="noopener" href="https://github.com/id-Software/Quake">id-Software/Quake</a> tree on GitHub. Line numbers were verified with <code>grep -n</code> against this worktree at commit <code>3ef8a7a</code> (which has the DOS build restored); upstream is the canonical link target, so a reference may land a line or two off in files the worktree touched.</p>
+      <p class="note">The linked file-and-line references describe the baseline, not today’s checkout. Links open upstream source, whose line numbers can differ; use the named function to orient yourself. Code excerpts and call graphs are reference material: you do not need to understand each line on a first read.</p>
     </div>
+
+    <section class="primer" aria-labelledby="primer-title">
+      <h2 id="primer-title">A first pass through the engine</h2>
+      <p>Imagine a running single-player level and press forward. Follow the three records below. The crucial handoff is from a requested movement to a server-owned result, then to a client-side representation of that result.</p>
+      {{OWNERSHIP}}
+      <p><strong>Before this loop can work:</strong> startup and level loading have already loaded the map, models, sounds and the game’s <code>progs.dat</code>. Signon is the connection setup that gives the client the asset list and initial state. Ordinary frames reuse that prepared world; they do not reload the map or recreate every entity. The per-frame tour starts after this setup.</p>
+      <dl class="glossary">
+        <div><dt>Host / frame / tick</dt><dd>The host coordinates the process. A frame is a pass through its work; a server tick advances the simulation. In the ordinary original listen loop, one accepted host frame runs one server tick when unpaused.</dd></div>
+        <div><dt>Edict / entity</dt><dd>An edict is a server object, including players, monsters, doors and invisible triggers. A client render entity is the record used to draw a visible object.</dd></div>
+        <div><dt>QuakeC / VM</dt><dd>The game’s behavior is compiled to bytecode in <code>progs.dat</code>. The C engine executes that code through a virtual machine (VM) and supplies services such as traces and sound events.</dd></div>
+        <div><dt>BSP / PVS</dt><dd>A binary space partition (BSP) repeatedly divides space into regions. A potentially visible set (PVS) lists which regions might be seen from another region.</dd></div>
+      </dl>
+      <p class="reading-route"><strong>Suggested route:</strong> read each section’s blue “First pass” box and diagram, then follow its next link: <a href="#sec-1">frame</a> → <a href="#sec-6">input and client</a> → <a href="#sec-2">server and QuakeC</a> → <a href="#sec-3">collision</a> → <a href="#sec-4">BSP / PVS</a> → <a href="#sec-5">rendering</a> → <a href="#sec-7">sound</a>. Save platform-loop variants, opcode listings and allocator internals for a second pass.</p>
+      <p><strong>Check your understanding:</strong> when you push against a wall, which half decides where you stop? The server. The client receives that result and draws it. The collision trace is called inside simulation; BSP visibility is also used later by rendering. The chapter order is a reading order, not seven consecutive engine stages.</p>
+    </section>
 
     <figure class="pipeline">
       <div class="pipe-head">
-        <h2>One frame, two halves, one wire between them</h2>
+        <h2>The frame map: follow the calls downward</h2>
         <div class="modeswitch" role="group" aria-label="Process mode">
           <button type="button" data-mode="listen" aria-pressed="true">Listen</button>
           <button type="button" data-mode="dedicated" aria-pressed="false">Dedicated</button>
@@ -508,8 +579,8 @@ html { scroll-behavior: smooth; }
         <span class="lg-both"><i></i>runs in both halves</span>
       </div>
       <div class="svg-scroll">
-      <svg class="pipe" id="pipe" viewBox="0 0 900 792" role="img" data-mode="listen"
-           aria-label="Vertical flow of one _Host_Frame: the host stages run down the centre, the client half on the left and the server half on the right, connected only by clc_move and svc_ entity update messages crossing the loopback or UDP wire.">
+      <svg class="pipe" id="pipe" viewBox="0 0 900 792" role="group" data-mode="listen"
+           aria-label="Vertical flow of one _Host_Frame: the host stages run down the centre, the client half on the left and the server half on the right, with gameplay commands and entity updates crossing the loopback or network boundary. Shared host services are not shown.">
         <defs>
           <marker id="ah" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse">
             <path d="M0,0 L10,5 L0,10 z" fill="context-stroke"></path>
@@ -521,16 +592,16 @@ html { scroll-behavior: smooth; }
 
         <!-- lane headers -->
         <text class="lane-label" x="30" y="20" fill="var(--cl)">Client half</text>
-        <text class="lane-label" x="480" y="20" fill="var(--sim)">Server half</text>
+        <text class="lane-label" x="480" y="20" fill="var(--sim)">Server / nested work</text>
         <line x1="455" y1="30" x2="455" y2="770" stroke="var(--rule)" stroke-dasharray="2 5"></line>
 
         <!-- 1. Host_FilterTime (host, full width) -->
         <g class="stage k-host" data-modes="listen dedicated remote" data-sec="sec-1" data-h="Host_FilterTime" tabindex="0" role="button">
           <rect x="30" y="34" width="840" height="42" rx="2"></rect>
           <text class="s-name" x="46" y="52">Host_FilterTime</text>
-          <text class="s-sub" x="46" y="67">host.c:501 — accumulate wall clock, cap at 72 Hz, clamp host_frametime to [0.001, 0.1]</text>
+          <text class="s-sub" x="46" y="67">baseline host.c:501 — rate gate; variable timestep, normally clamped to [0.001, 0.1]</text>
         </g>
-        <path class="flow" d="M450,76 L450,96" marker-end="url(#ah)"></path>
+        <path class="flow" d="M450,76 L450,86 L225,86 L225,96" marker-end="url(#ah)"></path>
 
         <!-- 2. input -->
         <g class="stage k-cl" data-modes="listen dedicated remote" data-sec="sec-6" data-h="Sys_SendKeyEvents" tabindex="0" role="button">
@@ -553,7 +624,7 @@ html { scroll-behavior: smooth; }
           <rect x="30" y="246" width="390" height="60" rx="2"></rect>
           <text class="s-name" x="46" y="265">CL_SendCmd</text>
           <text class="s-sub" x="46" y="281">cl_main.c:670 — CL_BaseMove, IN_Move, CL_SendMove</text>
-          <text class="s-sub" x="46" y="296">listen: runs before the server stage; client: after</text>
+          <text class="s-sub" x="46" y="296">send before local simulation and before reading updates</text>
         </g>
 
         <!-- clc_move crossing -->
@@ -570,13 +641,13 @@ html { scroll-behavior: smooth; }
         <g class="stage k-sim" data-modes="listen dedicated" data-sec="sec-2" data-h="SV_RunClients" tabindex="0" role="button">
           <rect x="480" y="330" width="390" height="42" rx="2"></rect>
           <text class="s-name" x="496" y="348">SV_RunClients</text>
-          <text class="s-sub" x="496" y="363">sv_user.c — packet fields to velocity; PlayerPreThink</text>
+          <text class="s-sub" x="496" y="363">sv_user.c — read commands; compute movement velocity</text>
         </g>
         <g class="stage k-sim" data-modes="listen dedicated" data-sec="sec-2" data-h="SV_Physics" tabindex="0" role="button">
           <rect x="480" y="380" width="390" height="58" rx="2"></rect>
           <text class="s-name" x="496" y="398">SV_Physics</text>
-          <text class="s-sub" x="496" y="414">sv_phys.c:539 — per edict: think, integrate, SV_FlyMove</text>
-          <text class="s-sub" x="496" y="429">calls into the QuakeC VM and into SV_Move traces</text>
+          <text class="s-sub" x="496" y="414">sv_phys.c:1507 — dispatch entity movement and callbacks</text>
+          <text class="s-sub" x="496" y="429">PlayerPreThink / PostThink; QuakeC and collision calls</text>
         </g>
         <g class="stage k-sim" data-modes="listen dedicated" data-sec="sec-3" data-h="SV_Move" tabindex="0" role="button">
           <rect x="504" y="446" width="180" height="30" rx="2"></rect>
@@ -593,8 +664,8 @@ html { scroll-behavior: smooth; }
 
         <!-- svc_ crossing -->
         <g class="msgroup" data-modes="listen remote">
-          <path class="msg up" d="M620,518 L620,548 L420,548" marker-end="url(#ah)"></path>
-          <text class="msg-label up" x="432" y="541">svc_ updates — PVS-visible entities, delta'd vs baseline</text>
+          <path class="msg up" d="M620,518 L620,548 L225,548 L225,562" marker-end="url(#ah)"></path>
+          <text class="msg-label up" x="432" y="541">entity updates — candidates in PVS; baseline-relative fields</text>
         </g>
 
         <!-- 6. CL_ReadFromServer -->
@@ -602,7 +673,7 @@ html { scroll-behavior: smooth; }
           <rect x="30" y="562" width="390" height="60" rx="2"></rect>
           <text class="s-name" x="46" y="581">CL_ReadFromServer</text>
           <text class="s-sub" x="46" y="597">cl_main.c:634 — ParseServerMessage, then RelinkEntities</text>
-          <text class="s-sub" x="46" y="612">lerps entities between cl.mtime[1] and cl.mtime[0]</text>
+          <text class="s-sub" x="46" y="612">remote: interpolate; original local server: newest state</text>
         </g>
         <path class="flow" d="M225,622 L225,646" marker-end="url(#ah)"></path>
 
@@ -615,9 +686,11 @@ html { scroll-behavior: smooth; }
         </g>
         <g class="stage k-cl" data-modes="listen remote" data-sec="sec-4" data-h="R_MarkLeaves" tabindex="0" role="button">
           <rect x="480" y="646" width="390" height="30" rx="2"></rect>
-          <text class="s-name" x="496" y="665" style="font-size:11.5px">R_MarkLeaves — walk the PVS, set visframe</text>
+          <text class="s-name" x="496" y="665" style="font-size:11.5px">Client render helper: R_MarkLeaves (PVS)</text>
         </g>
         <path class="flow" d="M225,706 L225,724" marker-end="url(#ah)"></path>
+
+        <path class="flow" d="M420,661 L480,661" marker-end="url(#ah)"></path>
 
         <!-- 8. S_Update -->
         <g class="stage k-cl" data-modes="listen remote" data-sec="sec-7" data-h="S_Update" tabindex="0" role="button">
@@ -627,11 +700,11 @@ html { scroll-behavior: smooth; }
         </g>
 
         <!-- loop -->
-        <path class="flow" d="M420,746 L444,746 L444,86 L436,86" marker-end="url(#ah)" stroke-dasharray="4 4"></path>
-        <text class="tick" x="452" y="700" transform="rotate(-90 452 700)">host_framecount++ · next frame</text>
+        <path class="flow" d="M30,746 L12,746 L12,55 L30,55" marker-end="url(#ah)" stroke-dasharray="4 4"></path>
+        <text class="tick" x="480" y="746">host_framecount++ · next frame</text>
       </svg>
       </div>
-      <figcaption>Time runs downward through one call to <code>_Host_Frame</code>. The two halves never share state: everything crossing the dashed centre line is a network message, even in single player, where the loopback driver in <code>net_loop.c</code> just <code>memcpy</code>s it. That is why <b>a listen server is a client and a server that happen to share an address space</b> — and why the mode switch above can simply delete one half. Click any stage to jump to the section that covers it.</figcaption>
+      <figcaption>Read downward for the order in the <b>original listen-server frame</b>; indented helpers run inside their parent stage. Commands reach the local server before it simulates. A remote client skips that server stage, sends its command, then reads available updates — despite a misleading comment in the original <code>host.c</code>. The mode buttons highlight work in this process; the remote server has its own loop. This map omits connection housekeeping and some host calls. The state boundary is useful, but not absolute: local play shares assets and host services, and <code>CL_LerpPoint</code> checks <code>sv.active</code>. Click a stage for details.</figcaption>
     </figure>
 
     {{BODY}}
@@ -694,7 +767,8 @@ html { scroll-behavior: smooth; }
   }
 
   var codeFigs = [].slice.call(document.querySelectorAll("figure.code"));
-  var globalFoldDefault = loadPref(FOLD_ALL_KEY, false);
+  var globalFoldDefault = loadPref(FOLD_ALL_KEY, true);
+  [].slice.call(document.querySelectorAll("details.code")).forEach(function (detail) { detail.open = !globalFoldDefault; });
 
   function setCollapsed(fig, bar, collapsed) {
     fig.classList.toggle("collapsed", collapsed);
@@ -721,6 +795,7 @@ html { scroll-behavior: smooth; }
       toggle();
     });
     bar.addEventListener("keydown", function (e) {
+      if (e.target !== bar) return;
       if (e.key === "Enter" || e.key === " ") { e.preventDefault(); toggle(); }
     });
   });
@@ -738,6 +813,7 @@ html { scroll-behavior: smooth; }
         var id = fig.dataset.foldId;
         if (id) savePref("lof-fold-" + id, next);
       });
+      [].slice.call(document.querySelectorAll("details.code")).forEach(function (detail) { detail.open = !next; });
       savePref(FOLD_ALL_KEY, next);
       foldAllBtn.setAttribute("aria-pressed", String(next));
       foldAllBtn.textContent = next ? "Expand all code" : "Collapse all code";
@@ -859,7 +935,7 @@ html { scroll-behavior: smooth; }
     }
     var navSec = document.querySelector('.nav-sec[data-sec="' + stage.dataset.sec + '"]');
     if (navSec) { navSecs.forEach(function (s) { s.open = (s === navSec); }); }
-    target.scrollIntoView({ behavior: "smooth", block: "start" });
+    target.scrollIntoView({ behavior: window.matchMedia("(prefers-reduced-motion: reduce)").matches ? "auto" : "smooth", block: "start" });
     target.classList.remove("target-flash");
     void target.offsetWidth;
     target.classList.add("target-flash");
@@ -876,3 +952,5 @@ html { scroll-behavior: smooth; }
   applyMode("listen");
 })();
 </script>
+
+</html>

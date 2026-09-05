@@ -1,6 +1,10 @@
 # Rendering: from screen update to pixels (software and GL paths)
 
-Quake ships two complete renderers behind one interface: a CPU-only, palette-based software rasterizer tuned to 1996 x86 hardware, and an OpenGL renderer that offloads rasterization and texture blending to the GPU. Both share the same BSP world, the same client-side entity list, and the same view-setup code in `view.c`; they diverge at `R_RenderView`, and each takes a fundamentally different route to the same goal — visible-surface determination and shading without wasting cycles on pixels the player will never see.
+Rendering starts with the client’s view of the world and a camera. Quake’s software and GL builds turn those inputs into pixels using different algorithms behind the same function names.
+
+> **First pass.** Choose one path for your first read: **software** if you want to understand how a CPU paints the world, **GL** if you want to follow polygon submission to graphics hardware. In both, view setup precedes rendering and HUD drawing follows it. World surfaces and animated model entities take different drawing paths. Source: `WinQuake/screen.c:893-932`, `WinQuake/gl_screen.c:874-921`, `WinQuake/r_main.c:876-1030`. [Next: sound and plumbing →](#sec-7)
+
+::: diagram rendering
 
 ## Where it sits in the frame
 
@@ -386,7 +390,7 @@ void R_AliasDrawModel (alight_t *plighting)
 		R_AliasPreparePoints ();
 }
 ```
-This is Quake's own miniature software triangle rasterizer, entirely separate from the BSP edge-list machinery: it transforms model-space vertices, interpolates lighting per vertex (Gouraud), and rasterizes independent, self-contained affine/perspective triangles (with an optimized path, `trivial_accept == 3`, when the whole model is known to be fully on-screen and needs no clipping). `R_DrawEntitiesOnList` (`WinQuake/r_main.c:527-596`) is also where sprites are dispatched via `R_DrawSprite` for `mod_sprite` entities, and where dynamic-light contribution is folded into an entity's `alight_t` before the alias draw call. Particles are handled separately again — `R_DrawParticles` (`WinQuake/r_part.c:653`) is one function shared textually between both renderers via `#ifdef GLQUAKE` (software draws particles as software-projected quads via `D_StartParticles`/`D_DrawParticle`, GL draws camera-facing triangle pairs with `glBegin(GL_TRIANGLES)`), reflecting that particles never interact with the BSP edge list or lightmaps at all — they are pure billboard geometry layered on top of the already-resolved scene.
+This is Quake's own miniature software triangle rasterizer, entirely separate from the BSP edge-list machinery: it transforms model-space vertices, interpolates lighting per vertex (Gouraud), and rasterizes independent, self-contained affine/perspective triangles (with an optimized path, `trivial_accept == 3`, when the whole model is known to be fully on-screen and needs no clipping). `R_DrawEntitiesOnList` (`WinQuake/r_main.c:527-596`) is also where sprites are dispatched via `R_DrawSprite` for `mod_sprite` entities, and where dynamic-light contribution is folded into an entity's `alight_t` before the alias draw call. Particles are handled separately again — `R_DrawParticles` (`WinQuake/r_part.c:653`) is one function shared textually between both renderers via `#ifdef GLQUAKE` (software draws particles as software-projected quads via `D_StartParticles`/`D_DrawParticle`, GL draws camera-facing triangles with `glBegin(GL_TRIANGLES)`), reflecting that particles never interact with the BSP edge list or lightmaps at all — they are pure billboard geometry layered on top of the already-resolved scene.
 
 ## GL renderer: texture chains, lightmaps, and hardware rasterization
 
@@ -435,7 +439,7 @@ qboolean R_CullBox (vec3_t mins, vec3_t maxs)
 	return false;
 }
 ```
-Its simplicity versus the software renderer's inlined corner-selection code is a good example of the GL renderer trading "one more indirect function call" against the "every cycle counts" discipline the software path was written under — a call the id programmers could make once the GPU was doing the actual per-pixel work.
+Its simplicity versus the software renderer's inlined corner-selection code is a good example of the GL renderer trading an additional helper call against the "every cycle counts" discipline the software path was written under — a call the id programmers could make once the GPU was doing the actual per-pixel work.
 
 Once the BSP walk finishes, `DrawTextureChains` (`WinQuake/gl_rsurf.c:1029`) flushes the per-texture chains built above, in ordinary (non-multitexture) or lightmap-blended passes, and `R_DrawWorld` (`WinQuake/gl_rsurf.c:1316`) ties it together:
 ```c
@@ -529,7 +533,7 @@ When neither extension is present (`gl_mtexable == false`), the fallback path in
 
 ### Sky and water warp (`gl_warp.c`)
 
-Underwater surfaces and sky are both procedurally distorted in texture space rather than geometrically re-tessellated. `EmitWaterPolys` (`WinQuake/gl_warp.c:194`) perturbs each pre-fragmented `glpoly_t`'s texture coordinates with a sine lookup table (`turbsin[]`, generated into `gl_warp_sin.h`) as a function of both the *other* texture axis and time — the same "os"/"ot" warp formula the software `D_WarpScreen` (`WinQuake/d_scan.c:44`) applies as a screen-space post-process instead:
+Underwater surfaces and sky are both procedurally distorted in texture space rather than geometrically re-tessellated. `EmitWaterPolys` (`WinQuake/gl_warp.c:194`) perturbs each pre-fragmented `glpoly_t`'s texture coordinates with a sine lookup table (`turbsin[]`, generated into `gl_warp_sin.h`) as a function of both the *other* texture axis and time — a texture-space water effect. The software renderer also warps water texture coordinates in `Turbulent8` (`WinQuake/d_scan.c:122-246`); its separate `D_WarpScreen` (`WinQuake/d_scan.c:44`) distorts the final image when the camera is underwater:
 ```c
 // WinQuake/gl_warp.c:194-219
 void EmitWaterPolys (msurface_t *fa)
@@ -560,7 +564,7 @@ void EmitWaterPolys (msurface_t *fa)
 	}
 }
 ```
-Sky is drawn in two additive layers (a slow-scrolling opaque cloud layer and a faster alpha-blended layer) bound to `solidskytexture`/`alphaskytexture`, via `R_DrawSkyChain` (`WinQuake/gl_warp.c:304`, the `#ifndef QUAKE2` variant used by this codebase):
+Sky is drawn in two layers (a slow-scrolling opaque cloud layer and a faster alpha-blended layer) bound to `solidskytexture`/`alphaskytexture`, via `R_DrawSkyChain` (`WinQuake/gl_warp.c:304`, the `#ifndef QUAKE2` variant used by this codebase):
 ```c
 // WinQuake/gl_warp.c:304-326
 void R_DrawSkyChain (msurface_t *s)

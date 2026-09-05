@@ -1,0 +1,32 @@
+<figure class="concept" aria-labelledby="collision-title">
+  <h3 id="collision-title">A moving box becomes a moving point</h3>
+  <div class="svg-scroll">
+    <svg class="explain-svg" viewBox="0 0 800 300" role="img" aria-labelledby="hull-title hull-desc">
+      <title id="hull-title">Collision hull expansion, top-down view</title>
+      <desc id="hull-desc">Left: a box moving right stops when its right edge reaches a wall. Right: expand the wall left by the box half-width, then trace only the box center. Both tests stop at the same center position. The trace tests the entire path.</desc>
+      <defs><marker id="hull-arrow" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto"><path d="M0 0L10 5L0 10Z" fill="var(--cl)"/></marker></defs>
+      <text x="24" y="28" class="svg-heading">A · Box against the real wall</text>
+      <rect x="290" y="55" width="86" height="160" class="solid-shape"/>
+      <text x="310" y="244">wall</text>
+      <rect x="65" y="110" width="50" height="50" class="client-shape"/>
+      <circle cx="90" cy="135" r="4" class="client-dot"/>
+      <rect x="240" y="110" width="50" height="50" class="client-shape"/>
+      <circle cx="265" cy="135" r="4" class="client-dot"/>
+      <path d="M118 135H254" class="trace-line" marker-end="url(#hull-arrow)"/>
+      <text x="60" y="190">start</text><text x="228" y="190">contact</text>
+      <text x="24" y="278">Stop when the box touches the wall.</text>
+      <path d="M400 45V280" class="divider-line"/>
+      <text x="424" y="28" class="svg-heading">B · Point against an expanded hull</text>
+      <rect x="690" y="55" width="86" height="160" class="solid-shape"/>
+      <rect x="665" y="55" width="25" height="160" class="expanded-shape"/>
+      <path d="M665 55V220" class="hull-boundary"/>
+      <circle cx="490" cy="135" r="5" class="client-dot"/>
+      <path d="M498 135H655" class="trace-line" marker-end="url(#hull-arrow)"/>
+      <circle cx="665" cy="135" r="5" class="client-dot"/>
+      <text x="459" y="190">start</text><text x="600" y="190">same stop</text>
+      <text x="584" y="244">expanded by half-width</text>
+      <text x="424" y="278">Trace the center through the hull.</text>
+    </svg>
+  </div>
+  <figcaption><b>A trace checks the path, not just the destination.</b> It returns the fraction traveled, end position, hit entity and collision plane. The picture simplifies to one wall and a symmetric box; the real 3D code selects prebuilt BSP hulls and applies an origin offset, or constructs an expanded box hull for an entity. A small epsilon keeps the actual stop just short of the boundary. Source: WinQuake/world.c:130-196, WinQuake/world.c:573-710.</figcaption>
+</figure>

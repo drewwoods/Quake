@@ -1,6 +1,10 @@
 # The Server Stage: Physics, the QuakeC VM, and Entity Transmission
 
-`Host_ServerFrame` is where the world exists. In roughly 1600 lines of `sv_phys.c`, 700 lines of `sv_user.c`, and a 250-line bytecode interpreter in `pr_exec.c`, Quake simulates every entity, executes game logic in QuakeC, turns byte-packed client commands into player movement, and builds a visibility-culled entity update for each client. This section follows one server tick from `pr_global_struct->frametime = host_frametime` to the last `NET_SendMessage`.
+The server is where gameplay becomes real. It reads movement requests, runs C physics and QuakeC behavior on its entities, then sends each client the state it needs to see.
+
+> **First pass.** Keep three jobs separate: read commands, simulate the world, send results. An **edict** is one server object; C and QuakeC both operate on its fields. Visibility filters the outgoing updates, not the main simulation loop. Source: `WinQuake/host.c:600-621`, `WinQuake/sv_phys.c:1507-1563`, `WinQuake/sv_main.c:427-470`. [Next: collision →](#sec-3)
+
+::: diagram quakec
 
 ## Where it sits in the frame
 
@@ -98,13 +102,13 @@ qboolean SV_RunThink (edict_t *ent)
 }
 ```
 
-There is no priority queue, no timer wheel: every entity is polled every frame and the `nextthink <= sv.time + host_frametime` test is the whole scheduling policy. On a 200-edict level at 20 Hz that is 4,000 float comparisons per second — genuinely cheaper than maintaining a heap, and utterly predictable. Two details matter downstream. The QuakeC-visible `time` global is set to the *scheduled* think time, not the actual `sv.time`, so a think that reschedules itself with `self.nextthink = time + 0.1` accumulates no drift. And the return value is `!ent->free` — a think function that calls `remove(self)` makes every caller bail out immediately, which is why `SV_Physics_Client` and `SV_Physics_Toss` are littered with `if (!SV_RunThink (ent)) return;`.
+There is no priority queue, no timer wheel: every entity is polled every frame and the `nextthink <= sv.time + host_frametime` test is the whole scheduling policy. On a 200-edict level at 20 Hz that is 4,000 float comparisons per second — genuinely cheaper than maintaining a heap, and utterly predictable. Two details matter downstream. The QuakeC-visible `time` global is set to the *scheduled* think time, not the actual `sv.time`, so a think rescheduled with `self.nextthink = time + 0.1` can preserve its schedule when it is serviced on time. Overdue thinks are clamped forward to `sv.time`; this is not an unlimited catch-up scheduler. And the return value is `!ent->free` — a think function that calls `remove(self)` makes every caller bail out immediately, which is why `SV_Physics_Client` and `SV_Physics_Toss` are littered with `if (!SV_RunThink (ent)) return;`.
 
 The function header's own comment (`WinQuake/sv_phys.c:120-122`) admits the imprecision: "There is some play in the exact time the think function will be called, because it is called before any movement is done in a frame. Not used for pushmove objects, because they must be exact." Pushers get the exact treatment in `SV_Physics_Pusher` (below), because a door that overshoots its think time by a frame ends up geometrically in the wrong place, whereas a rocket that thinks 8 ms late just moves 8 ms further.
 
 ## `SV_FlyMove`: the sliding-collision core
 
-Every non-trivial mover funnels into `SV_FlyMove` (`WinQuake/sv_phys.c:229-362`) — players, monsters in freefall, projectiles. It is an iterative trace-and-slide, capped at four bounces:
+`SV_FlyMove` (`WinQuake/sv_phys.c:229-362`) handles sliding movement for players and falling step entities. Tossed and flying projectiles instead use `SV_Physics_Toss` → `SV_PushEntity` → `SV_Move` (`WinQuake/sv_phys.c:1245-1340`). It is an iterative trace-and-slide, capped at four bounces:
 
 `WinQuake/sv_phys.c:252-296`:
 
@@ -173,7 +177,7 @@ The plane-accumulation logic (`WinQuake/sv_phys.c:308-348`) is the part that mak
 
 That is `WinQuake/sv_phys.c:333-348`. The final guard (`WinQuake/sv_phys.c:354-358`) kills velocity entirely if the clipped result opposes the original direction, "to avoid tiny occilations in sloping corners" — a heuristic that trades a little correctness for the absence of visible jitter, and one that every subsequent id engine inherited unchanged.
 
-The `numbumps = 4` cap is a hard budget, not a convergence criterion. In a complex corner the entity simply stops short with residual velocity; no iteration to a fixed point, no continuous collision detection. On a 1996 CPU, four `SV_Move` calls per entity per frame was already the dominant server cost.
+The `numbumps = 4` cap bounds the number of trace-and-slide attempts. Each `SV_Move` sweeps its segment, so this is continuous path testing against the current collision scene, but not a general solver for all moving bodies over time. Difficult corners can exhaust the budget before the desired movement is complete (`WinQuake/sv_phys.c:252-362`).
 
 ## Gravity, velocity bounds, and NaN defense
 
@@ -210,7 +214,7 @@ Water is handled as a content type sampled at up to three points on the entity's
 		point[2] = ent->v.origin[2] + (ent->v.mins[2] + ent->v.maxs[2])*0.5;
 ```
 
-`waterlevel >= 2` (waist-deep) switches the player from `SV_AirMove` to `SV_WaterMove`; `waterlevel == 3` is the condition QuakeC uses for drowning. `SV_CheckWaterTransition` (`WinQuake/sv_phys.c:1198`) compares the new content against the old to emit splash sounds and apply slime/lava damage — the engine detects the transition, QuakeC decides what it means.
+`waterlevel >= 2` (waist-deep) switches the player from `SV_AirMove` to `SV_WaterMove`; `waterlevel == 3` is the condition QuakeC uses for drowning. `SV_CheckWaterTransition` (`WinQuake/sv_phys.c:1198`) compares the new content against the old to update water state and emit splash sounds. It does not apply slime/lava damage; damage rules belong to game logic.
 
 `MOVETYPE_WALK` skips gravity entirely when in water (`WinQuake/sv_phys.c:1089-1090`): `if (!SV_CheckWater (ent) && ! ((int)ent->v.flags & FL_WATERJUMP)) SV_AddGravity (ent);`. Buoyancy is not modeled; water simply turns gravity off and substitutes a different acceleration/friction model.
 
@@ -287,7 +291,7 @@ and, at the end (`WinQuake/sv_phys.c:1126-1130`), `SV_LinkEdict (ent, true)` fol
 
 Crucially, the *velocity* the move uses was already computed, earlier in the frame, by `SV_ClientThink` inside `SV_RunClients`. The split is: `SV_RunClients` turns network input into velocity; `SV_Physics_Client` turns velocity into position.
 
-`SV_WalkMove` (`WinQuake/sv_phys.c:958-1049`) is stair-stepping, and it is delightfully brute-force. It runs the normal `SV_FlyMove`, and if the result was blocked by a wall (`clip & 2`), it *rewinds to the original position*, teleports the player up by `STEPSIZE` (18 units, `WinQuake/sv_phys.c:957`), re-runs the whole slide move, then pushes back down:
+`SV_WalkMove` (`WinQuake/sv_phys.c:958-1049`) is stair-stepping, and it is delightfully brute-force. It runs the normal `SV_FlyMove`, and if the result was blocked by a wall (`clip & 2`), it *rewinds to the original position*, tries a swept upward move of `STEPSIZE` (18 units, `WinQuake/sv_phys.c:957`), re-runs the whole slide move, then pushes back down:
 
 ```c
 	VectorCopy (oldorg, ent->v.origin);	// back to start pos
@@ -305,7 +309,7 @@ Crucially, the *velocity* the move uses was already computed, earlier in the fra
 	clip = SV_FlyMove (ent, host_frametime, &steptrace);
 ```
 
-(`WinQuake/sv_phys.c:999-1013`.) Three full slide moves per player per frame in the worst case, and the *whole thing* is discarded if the downward trace doesn't land on floor (`WinQuake/sv_phys.c:1041-1048`), reverting to the saved no-step result. The comment there is a good example of the empirical, bug-driven character of this code: "if the push down didn't end up on good ground, use the move without the step up. This happens near wall / slope combinations, and can cause the player to hop up higher on a slope too steep to climb."
+(`WinQuake/sv_phys.c:999-1013`.) There are two main slide attempts, with further attempts possible inside `SV_TryUnstick`; the stepped result is discarded if the downward trace doesn't land on floor (`WinQuake/sv_phys.c:1041-1048`), reverting to the saved no-step result. The comment there is a good example of the empirical, bug-driven character of this code: "if the push down didn't end up on good ground, use the move without the step up. This happens near wall / slope combinations, and can cause the player to hop up higher on a slope too steep to climb."
 
 There is even a sub-heuristic for float precision: if stepping up moved the player less than 1/32 of a unit, `SV_TryUnstick` (`WinQuake/sv_phys.c:901`) nudges the player in eight compass directions looking for one that frees them (`WinQuake/sv_phys.c:1017-1024`). The header comment on `SV_TryUnstick` names the cause outright — "float precision at some angle joins in the BSP hull" (`WinQuake/sv_phys.c:894`).
 
@@ -366,7 +370,7 @@ while (1)
 		break;
 ```
 
-Every operand is a 16-bit index into one flat `pr_globals` array — there are no registers and no stack machine. The compiler allocates temporaries as globals, which makes the interpreter trivially fast (three array indexes and a switch per instruction) at the cost of making QuakeC non-reentrant in an interesting way: recursion works only because `PR_EnterFunction` (`WinQuake/pr_exec.c:294-326`) *copies the callee's local slots onto a shadow stack* before overwriting them:
+Many operands address words in the flat `pr_globals` array; branch opcodes instead interpret their signed 16-bit operands as relative statement offsets — there are no registers and no stack machine. The compiler allocates temporaries as globals, which makes the interpreter trivially fast (three array indexes and a switch per instruction) at the cost of making QuakeC non-reentrant in an interesting way: recursion works only because `PR_EnterFunction` (`WinQuake/pr_exec.c:294-326`) *copies the callee's local slots onto a shadow stack* before overwriting them:
 
 ```c
 // save off any locals that the new function steps on
@@ -392,7 +396,7 @@ Every operand is a 16-bit index into one flat `pr_globals` array — there are n
 
 `PR_LeaveFunction` (`WinQuake/pr_exec.c:333-353`) copies them back. Locals are statically allocated globals with save/restore around calls — a callee-saves convention implemented in software.
 
-The `runaway = 100000` counter (`WinQuake/pr_exec.c:382`, decremented at `:399`) is the sandbox: a buggy mod cannot hang the server, it gets a `PR_RunError` with a QuakeC stack trace (`PR_StackTrace`, `WinQuake/pr_exec.c:190`) that `longjmp`s out through `Host_Error` to the top of `_Host_Frame`. `pr_xfunction->profile++` on every instruction is a free per-function instruction counter, dumped by the `profile` console command (`PR_Profile_f`, `WinQuake/pr_exec.c:222`) — the mod author's optimization tool, built into the shipping engine.
+The `runaway = 100000` counter (`WinQuake/pr_exec.c:382`, decremented at `:399`) bounds bytecode instruction execution for one invocation. Exhausting it raises `PR_RunError` with a QuakeC stack trace (`PR_StackTrace`, `WinQuake/pr_exec.c:190`). This is a runaway-loop guard, not a general safety sandbox or a time limit on C builtins. `Host_Error` abandons an interactive game; on a dedicated server it exits the process. `pr_xfunction->profile++` on every instruction is a free per-function instruction counter, dumped by the `profile` console command (`PR_Profile_f`, `WinQuake/pr_exec.c:222`) — the mod author's optimization tool, built into the shipping engine.
 
 Two opcodes are not general computation at all. `OP_CALL0`–`OP_CALL8` (`WinQuake/pr_exec.c:620-636`) reuse a negative `first_statement` as a builtin index:
 
@@ -413,7 +417,7 @@ And `OP_STATE` (`WinQuake/pr_exec.c:649-661`) hard-codes the animation frame con
 
 ### Builtins
 
-The engine↔progs boundary is a flat function-pointer table, `pr_builtin[]` (`WinQuake/pr_cmds.c:1831-1931`), indexed by the negative first_statement above, with `pr_numbuiltins` computed by `sizeof` (`WinQuake/pr_cmds.c:1933`). Arguments arrive in fixed global slots `OFS_PARM0..7` and results go in `OFS_RETURN` — the same ABI the interpreter uses for QuakeC-to-QuakeC calls. There are about 80 of them and they are the *only* way progs can touch the world: `setorigin` (`WinQuake/pr_cmds.c:120`) because assigning `.origin` directly would skip `SV_LinkEdict`, `setmodel` (`WinQuake/pr_cmds.c:234`) because model indices must be interned in the precache table, `traceline` (`WinQuake/pr_cmds.c:609`) for hitscan, `spawn`/`remove` for edict lifetime, `sound`/`bprint`/`stuffcmd` for output.
+The engine↔progs boundary is a flat function-pointer table, `pr_builtin[]` (`WinQuake/pr_cmds.c:1831-1931`), indexed by the negative first_statement above, with `pr_numbuiltins` computed by `sizeof` (`WinQuake/pr_cmds.c:1933`). Arguments arrive in fixed global slots `OFS_PARM0..7` and results go in `OFS_RETURN` — the same ABI the interpreter uses for QuakeC-to-QuakeC calls. There are about 80 of them and they supply operations beyond direct reads and writes of QuakeC globals and entity fields: `setorigin` (`WinQuake/pr_cmds.c:120`) because assigning `.origin` directly would skip `SV_LinkEdict`, `setmodel` (`WinQuake/pr_cmds.c:234`) because model indices must be interned in the precache table, `traceline` (`WinQuake/pr_cmds.c:609`) for hitscan, `spawn`/`remove` for edict lifetime, `sound`/`bprint`/`stuffcmd` for output.
 
 The commented-out builtin numbers in the table (`// float(vector v1, vector v2, float tryents) traceline = #16;`) are the actual interface contract — QuakeC declares `traceline = #16` and the compiler emits a function whose `first_statement` is `-16`. Adding a builtin means appending to this array; the number is its position, forever.
 
@@ -448,7 +452,7 @@ The commented-out builtin numbers in the table (`// float(vector v1, vector v2, 
 	}
 ```
 
-`host_client` and `sv_player` are file-scope globals set here and read throughout `sv_user.c`. That is not laziness so much as 1996 register economy: passing a client pointer through `SV_ClientThink` → `SV_AirMove` → `SV_UserFriction` → `SV_Accelerate` would have cost a push and a load at every level on a 486.
+`host_client` and `sv_player` are file-scope globals set here and read throughout `sv_user.c`. This makes the active client implicit throughout the movement call chain. When reading a helper, trace back to the loop that set those globals; the helper is not independent of that calling context.
 
 `SV_ReadClientMessage` (`WinQuake/sv_user.c:482-593`) drains all pending packets from that client's qsocket, dispatching on a leading command byte: `clc_nop`, `clc_disconnect`, `clc_stringcmd`, `clc_move`. The `clc_stringcmd` case (`WinQuake/sv_user.c:528-...`) is Quake's authorization model, and it is a hard-coded whitelist of command prefixes — `status`, `god`, `notarget`, `fly`, `name`, `noclip`, `say`, `say_team`, `tell`, `color`, `kill`, `pause`, `spawn`, `begin`, `prespawn`, `kick`, `ping`, `give`, `ban` — matched with `Q_strncasecmp` and executed through the normal console command path. Anything else is rejected unless `host_client->privileged`. Prefix matching plus a shared command buffer is exactly the kind of surface that produced remote-execution bugs in later derivatives.
 
@@ -477,7 +481,7 @@ The commented-out builtin numbers in the table (`// float(vector v1, vector v2, 
 	host_client->edict->v.button2 = (bits & 2)>>1;
 ```
 
-Notice what the client actually sends: a float echo of the last received server time (for RTT), three 8-bit-quantized angles, three 16-bit movement intentions, one byte of buttons, one byte of impulse. That's 16 bytes. The client sends *intentions*, never positions — the server is fully authoritative over where the player ends up. Angles are the exception: `v_angle` is copied straight from the packet, because view direction has no server-side model and forcing it would fight the mouse.
+Notice what the client actually sends: a float echo of the last received server time (for RTT), three 8-bit-quantized angles, three 16-bit movement intentions, one byte of buttons, one byte of impulse. Including the one-byte `clc_move` opcode, that is 16 bytes. The client sends *intentions*, never positions — the server is fully authoritative over where the player ends up. Angles are the exception: `v_angle` is copied straight from the packet, because view direction has no server-side model and forcing it would fight the mouse.
 
 Note also that there is no per-command timestamp and no command sequence. A `usercmd_t` is applied with *this frame's* `host_frametime`, whatever that is. If the client's framerate and the server's differ, the client's inputs are effectively resampled — the root of Quake 1's framerate-dependent movement quirks, and precisely what QuakeWorld's timestamped commands fixed.
 
@@ -530,7 +534,7 @@ It also derives the *rendered* body angles from the view angles at `WinQuake/sv_
 	}		
 ```
 
-Note the bug that made a genre. `wishspeed` is clamped, but `SV_AirAccelerate` (`WinQuake/sv_user.c:207-226`) separately clamps its *own* `wishspd` to 30 while computing `accelspeed` from the unclamped `wishspeed` global at `WinQuake/sv_user.c:220` (with the "correct" version commented out on the line above). The result: the projection test `addspeed = wishspd - currentspeed` uses a tiny target, so it stays positive whenever you're moving roughly perpendicular to your wish direction, while the acceleration applied is full-sized. Turn while strafing in mid-air and you gain speed with no upper bound. That is strafe-jumping and bunny-hopping — an artifact of an inconsistent clamp, shipped, and load-bearing for two decades of movement shooters.
+Note the bug that made a genre. `wishspeed` is clamped, but `SV_AirAccelerate` (`WinQuake/sv_user.c:207-226`) separately clamps its *own* `wishspd` to 30 while computing `accelspeed` from the unclamped `wishspeed` global at `WinQuake/sv_user.c:220` (with the "correct" version commented out on the line above). The result: the projection test `addspeed = wishspd - currentspeed` uses a tiny target, so it stays positive whenever you're moving roughly perpendicular to your wish direction, while the acceleration applied is full-sized. With suitable steering, repeated air acceleration can increase total speed above `sv_maxspeed`, because that variable caps desired speed rather than the resulting velocity vector. `SV_CheckVelocity` still applies the separate per-axis `sv_maxvelocity` limit. That is strafe-jumping and bunny-hopping — an artifact of an inconsistent clamp, shipped, and load-bearing for two decades of movement shooters.
 
 `SV_Accelerate` (`WinQuake/sv_user.c:190-205`) is the ground version, and it is the standard projection accelerator: only the component of `wishdir` you're not already moving along gets added.
 
@@ -582,7 +586,7 @@ The last stage builds one packet per client. `SV_SendClientMessages` (`WinQuake/
 		SZ_Write (&msg, sv.datagram.data, sv.datagram.cursize);
 ```
 
-The ordering is a priority ordering, and it is enforced by truncation rather than by a scheduler: timestamp first, then *this client's* own state (health, ammo, weapon, punch angles, velocity — `SV_WriteClientdataToMessage`, `WinQuake/sv_main.c:576`), then visible entities, then whatever broadcast events (`sv.datagram`: sounds, particles, temp entities) still fit. Run out of room and the least important thing is what got dropped. There is no retransmission of unreliable data at all — the next frame's snapshot is authoritative, so a lost packet costs one frame of smoothness, not correctness.
+The ordering is a priority ordering, and it is enforced by truncation rather than by a scheduler: timestamp first, then *this client's* own state (health, ammo, weapon, punch angles, velocity — `SV_WriteClientdataToMessage`, `WinQuake/sv_main.c:576`), then visible entities, then whatever broadcast events (`sv.datagram`: sounds, particles, temp entities) still fit. Run out of room and later data can be omitted. Unreliable packets are not retransmitted. A later baseline-relative entity update can restore current state without the lost packet, but one-shot sounds and effects in the lost datagram may never be seen.
 
 ### PVS gating
 
@@ -628,7 +632,7 @@ byte *SV_FatPVS (vec3_t org)
 		}
 ```
 
-The per-entity leaf list (`ent->leafnums[]`, up to `MAX_ENT_LEAFS` = 16, `WinQuake/progs.h:34`, `WinQuake/progs.h:40-41`) is maintained by `SV_LinkEdict` in `world.c` — the same call that keeps the areanode tree current for collision also records which BSP leaves the entity's bounding box straddles. So the visibility test is a 16-iteration bit test against a bitfield, per entity, per client. No frustum, no distance, no occlusion queries: a static precomputed cell-to-cell visibility matrix does all the work, at the cost of a lengthy `vis` compile step and the classic Quake artifact of entities in an adjacent-but-visible room being culled when they shouldn't be.
+The per-entity leaf list (`ent->leafnums[]`, up to `MAX_ENT_LEAFS` = 16, `WinQuake/progs.h:34`, `WinQuake/progs.h:40-41`) is maintained by `SV_LinkEdict` in `world.c` — the same call that keeps the areanode tree current for collision also records which BSP leaves the entity's bounding box straddles. So the visibility test is a 16-iteration bit test against a bitfield, per entity, per client. No frustum, no distance, no occlusion queries: a static precomputed cell-to-cell visibility matrix does all the work, at the cost of offline visibility computation and a conservative result that can include occluded entities. Missing a truly visible entity would be a culling/data limitation or bug, not the intended meaning of PVS.
 
 Two consequences are worth naming. First, a client cannot inspect entities outside its fat PVS, although the conservative PVS still includes some occluded entities. Second, a non-client entity with no model (`!ent->v.modelindex`) is not transmitted, so QuakeC's invisible logic entities — triggers, spawn points, path corners — cost no entity-update bandwidth.
 

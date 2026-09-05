@@ -104,8 +104,12 @@ def inline(text):
 
     def stash_link(m):
         label, url = m.group(1), m.group(2)
-        links.append('<a target="_blank" rel="noopener" href="%s">%s</a>'
-                     % (html.escape(url, quote=True), inline(label)))
+        external = re.match(r"https?://", url)
+        if not external and not url.startswith("#"):
+            url = os.path.relpath(os.path.join(SRC, url), HERE)
+        links.append('<a%s href="%s">%s</a>'
+                     % (' target="_blank" rel="noopener"' if external else '',
+                        html.escape(url, quote=True), inline(label)))
         return "\x01%d\x01" % (len(links) - 1)
 
     text = MD_LINK.sub(stash_link, text)
@@ -302,6 +306,15 @@ def convert(md, sec_index, sec_id, kicker):
     while i < n:
         ln = lines[i]
 
+        # --- authored, accessible diagrams ------------------------------
+        diagram = re.fullmatch(r"::: diagram ([a-z0-9-]+)", ln)
+        if diagram:
+            with open(os.path.join(HERE, "diagrams", diagram.group(1) + ".html"),
+                      encoding="utf-8") as f:
+                out.append(link_refs(f.read()))
+            i += 1
+            continue
+
         # --- fenced code ------------------------------------------------
         if ln.startswith("```"):
             lang = ln[3:].strip()
@@ -396,7 +409,9 @@ def convert(md, sec_index, sec_id, kicker):
             while i < n and lines[i].startswith(">"):
                 buf.append(lines[i].lstrip(">").strip())
                 i += 1
-            out.append("<blockquote><p>%s</p></blockquote>" % inline(" ".join(buf)))
+            quote = " ".join(buf)
+            cls = ' class="first-pass"' if quote.startswith("**First pass.") else ''
+            out.append("<blockquote%s><p>%s</p></blockquote>" % (cls, inline(quote)))
             continue
 
         # --- lists --------------------------------------------------------
@@ -471,6 +486,8 @@ def main():
 
     doc = TEMPLATE.replace("{{NAV}}", "".join(nav_html))
     doc = doc.replace("{{BODY}}", body_html)
+    with open(os.path.join(HERE, "diagrams", "ownership.html"), encoding="utf-8") as f:
+        doc = doc.replace("{{OWNERSHIP}}", link_refs(f.read()))
     doc = doc.replace("{{TOC_JSON}}", json.dumps(
         [{"id": s["id"], "n": s["n"], "title": s["title"]} for s in sections]))
 

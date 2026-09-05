@@ -1,6 +1,10 @@
 # Collision: Hulls, Traces, and Hit Detection
 
-Quake does not collide against rendered polygons. The map compiler precomputes three world hulls — for a point, a 32×32×56 box, and a 64×64×88 box — with geometry expanded by the mover's extents. Runtime world collision is therefore a point trace through a solid/empty BSP. Non-BSP entities keep arbitrary bounding boxes; the engine fabricates a six-plane BSP around each candidate so the same trace code can test it. `SV_Move` combines world tracing with an areanode broadphase for entity candidates, and QuakeC exposes the result through `traceline`.
+Collision answers a question: if this object tries to move from A to B, how far can it get and what does it hit? The caller uses the answer to stop, slide, bounce or trigger game behavior.
+
+> **First pass.** Start with **trace_t**, the result of a movement query. `SV_Move` checks the world and candidate solid entities; it does not decide whether a hit means damage or a bounce. World hulls make common box sizes cheap to trace. The separate **areanode tree** narrows which moving entities need testing. Source: `WinQuake/world.h:28-37`, `WinQuake/world.c:923-961`. [Next: BSP and visibility →](#sec-4)
+
+::: diagram collision
 
 ## Where it sits in the frame
 
@@ -25,7 +29,7 @@ typedef struct
 
 The distinction between `allsolid` and `startsolid` is load-bearing and easy to get backwards. `startsolid` means the trace *began* inside a solid — the mover is embedded — but it may still have found open space along the way. `allsolid` means it never left solid at all. The header comment on `SV_Move` (`WinQuake/world.h:72-75`) states the resulting policy explicitly: "if the starting point is in a solid, it will be allowed to move out to an open area." That is a deliberate, forgiving choice — a player who ends up stuck (through a telefrag, a moving platform, or float error at a hull seam) can escape rather than being frozen forever. `SV_FlyMove` turns `allsolid` into "kill velocity, return 3" (`WinQuake/sv_phys.c:262-266`), but tolerates `startsolid` silently.
 
-`inopen` / `inwater` record the content types the trace passed through; `SV_ReadClientMessage`-driven QuakeC uses them via `trace_inopen` / `trace_inwater` to distinguish a shot that crossed a water surface. `fraction` is parametric along the move, so callers scale their own velocity by it rather than recomputing distances.
+`inopen` / `inwater` record the content types the trace passed through; the QuakeC `traceline` builtin exposes them via `trace_inopen` / `trace_inwater` to distinguish a shot that crossed a water surface. `fraction` is parametric along the move, so callers can determine how much of the requested path was completed; the hit plane is then used to clip velocity.
 
 ## The three hulls
 
@@ -107,7 +111,7 @@ Hull 0 is different: it has no clipnodes of its own in the file. `Mod_MakeHull0`
 
 Note hull 0's `clip_mins`/`clip_maxs` stay zeroed — a point has no size, so no offset correction is needed.
 
-**Why three?** Because dilating the world by the mover's size at *compile* time turns a swept-box test into a swept-point test at runtime. This is a Minkowski sum baked into the data. If you push every wall inward by 16 units on X and Y, 24 down and 32 up, then a player *box* colliding with the real world is exactly a player *point* colliding with the dilated world. `qbsp` does this expansion once, offline, so the runtime never has to consider the mover's extents at all — `SV_RecursiveHullCheck` only ever traces a line.
+**Why three?** Because dilating the world by the mover's size at *compile* time turns a swept-box test into a swept-point test at runtime. This is a Minkowski sum baked into the data. Expand each solid obstacle by the reflected mover box: the space where the box’s origin would cause an overlap becomes solid in the expanded world. For example, a box with a 16-unit horizontal half-width must stop its center 16 units before a vertical wall. `qbsp` does this expansion once, offline, so the inner trace only needs a point path after the runtime has selected a hull and applied its offset — `SV_RecursiveHullCheck` only ever traces a line.
 
 The constraint applies to collision against BSP geometry: **there are only three pre-expanded mover sizes.** `SV_HullForEntity` chooses hull 0, 1, or 2 by the moving box's width. A grenade or nail uses the point hull; players and most monsters use the 32×32×56 hull; large monsters use the 64×64×88 hull. Arbitrary entity-vs-entity boxes still work through the generated box hull described below. This is why a rocket can pass through a gap that its player cannot.
 
@@ -260,7 +264,7 @@ When the segment straddles the plane, it is split — with the crossing point de
 	side = (t1 < 0);
 ```
 
-`DIST_EPSILON` is `0.03125` — 1/32 — chosen, per the comment at `WinQuake/world.c:572-573`, "to keep floating point happy." Because it is a negative power of two it is exactly representable and adds no rounding of its own. Backing every split point 1/32 unit toward the near side means an entity is never left mathematically *on* a surface, where the next frame's `SV_HullPointContents` could round it to the solid side and jam it in a wall. This one constant is why players stand 1/32 of a unit above the floor in Quake, and it is the same epsilon that `SV_WalkMove` tests against when deciding whether stepping up made progress (`WinQuake/sv_phys.c:1019-1020`).
+`DIST_EPSILON` is `0.03125` — 1/32 — chosen, per the comment at `WinQuake/world.c:572-573`, "to keep floating point happy." The constant itself is exactly representable in binary, though arithmetic using it can still round. Backing every split point 1/32 unit toward the near side means an entity is never left mathematically *on* a surface, where the next frame's `SV_HullPointContents` could round it to the solid side and jam it in a wall. This one constant is why players stand 1/32 of a unit above the floor in Quake, and it is the same epsilon that `SV_WalkMove` tests against when deciding whether stepping up made progress (`WinQuake/sv_phys.c:1019-1020`).
 
 The near half is recursed first; only if it reports clear does the far half get considered:
 
@@ -547,7 +551,7 @@ Trigger dispatch (`WinQuake/world.c:277-319`) walks the *trigger* lists of every
 	}
 ```
 
-Three details. `next = l->next` is captured *before* the QuakeC call, because a touch function can legally `remove()` the trigger and unlink it mid-iteration — the classic teleporter/pickup case. The `self`/`other` globals are saved and restored around the call because `SV_TouchLinks` can be re-entered: a touch function that calls `setorigin` re-enters `SV_LinkEdict` and hence `SV_TouchLinks`. And the touch is a pure AABB overlap test — triggers are boxes, never hulls, so a trigger's shape is exactly its bounding box regardless of the brushes it was built from.
+Three details. `next = l->next` is captured *before* the QuakeC call, because a touch function can legally `remove()` the trigger and unlink it mid-iteration — the classic teleporter/pickup case. The `self`/`other` globals are saved and restored around the call because `SV_TouchLinks` can be re-entered: a touch function can invoke movement such as `walkmove`, which relinks with trigger touching enabled. `setorigin` itself passes `false` for trigger touching (`WinQuake/pr_cmds.c:120-129`). And the touch is a pure AABB overlap test — triggers are boxes, never hulls, so a trigger's shape is exactly its bounding box regardless of the brushes it was built from.
 
 Trigger detection is thus decoupled from movement: `SV_FlyMove` handles blocking collisions and calls `SV_Impact`, while triggers fire from the post-move relink. That is why walking through a trigger never slows you down and why a very fast projectile can pass *through* a thin trigger between frames without firing it — the check is on the endpoint, not the swept volume.
 
@@ -580,7 +584,7 @@ edict_t	*SV_TestEntityPosition (edict_t *ent)
 }
 ```
 
-The "This could be a lot more efficient..." comment (`WinQuake/world.c:548`) is id's own note that a dedicated point-classify would beat a degenerate trace. It survived to the GPL release because it is not on any hot path.
+The "This could be a lot more efficient..." comment (`WinQuake/world.c:548`) is id's own note that a dedicated point-classify would beat a degenerate trace. It is still used on the per-frame player path below, so its cost depends on how often those callers need to test a position.
 
 Its main consumer is `SV_CheckStuck` (`WinQuake/sv_phys.c:762-800`), which runs for every walking player every frame and, if stuck, first tries `oldorigin` and then brute-forces a 3×3×18 grid of unit offsets looking for daylight:
 
@@ -646,7 +650,7 @@ For ground monsters the move is done as a *drop from above*, not a slide:
 	}
 ```
 
-Lift 18 units, drop 36, and see where you land. One trace resolves stepping up onto a stair, stepping down off a ledge, and refusing to walk into a wall — `fraction == 1` means nothing was hit within 36 units, i.e. a cliff, and the move is rejected. Monsters simply never walk off ledges, which is why Quake's AI never needed navmeshes or fall prediction.
+Lift 18 units, drop 36, and see where you land. One trace resolves stepping up onto a stair, stepping down off a ledge, and refusing to walk into a wall — `fraction == 1` means nothing was hit within 36 units, i.e. a cliff, and the move is rejected. Grounded monsters normally reject such a move. `FL_PARTIALGROUND` supplies exceptions for monsters that have already lost support (`WinQuake/sv_move.c:174-211`); flying and swimming monsters follow different rules.
 
 Then the corner check. `SV_CheckBottom` (`WinQuake/sv_move.c:37-97`) verifies the monster isn't left balanced on a corner. It first tries the cheap path — four `SV_PointContents` probes one unit under the box corners, and if all four are solid world it returns immediately (`WinQuake/sv_move.c:47-61`, incrementing the `c_yes`/`c_no` counters at `WinQuake/sv_move.c:35` that exist purely to measure that fast path's hit rate). Only on failure does it do the expensive version: trace down from the midpoint, then from each corner, rejecting if any corner is more than `STEPSIZE` below the middle:
 
@@ -701,7 +705,7 @@ It calls `PF_changeyaw` — a *builtin* — directly from C, turns first, and ro
 	pr_global_struct->self = oldself;
 ```
 
-QuakeC calls into C, which relinks the entity, which fires triggers, which calls back into QuakeC. The interpreter's current-function pointer and `self` must be saved by hand because the VM has no real call stack for a re-entry from C.
+QuakeC calls into C, which relinks the entity, which fires triggers, which calls back into QuakeC. The interpreter's current-function pointer and `self` must be saved by hand because these globals must survive the nested callback. The interpreter does have explicit call and local-save stacks; that does not automatically preserve every engine-visible VM global across a builtin.
 
 ## Hitscan vs. projectiles in progs
 
@@ -754,7 +758,7 @@ The QuakeC side is a loop of traces. The shipped shotgun code (this tree carries
 
 Six traces for the shotgun, fourteen for the super shotgun, every shot, plus one for the aim puff — with `2048` units as the hard-coded weapon range. `ClearMultiDamage`/`ApplyMultiDamage` around the loop coalesce pellets into a single damage event so a target doesn't run its pain animation fourteen times.
 
-**Projectiles** are edicts. QuakeC spawns one, sets `.movetype` to `MOVETYPE_FLYMISSILE`, `.solid` to `SOLID_BBOX`, `.owner` to the shooter, and a `.touch` function; the engine then moves it each frame through `SV_Physics_Toss` → `SV_FlyMove` → `SV_Move`, and `SV_Impact` (`WinQuake/sv_phys.c:153`) invokes the touch function on contact. `MOVETYPE_FLYMISSILE` is what selects `MOVE_MISSILE` and the ±15 monster-clipping expansion described above.
+**Projectiles** are edicts. QuakeC spawns one, sets `.movetype` to `MOVETYPE_FLYMISSILE`, `.solid` to `SOLID_BBOX`, `.owner` to the shooter, and a `.touch` function; the engine then moves it each frame through `SV_Physics_Toss` → `SV_PushEntity` → `SV_Move`, and `SV_Impact` (`WinQuake/sv_phys.c:153`) invokes the touch function on contact. `MOVETYPE_FLYMISSILE` is what selects `MOVE_MISSILE` and the ±15 monster-clipping expansion described above.
 
 So: hitscan is *N* traces resolved this instant with no entity created; projectiles are one entity traced once per frame until something touches it. The tradeoff is exactly the one you would expect — hitscan costs CPU at fire time and nothing thereafter, projectiles cost an edict slot, per-frame physics, and network bandwidth for as long as they fly. On a 1996 server with `MAX_EDICTS` at 600, that mattered.
 

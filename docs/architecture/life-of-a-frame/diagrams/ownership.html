@@ -1,0 +1,9 @@
+<figure class="concept" id="ownership" aria-labelledby="ownership-title">
+  <h3 id="ownership-title">Follow one press of “forward”</h3>
+  <ol class="flow-cards">
+    <li class="client"><span class="step-label">1 · Client intent</span><strong>“I want to move”</strong><code>usercmd_t</code><p>Direction, view angles and buttons. This is a request, not a new position.</p></li>
+    <li class="server"><span class="step-label">2 · Server world</span><strong>“Here is what happened”</strong><code>edict_t</code><p>Apply movement, game rules and collision. The server owns the resulting position and health.</p></li>
+    <li class="client"><span class="step-label">3 · Client view</span><strong>“Here is what to show”</strong><code>entity_t</code><p>Decode entity updates, prepare positions for drawing, then render the view and mix sounds.</p></li>
+  </ol>
+  <figcaption>The first handoff sends a <b>movement command</b>; the second sends <b>entity updates</b>. An edict and a render entity are different records, connected by an entity number. In single player these messages pass through in-memory loopback queues; over a network the server runs its own frame loop. Source: WinQuake/cl_input.c:283-323, WinQuake/sv_user.c:600-630, WinQuake/cl_parse.c:330-446.</figcaption>
+</figure>

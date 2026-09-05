@@ -1,0 +1,22 @@
+<figure class="concept" aria-labelledby="rendering-title">
+  <h3 id="rendering-title">Choose one renderer, then follow its route to pixels</h3>
+  <div class="diagram-source"><strong>Client scene + camera</strong><br><code>SCR_UpdateScreen → V_RenderView → R_RenderView</code></div>
+  <div class="branch-stem" aria-hidden="true">↓</div>
+  <div class="branch-cards">
+    <div class="client"><span class="step-label">Software build · CPU</span><ol>
+      <li>Use PVS and the view frustum to find candidate world surfaces.</li>
+      <li>Scan their edges to find visible horizontal runs of pixels: <strong>spans</strong>.</li>
+      <li>Texture those spans using cached texture + lighting results; write depth for later drawing.</li>
+      <li>Draw model entities and particles with their own routines and depth tests.</li>
+    </ol></div>
+    <div class="client"><span class="step-label">GL build · CPU + GPU</span><ol>
+      <li>Use PVS and the view frustum to find candidate world surfaces.</li>
+      <li>Submit polygons, grouping suitable surfaces by texture.</li>
+      <li>Let OpenGL rasterize, combine textures with lightmaps, and depth-test fragments.</li>
+      <li>Submit model entities and particles through their GL routines.</li>
+    </ol></div>
+  </div>
+  <div class="branch-stem" aria-hidden="true">↓</div>
+  <div class="diagram-source"><strong>Overlay the HUD / console, then present the image</strong></div>
+  <figcaption>These are alternative builds, not two stages run in sequence. The software renderer resolves opaque world visibility with spans, but <b>it still has a depth buffer</b> for later objects. “Alias model” is Quake’s name for an animated <code>.mdl</code> mesh, such as a monster; it does not go through the world’s edge list. Source: WinQuake/r_main.c:876-1030, WinQuake/d_edge.c:215-416, WinQuake/gl_rmain.c:949-978, WinQuake/r_main.c:527-596.</figcaption>
+</figure>

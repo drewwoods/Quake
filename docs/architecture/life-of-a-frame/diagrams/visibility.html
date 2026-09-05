@@ -1,0 +1,17 @@
+<figure class="concept" aria-labelledby="visibility-title">
+  <h3 id="visibility-title">One map, several different questions</h3>
+  <div class="diagram-source"><strong>Before play: compile the level into a <code>.bsp</code></strong><br>Spatial partitions + collision hulls + visibility data + light samples</div>
+  <div class="branch-stem" aria-hidden="true">↓</div>
+  <div class="world-branches">
+    <div class="diagram-source collision-branch"><span class="step-label">Collision hulls</span><strong>Can this move reach its end?</strong><p><code>SV_Move</code> traces through solid / empty regions and nearby entities.</p><p>This query does not use PVS.</p></div>
+    <div>
+      <div class="diagram-source"><span class="step-label">Render BSP + PVS</span><strong>What might be visible from this region?</strong></div>
+      <div class="branch-stem" aria-hidden="true">↓</div>
+      <div class="branch-cards">
+        <div class="server"><span class="step-label">Server use</span><strong>Send relevant entity updates</strong><p><code>SV_FatPVS</code> combines visibility near the player’s eye. An omitted entity can still be simulated.</p></div>
+        <div class="client"><span class="step-label">Client use</span><strong>Prune the render tree</strong><p><code>R_MarkLeaves</code> marks candidate regions. Frustum tests and surface visibility still decide what is drawn.</p></div>
+      </div>
+    </div>
+  </div>
+  <figcaption>Collision and visibility are <b>different queries over data from the same map</b>. A leaf is a region at the end of a BSP tree walk, not necessarily a whole room. PVS means “could be visible from this region,” so it can include something behind a wall at your exact viewpoint. Source: WinQuake/model.c:84-160, WinQuake/r_main.c:491-519, WinQuake/sv_main.c:367-462, WinQuake/world.c:923-961.</figcaption>
+</figure>

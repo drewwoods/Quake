@@ -1,0 +1,43 @@
+<figure class="concept" aria-labelledby="interpolation-title">
+  <h3 id="interpolation-title">The interesting part is how Quake chooses the interval</h3>
+  <p><code>CL_ReadFromServer</code> advances <code>cl.time</code> and drains incoming messages. <code>CL_LerpPoint</code> then fits that clock to the last two server timestamps. There is no configurable snapshot-delay buffer here: Quake keeps two samples and corrects the clock when it gets outside their interval.</p>
+  <div class="svg-scroll">
+    <svg class="explain-svg" viewBox="0 0 800 350" role="img" aria-labelledby="snapshot-title snapshot-desc">
+      <title id="snapshot-title">A 200-millisecond snapshot gap is compressed into a 100-millisecond interpolation interval</title>
+      <desc id="snapshot-desc">Received entity samples are from server times 10.000 and 10.200 seconds. Because their gap exceeds 0.1 seconds, CL_LerpPoint rewrites the older timestamp to 10.100, keeping its old position. At client time 10.150 the entity is halfway between the two positions, although that time is three quarters of the way through the original sample interval.</desc>
+      <text x="32" y="28" class="svg-heading">Received samples · server time, not packet arrival time</text>
+      <path d="M100 85H700" class="divider-line"/>
+      <circle cx="100" cy="85" r="6" class="client-dot"/>
+      <circle cx="700" cy="85" r="6" class="client-dot"/>
+      <text x="100" y="61">older · 10.000 s</text>
+      <text x="700" y="61" text-anchor="end">newest · 10.200 s</text>
+      <text x="100" y="116">msg_origins[1]</text>
+      <text x="700" y="116" text-anchor="end">msg_origins[0]</text>
+      <text x="400" y="80" text-anchor="middle">200 ms gap</text>
+
+      <text x="32" y="169" class="svg-heading">After CL_LerpPoint limits the gap</text>
+      <path d="M100 228H400" class="divider-line" stroke-dasharray="4 5"/>
+      <path d="M400 228H700" class="trace-line"/>
+      <path d="M400 215V241M700 215V241" class="hull-boundary"/>
+      <text x="400" y="203" text-anchor="middle">10.100 s</text>
+      <text x="700" y="203" text-anchor="middle">10.200 s</text>
+      <text x="400" y="268" text-anchor="middle">mtime[1] rewritten</text>
+      <text x="700" y="268" text-anchor="middle">mtime[0]</text>
+      <circle cx="550" cy="228" r="8" class="client-dot"/>
+      <path d="M550 241V292" class="trace-line"/>
+      <text x="550" y="319" text-anchor="middle">cl.time = 10.150 → fraction = 0.5</text>
+    </svg>
+  </div>
+  <figcaption><b>The timestamp changes; the stored older position does not.</b> In this illustrative gap, the same two entity positions are interpolated over 100 ms instead of 200 ms. That bounds the interval used for smoothing; it does not reconstruct the missing updates. Source: WinQuake/cl_main.c:391-408, WinQuake/cl_main.c:634-661.</figcaption>
+  <div class="table-scroll">
+    <table class="grid">
+      <thead><tr><th scope="col">What happens</th><th scope="col">What the engine actually does</th></tr></thead>
+      <tbody>
+        <tr><td>Client clock passes the newest sample</td><td>Clamp the fraction to 1: no movement extrapolation. If the raw fraction exceeds 1.01, also reset <code>cl.time</code> to the newest timestamp. The lower boundary has the matching −0.01 tolerance.</td></tr>
+        <tr><td>Original local server is active</td><td><code>sv.active</code> forces fraction 1 and resets <code>cl.time</code> to the newest timestamp. Client and local server already run in the same host frame. Zero sample interval, <code>cl_nolerp</code> and timedemo take this same branch.</td></tr>
+        <tr><td>One entity appears to teleport</td><td>Later, <code>CL_RelinkEntities</code> overrides the fraction for that entity if any position component changes by more than 100 units. <code>forcelink</code> also copies the newest pose directly. These decisions do not reset the shared client clock.</td></tr>
+      </tbody>
+    </table>
+  </div>
+  <p class="diagram-return">When debugging motion, inspect <code>cl.mtime[2]</code> and <code>cl.time</code> first, then the entity’s <code>msg_origins[2]</code> and <code>forcelink</code>. A snap may come from clock correction or from an entity-specific decision. Source: WinQuake/cl_main.c:391-434, WinQuake/cl_main.c:499-533.</p>
+</figure>

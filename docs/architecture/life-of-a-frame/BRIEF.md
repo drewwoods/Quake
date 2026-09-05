@@ -1,5 +1,33 @@
 # Quake "Life of a Frame" documentation — researcher brief
 
+## Reader-facing guide (updated September 2026)
+
+The reader wants a gentle introduction to Quake, and already knows programming
+concepts such as linear interpolation. Diagrams should explain engine-specific
+choices, data flow and failure cases rather than teach basic mathematics. Preserve the detailed reference below,
+but lead each chapter with a short explanation and a **First pass.** blockquote.
+These summaries form a linked reading route through the engine; explain state
+ownership, call order and terminology before algorithms or historical rationale.
+
+Edit `sections/*.md`, `template.html` and `diagrams/*.html`, then run
+`python3 docs/architecture/life-of-a-frame/build.py` from the repository root.
+The generated `quake-life-of-a-frame.html` is checked in. A standalone
+`::: diagram name` line in Markdown includes `diagrams/name.html`; source
+references in that fragment are linkified by the builder. Relative Markdown
+links resolve from `sections/` and are adjusted for the generated page.
+
+The guide describes the original NetQuake loop at local commit `3ef8a7a`.
+The current branch has a different host loop; keep that distinction visible.
+Verify baseline claims with `git show 3ef8a7a:WinQuake/<file>` and distinguish
+code behavior from inferred design motives. Diagrams must have text equivalents,
+work in light/dark themes and stay usable on narrow screens. Check the generated
+page's links, controls and visual layout after rebuilding.
+
+The original research brief below describes the detailed reference layer, not
+the expected difficulty of the first reading path.
+
+## Original research brief
+
 Repo: /Users/drew/src/Quake-worktree (id Software Quake 1 source, GPL release). Engine code is in WinQuake/ (software + GL renderer, server, client, progs VM). QW/ is QuakeWorld — ignore unless told.
 
 Goal: an interactive HTML doc that walks the life of one frame (Host_Frame) — input, server/world simulation, networking, client, rendering, sound — and drills into subsystems. Your section is one drill-down. Another agent will assemble all sections into HTML, so write CLEAN MARKDOWN following the format below exactly.

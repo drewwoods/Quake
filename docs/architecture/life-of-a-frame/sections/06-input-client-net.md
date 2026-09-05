@@ -1,10 +1,10 @@
 # Input, client movement, and networking
 
-This section traces a single control input from the physical keyboard/mouse
-through to bytes on the wire, and traces the reply back through delta-decoded
-entity updates to the interpolated positions the renderer draws. NetQuake
-supports loopback, LAN, serial, modem, IPX, and UDP transports, but it has no
-client prediction. QuakeWorld later added prediction to hide WAN latency.
+The client turns keyboard and mouse input into movement requests. It also decodes server messages into a scene for rendering. These are the two directions of the same conversation; the client’s requested movement is not the authoritative result.
+
+> **First pass.** A key binding such as `+forward` first becomes a console command, then button state, then fields in `usercmd_t`. The client sends that request. Later it draws received entity positions, often interpolating between two updates. **Interpolation is not movement prediction**; original NetQuake does not run the player’s physics ahead locally. Source: `WinQuake/keys.c:561-733`, `WinQuake/cl_input.c:283-323`, `WinQuake/cl_main.c:391-434`. [Next: the server and QuakeC →](#sec-2)
+
+::: diagram interpolation
 
 ## Where it sits in the frame
 
@@ -519,7 +519,7 @@ one UDP socket per connection:
 			{
 ```
 
-- **Unreliable datagrams** (used for `clc_move` and `svc_update` — anything
+- **Unreliable datagrams** (used for `clc_move` and entity fast updates — anything
   perishable, sent every frame): `Datagram_SendUnreliableMessage`
   (`WinQuake/net_dgrm.c:289-307`) fires and forgets, tagging the packet
   `NETFLAG_UNRELIABLE` with its own independent sequence counter
@@ -805,11 +805,11 @@ reuses the normal parser and interpolation path.
 
 Everything above adds up to a specific architectural choice: **NetQuake does
 not simulate the local player's movement client-side at all.** `CL_SendCmd`
-builds a `usercmd_t` and ships it off; the client then does nothing but wait
-for the server's next `svc_update`/fast-update snapshot and interpolate
+builds a `usercmd_t` and ships it off; the client continues rendering, handling view input and processing messages while it waits
+for the server’s next entity update. It can interpolate
 between the last two received positions (`CL_RelinkEntities`,
 `CL_LerpPoint` above) — including for the local player's own entity (`client_state_t`, `WinQuake/client.h:148-235`,
-holds `mtime[2]` and the entity array uniformly for local and remote
+holds `mtime[2]`; the separate `cl_entities` array stores render entities for local and remote
 players). There
 is no `CL_PredictMove` in this codebase, no rewind-and-replay reconciliation,
 and no local physics integration of `usercmd_t` against the world. Movement

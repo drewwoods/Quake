@@ -1,0 +1,10 @@
+<figure class="concept" aria-labelledby="quakec-title">
+  <h3 id="quakec-title">The engine calls the game; the game calls engine services</h3>
+  <ol class="flow-cards">
+    <li class="server"><span class="step-label">1 · Engine, in C</span><strong>A callback is due</strong><code>SV_RunThink</code><p>Set QuakeC’s <code>self</code> and <code>time</code>, then enter <code>PR_ExecuteProgram</code>.</p></li>
+    <li class="server"><span class="step-label">2 · Game, in QuakeC</span><strong>Run the entity’s behavior</strong><code>progs.dat</code><p>Bytecode reads or changes entity fields. It can schedule another think or call an engine builtin.</p></li>
+    <li><span class="step-label">3 · Builtin, in C</span><strong>Do an engine operation</strong><code>PF_traceline → SV_Move</code><p>For example, test a line against the world and entities, then return trace results to QuakeC.</p></li>
+  </ol>
+  <p class="diagram-return">↶ The builtin returns to QuakeC; the callback returns to the C simulation.</p>
+  <figcaption>These are nested function calls on the same thread. The VM is an interpreter, not another process. <code>think</code> is one entry point; <code>touch</code>, <code>PlayerPreThink</code> and <code>PlayerPostThink</code> are others. QuakeC entity fields live in the server’s edicts. Source: WinQuake/sv_phys.c:126-144, WinQuake/progs.h:36-52, WinQuake/pr_exec.c:615-631, WinQuake/pr_cmds.c:609-635.</figcaption>
+</figure>
