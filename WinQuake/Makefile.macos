@@ -19,7 +19,7 @@ debug_CFLAGS     = -O0 -g
 CFLAGS           := $(COMMON_CFLAGS) $($(CONFIG)_CFLAGS) $(CFLAGS)
 OBJCFLAGS        := $(CFLAGS) -fobjc-arc $(OBJCFLAGS)
 unexport CFLAGS OBJCFLAGS
-LDLIBS            = -framework Cocoa -framework CoreGraphics \
+LDLIBS            = -framework Cocoa -framework CoreGraphics -framework CoreVideo \
 	-framework AudioUnit -framework AudioToolbox -framework CoreAudio -framework QuartzCore -lm
 
 SOURCES = \

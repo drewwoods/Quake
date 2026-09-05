@@ -77,6 +77,10 @@ void	VID_Shutdown (void);
 // backends have no equivalent and the caller falls back to rendering once
 // per simulation step.
 float	VID_RefreshInterval (void);
+
+// counts display refreshes, 0 where the platform cannot count them.  Render
+// when it changes and every frame lands on its own vsync.
+unsigned long long	VID_VsyncSerial (void);
 #endif
 // Called at shutdown
 
