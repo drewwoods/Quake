@@ -2,11 +2,9 @@
 
 This section traces a single control input from the physical keyboard/mouse
 through to bytes on the wire, and traces the reply back through delta-decoded
-entity updates to the interpolated positions the renderer draws. NetQuake's
-whole client architecture is built around one constraint that later dropped
-away in QuakeWorld: assume a fast, low-latency link (a LAN, or a modem talking
-to a *local* single-player "server" via the loopback driver), and optimize for
-simplicity and bandwidth rather than for hiding internet-scale latency.
+entity updates to the interpolated positions the renderer draws. NetQuake
+supports loopback, LAN, serial, modem, IPX, and UDP transports, but it has no
+client prediction. QuakeWorld later added prediction to hide WAN latency.
 
 ## Where it sits in the frame
 
@@ -24,10 +22,10 @@ frame:
 5. `CL_SendCmd()` is called from **one of two places** depending on topology:
    `WinQuake/host.c:663` (`if (sv.active) CL_SendCmd();`, before the server
    simulates — a listen server samples input before running the world), or
-   `WinQuake/host.c:686` (`if (!sv.active) CL_SendCmd();`, for a pure client,
-   after the server-frame block but before waiting on the network — see the
-   comment at `WinQuake/host.c:684-685`: "if running the server remotely,
-   send intentions now after the incoming messages have been read").
+   `WinQuake/host.c:686` (`if (!sv.active) CL_SendCmd();`) for a pure client,
+   after the skipped server-frame block and immediately before the network
+   read. The source comment says incoming messages have already been read,
+   but the executable order is send, then read.
 6. `CL_ReadFromServer()` — `WinQuake/host.c:693` — only when
    `cls.state == ca_connected`; this both drains the socket and calls
    `CL_ParseServerMessage`, `CL_RelinkEntities`, `CL_UpdateTEnts`.
@@ -398,16 +396,15 @@ into a `clc_move` (`WinQuake/protocol.h:139`, `#define clc_move 3
 ```
 
 Piggybacking `cl.mtime[0]` (the timestamp of the last server update this
-client has processed) into every move command is the *entire* ping mechanism
-— the server echoes it back so the client can compute round-trip time without
-a dedicated ping/pong exchange. The move message goes out via
+client has processed) into every move command is the ping mechanism. The
+server subtracts it from `sv.time` and stores the sample in
+`client->ping_times`; no separate ping response is needed. The move goes via
 `NET_SendUnreliableMessage` (`WinQuake/cl_input.c:390`) rather than the
 reliable stream: a lost movement packet is harmless because the *next* frame
 sends a fresh, complete `usercmd_t` a fraction of a second later — retransmitting
 a stale input would be actively wrong. This is a deliberate consequence of
-1996-era 28.8k/33.6k modem links, where every reliable retransmit could stall
-the whole connection (see the reliable/unreliable split in `net_dgrm.c`
-below): inputs are cheap and perishable, so they ride the lossy channel;
+1996-era 28.8k/33.6k modem links, where reliable retransmission delays later
+reliable data. Inputs are cheap and perishable, so they ride the lossy channel;
 state that must arrive (level changes, spawn events) rides the reliable one.
 
 ## Net layer: driver abstraction, loopback, and datagram delivery
@@ -440,8 +437,8 @@ int NET_SendMessage (qsocket_t *sock, sizebuf_t *data)
 ```
 
 `net_loop.c` implements this vtable without touching a real socket at all:
-`Loop_SendMessage` (`WinQuake/net_loop.c:154-183`) just memcpy's the
-serialized message into the *other* endpoint's `receiveMessage` ring buffer,
+`Loop_SendMessage` (`WinQuake/net_loop.c:154-183`) copies the serialized
+message into the *other* endpoint's linear `receiveMessage` buffer,
 and `Loop_GetMessage` (`WinQuake/net_loop.c:127-150`) reads it back out:
 
 ```c
@@ -473,12 +470,10 @@ int Loop_GetMessage (qsocket_t *sock)
 }
 ```
 
-This is why single-player and listen-server-hosted LAN play is bit-for-bit
-the same code path as remote play: the server and client threads inside one
-process are simply two `qsocket_t`s pointed at each other via
-`driverdata`, so there's exactly one implementation of the protocol and one
-implementation of `CL_ParseServerMessage`, tested constantly by every
-single-player session.
+This is why single-player and listen-server-hosted LAN play use the same
+message format and parser as remote play. The client and server halves in one
+process use two `qsocket_t`s pointed at each other through `driverdata`, and
+the client still consumes messages through `CL_ParseServerMessage`.
 
 `net_dgrm.c` is the real driver, and it implements two delivery models over
 one UDP socket per connection:
@@ -534,10 +529,9 @@ one UDP socket per connection:
   next frame's snapshot supersedes it anyway.
 
 Only one reliable message may be in flight per connection at a time (`canSend`
-gates it), which is a deliberate simplification: id's servers never needed a
-sliding window because gameplay-critical reliable traffic (signon, print
-messages, sound triggers) is low-volume compared to the per-frame unreliable
-snapshot stream.
+gates it). Signon and control messages are low-volume compared with the
+independent per-frame unreliable snapshot stream, so the protocol needs no
+reliable sliding window.
 
 `MSG_Write*`/`MSG_Read*` in `common.c` are the shared serialization
 primitives both `cl_input.c`/`cl_parse.c` and the server side use.
@@ -713,9 +707,9 @@ typedef struct entity_s
 ```
 
 `origin`/`angles` are what the renderer actually draws; `msg_origins[2]` /
-`msg_angles[2]` are raw server snapshots. The client never draws a raw
-snapshot directly — `CL_RelinkEntities` (`WinQuake/cl_main.c:442-...`)
-blends between the two most recent snapshots using a fraction computed by
+`msg_angles[2]` are raw server snapshots. `CL_RelinkEntities`
+(`WinQuake/cl_main.c:442-...`) usually blends between the two most recent
+snapshots using a fraction computed by
 `CL_LerpPoint` (`WinQuake/cl_main.c:391-408`), based on where `cl.time`
 (the client's local clock, advanced every frame in `CL_ReadFromServer`) sits
 between the timestamps of the last two server messages, `cl.mtime[0]` and
@@ -804,11 +798,8 @@ any further server messages.
 `NET_GetMessage`: during `cls.demoplayback`, message bytes and view angles
 are read straight from `cls.demofile` instead of the socket
 (`WinQuake/cl_demo.c:90-127`), and the same `CL_ParseServerMessage` path
-handles them, since a demo is literally a recording of the raw server
-message stream. This is only possible *because* NetQuake has no client-side
-prediction — a demo is nothing but "replay these snapshots and interpolate,"
-with no local simulation state to reconcile against a divergent recorded
-input stream.
+handles them, since a demo records the raw server message stream. Playback
+reuses the normal parser and interpolation path.
 
 ## No client-side prediction: NetQuake vs. QuakeWorld
 
@@ -822,10 +813,9 @@ holds `mtime[2]` and the entity array uniformly for local and remote
 players). There
 is no `CL_PredictMove` in this codebase, no rewind-and-replay reconciliation,
 and no local physics integration of `usercmd_t` against the world. Movement
-*feels* immediate primarily because id assumed single-digit-millisecond
-round-trips (LAN, or the loopback driver for single-player), so the gap
-between "I pressed forward" and "the server's snapshot shows me having moved
-forward" is imperceptible.
+feels immediate over loopback and low-latency LAN play. On modem and WAN links,
+the gap between sending input and receiving the resulting server state is
+visible because the client cannot predict through it.
 
 That assumption breaks down over the public internet, which is exactly the
 problem QuakeWorld (`QW/`, a separate codebase in this repository — not

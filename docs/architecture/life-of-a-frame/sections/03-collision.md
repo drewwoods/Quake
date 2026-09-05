@@ -1,6 +1,6 @@
 # Collision: Hulls, Traces, and Hit Detection
 
-Quake does not do collision detection against triangles. It does not do collision detection against the polygons you can see at all. Instead, the map compiler precomputes *three* separate BSP trees per map — one for a point, one for a 32×32×56 box, one for a 64×64×88 box — in which the world geometry has been dilated by the size of the moving object, so that at runtime every collision query degenerates into a *line* trace through a *point* in a solid/empty BSP. Bounding boxes of non-world entities are turned into six-plane BSPs on the fly so they can go through the exact same code. The result is that `SV_Move`, the one collision entry point the whole engine uses, resolves a swept-box-vs-world query in a few dozen float compares and a handful of recursive descents — no triangle tests, no GJK, no broadphase sweep, nothing that would have been affordable on a 75 MHz Pentium. This section covers that machinery, the areanode structure that culls entity-vs-entity tests, and how it all surfaces to game code as `traceline`.
+Quake does not collide against rendered polygons. The map compiler precomputes three world hulls — for a point, a 32×32×56 box, and a 64×64×88 box — with geometry expanded by the mover's extents. Runtime world collision is therefore a point trace through a solid/empty BSP. Non-BSP entities keep arbitrary bounding boxes; the engine fabricates a six-plane BSP around each candidate so the same trace code can test it. `SV_Move` combines world tracing with an areanode broadphase for entity candidates, and QuakeC exposes the result through `traceline`.
 
 ## Where it sits in the frame
 
@@ -109,7 +109,7 @@ Note hull 0's `clip_mins`/`clip_maxs` stay zeroed — a point has no size, so no
 
 **Why three?** Because dilating the world by the mover's size at *compile* time turns a swept-box test into a swept-point test at runtime. This is a Minkowski sum baked into the data. If you push every wall inward by 16 units on X and Y, 24 down and 32 up, then a player *box* colliding with the real world is exactly a player *point* colliding with the dilated world. `qbsp` does this expansion once, offline, so the runtime never has to consider the mover's extents at all — `SV_RecursiveHullCheck` only ever traces a line.
 
-The cost is the defining constraint of Quake level design and gameplay: **there are only three collision sizes in the entire game.** Every entity is snapped to the nearest one by `SV_HullForEntity`. A grenade, a nail, a health box, and an ogre's fireball all collide as points against the world (hull 0). Every player and most monsters collide as a 32×32×56 box (hull 1). Shamblers and other large monsters use 64×64×88 (hull 2). Nothing in between exists. This is why Quake's monsters come in exactly two footprints, why doorways are sized the way they are, and why a rocket passes cleanly through a gap that the player who fired it cannot fit through.
+The constraint applies to collision against BSP geometry: **there are only three pre-expanded mover sizes.** `SV_HullForEntity` chooses hull 0, 1, or 2 by the moving box's width. A grenade or nail uses the point hull; players and most monsters use the 32×32×56 hull; large monsters use the 64×64×88 hull. Arbitrary entity-vs-entity boxes still work through the generated box hull described below. This is why a rocket can pass through a gap that its player cannot.
 
 Fabien Sanglard's review and Olivier Montanuy's *Unofficial Quake Specs* both cover the hull expansion from the BSP-format side; the specs document the clipnode lump and the per-model `headnode[]` array that selects which hull a submodel uses.
 
@@ -154,7 +154,7 @@ hull_t *SV_HullForEntity (edict_t *ent, vec3_t mins, vec3_t maxs, vec3_t offset)
 }
 ```
 
-Two paths. For `SOLID_BSP` — the world itself, and every door, platform, and train, which are BSP submodels — hull selection is a two-branch decision on the *X size alone* of the moving object. Not the largest dimension, not a volume: `size[0]`. That is fine because the three hulls only ever differ meaningfully in their horizontal footprint and the mover sizes are drawn from a tiny fixed set, but it is exactly the kind of shortcut that makes this code fast and inflexible in equal measure.
+Two paths. For `SOLID_BSP` — the world itself, and every door, platform, and train, which are BSP submodels — hull selection is a threshold decision on the moving object's *X size alone*: point-sized, at most 32 units, or larger. It does not inspect the largest dimension or choose the numerically nearest hull.
 
 The `offset` output is the coordinate correction. Because the dilated hull was built assuming the mover's origin sits at a specific position within its box, the caller's world-space start/end must be shifted into the hull's frame — `VectorSubtract (hull->clip_mins, mins, offset)` computes exactly the discrepancy between the hull's assumed box and the actual box, then adds the entity's origin so a moving door's hull travels with it.
 

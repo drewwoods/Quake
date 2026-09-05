@@ -1,5 +1,9 @@
 # The Top-Level Frame: `Sys_*` Main Loop and `Host_Frame`
 
+> Scope: this section describes the original loop at commit `3ef8a7a`. The
+> current branch separates simulation and rendering; see the
+> [frame-rate update](../../../updates/2026-09-03-frame-rate-cap.md).
+
 Quake has no engine "framework," no scheduler, no threads, and no event loop in the modern sense. It has a `while (1)` in a platform file that computes a wall-clock delta and hands it to one function, `Host_Frame`, which runs *everything* — input, console, network, the QuakeC world simulation, the client's view of that world, the software or GL rasterizer, and mixing sound — in a fixed, straight-line order, then returns. There is exactly one place where the game advances in time and exactly one ordering of stages, and both the dedicated server and the single-player game are the same code with different flags. This section is the spine that the rest of the document hangs from: it establishes what `host_frametime` is, why the ordering of stages in `_Host_Frame` is what it is, and how the client and server manage to be two logically independent programs that happen to share an address space.
 
 ## Where it sits in the frame
@@ -52,7 +56,7 @@ The platform layer's entire job at runtime is to answer "how much wall-clock tim
 	}
 ```
 
-Two things are worth pulling out. First, the dedicated branch busy-waits on `Sys_Sleep()` until `sys_ticrate` seconds (default `0.05`, i.e. 20 Hz — `WinQuake/host.c:60`) have elapsed. A dedicated server has no reason to run faster than its network tick, and burning a Pentium on empty frames would have been actively hostile on the shared machines people ran servers on. Second, the interactive branch never sleeps *for a fixed period* — it blocks on `MsgWaitForMultipleObjects` (`WinQuake/sys_win.c:673-676`), waking on either a timeout or any input event. When the window is not focused it yields; when it is, the loop spins as fast as the machine allows and the rate limiting happens later, inside `Host_FilterTime`.
+Two things are worth pulling out. First, the dedicated branch polls the clock with a 1 ms `Sleep` inside `Sys_Sleep()` until `sys_ticrate` seconds (default `0.05`, i.e. 20 Hz — `WinQuake/host.c:60`) have elapsed. Second, the interactive branch sleeps only while paused, minimized, or unfocused. `SleepUntilInput` blocks on `MsgWaitForMultipleObjects` (`WinQuake/sys_win.c:673-676`), waking on either a timeout or an input event. While active, the loop spins as fast as the machine allows and `Host_FilterTime` rejects calls that arrive too soon.
 
 The Linux loop (`WinQuake/sys_linux.c:402-429`) differs in one interesting way — it *clamps the accumulator rather than the delta*:
 
@@ -82,9 +86,9 @@ The Linux loop (`WinQuake/sys_linux.c:402-429`) differs in one interesting way �
         Host_Frame (time);
 ```
 
-`oldtime += time` is the same as `oldtime = newtime` here, but the `time > sys_ticrate.value*2` branch exists to keep the two from drifting apart after a hitch. On the dedicated path the delta handed to `Host_Frame` is *forced* to exactly `sys_ticrate.value` rather than the true elapsed time — a dedicated server therefore simulates in perfectly uniform 50 ms steps regardless of how badly the host machine hiccuped, which makes server-side physics deterministic and demo/VCR playback reproducible.
+The two branches after the dedicated check do different jobs depending on which path reached them. On the interactive path `time` is the true elapsed delta, so `oldtime += time` is equivalent to `oldtime = newtime` — except when the delta exceeds two tics, where `oldtime = newtime` discards the excess rather than trying to catch it up. On the dedicated path `time` has already been overwritten with `sys_ticrate.value`, which can never exceed `sys_ticrate.value*2`; that branch is therefore unreachable and `oldtime` always advances by exactly one tic. A dedicated server consequently simulates in uniform 50 ms steps and, because `oldtime` accumulates rather than resyncing to the clock, keeps the backlog after a hitch and runs consecutive tics without sleeping until it catches up.
 
-The DOS loop (`WinQuake/sys_dos.c:937-950`) is the most primitive of the three: no sleeping at all, just a `continue` when a dedicated server hasn't reached its tic. Under DOS there was no OS to yield to, so spinning cost nothing. `Sys_FloatTime` there (`WinQuake/sys_dos.c:689-745`) reads the 8253 PIT counter at port 0x40 and the BIOS tick count at real-mode address `0x46c`, reconstructing a ~1.193 MHz timebase and defending against the two clocks disagreeing across a latch. It also carries a `sametimecount` hack that manufactures forward progress if the clock appears frozen for 100,000 consecutive calls — a symptom of just how unreliable the 1996 PC timebase was.
+The DOS loop (`WinQuake/sys_dos.c:937-950`) is the most primitive of the three: just a `continue` when a dedicated server has not reached its tic. Nothing in the loop sleeps or yields, so it polls the clock continuously. `Sys_FloatTime` there (`WinQuake/sys_dos.c:689-745`) reads the 8253 PIT counter at port 0x40 and the BIOS tick count at real-mode address `0x46c`, reconstructing a ~1.193 MHz timebase and defending against the two clocks disagreeing across a latch. It also carries a `sametimecount` hack that manufactures forward progress if the clock appears frozen for 100,000 consecutive calls.
 
 ## `Host_Frame` and the profiling wrapper
 
@@ -99,7 +103,7 @@ The first statement in `_Host_Frame` is not work but a landing pad:
 
 `WinQuake/host.c:640-641`. `Host_Error` (`WinQuake/host.c:121`) and `Host_EndGame` (`WinQuake/host.c:90`) `longjmp` to this buffer (`host_abortserver`, declared `WinQuake/host.c:52`). This is Quake's entire error-recovery strategy: any subsystem, arbitrarily deep — a bad BSP node, a QuakeC runtime error, a dropped server connection — can abandon the frame from wherever it is and the engine resumes at the top of the next one, having torn down the server or disconnected the client on the way out. No unwinding, no cleanup handlers; the hunk allocator is reset to `host_hunklevel` by `Host_ClearMemory` (`WinQuake/host.c:477`) when the level is torn down and that is the whole memory-safety story.
 
-Then `rand ()` is called once per frame, unconditionally (`WinQuake/host.c:643-644`), with the comment "keep the random time dependent." Advancing the PRNG by wall-clock frame count rather than by simulation events deliberately decouples random outcomes from the deterministic simulation, so two runs at different framerates diverge.
+Then `rand ()` is called once per attempted frame, before `Host_FilterTime` (`WinQuake/host.c:643-644`), with the comment "keep the random time dependent." Rejected frames advance the PRNG too, so otherwise identical runs can diverge when their platform loops call `Host_Frame` at different rates.
 
 ## `Host_FilterTime`: what `host_frametime` actually means
 
@@ -192,7 +196,7 @@ Note that the clamp is *not* applied when `host_framerate` is set, and that neit
 
 **`NET_Poll`** (`WinQuake/net_main.c:927-953`) is *not* the game packet path. It calls `SetNetTime()` and runs a time-ordered list of poll procedures — server-list broadcast/collect (`WinQuake/net_main.c:308-309`), ping tests (`WinQuake/net_dgrm.c:570,697`), the serial/modem dialing state machine (`WinQuake/net_comx.c:1262-1277`), IPX housekeeping (`WinQuake/net_ipx.c:195`). Actual game traffic is read on demand inside `SV_RunClients` and `CL_GetMessage`. `NET_Poll` sits here because it is cheap out-of-band bookkeeping that wants to run once per frame with a fresh timestamp.
 
-**`CL_SendCmd`** appears twice, guarded by opposite conditions, and this is the single most deliberate ordering decision in the function. When `sv.active` — a listen server or single player — the client's intentions must be built *before* `Host_ServerFrame` runs, because the server will consume them in the same frame through the loopback socket. When the server is remote, intentions are built *after* the server stage (which is skipped) and just before `CL_ReadFromServer`, so the outgoing packet reflects the newest input and goes out as late as possible in the frame — minimizing the input-to-wire latency that dominates on a modem link.
+**`CL_SendCmd`** appears twice, guarded by opposite conditions. When `sv.active` — a listen server or single player — the client's intentions must be built *before* `Host_ServerFrame` runs, because the server consumes them in the same frame through the loopback socket. When the server is remote, the server stage is skipped and the second call runs immediately before `CL_ReadFromServer`. The nearby source comment says incoming messages have already been read, but the code does the opposite: it sends this frame's input first, then drains incoming packets.
 
 **`Host_GetConsoleCommands`** (`WinQuake/host.c:532-543`) drains `Sys_ConsoleInput()` for the dedicated-server operator's stdin and injects it into the same command buffer.
 
@@ -229,7 +233,7 @@ Note that the client keeps its *own* clock (`cl.time`) driven by the same `host_
 
 **`S_Update`** (`WinQuake/snd_dma.c:721`) is handed the *renderer's* view vectors (`r_origin, vpn, vright, vup`) rather than the client's entity origin, so spatialization matches exactly what was just drawn — including in chase-cam mode. Before signon completes it is called with zero vectors so ambient sounds don't pan wildly during connection. `CDAudio_Update` (`WinQuake/cd_win.c:398`, `WinQuake/cd_linux.c:328`) then services the redbook audio track state machine.
 
-**`host_framecount++`** (`WinQuake/host.c:726`) is the last statement. It is a frame *counter*, not a time source; the renderer uses it to mark which BSP nodes and surfaces have already been visited this frame (the standard "visframe" trick), so per-frame visited-flags never need clearing.
+**`host_framecount++`** (`WinQuake/host.c:726`) is the last statement. Demo playback and `timedemo` use it to limit reads and count benchmarked frames. The renderer keeps separate `r_framecount` and `r_visframecount` counters.
 
 ## `Host_ServerFrame` and the `FPS_20` road not taken
 
@@ -306,7 +310,7 @@ From that, the frame behaviour falls out:
 
 ## How client and server coexist in one process
 
-They do not share state; they share a process and communicate exclusively by messages, exactly as if they were on opposite ends of a modem. The mechanism is the loopback network driver, `WinQuake/net_loop.c`.
+Neither half reads the other's gameplay state. Commands and snapshots cross the same network-message interface that remote play uses, and the only things the two share are process-wide: host timing, cvars, and the memory allocators. Locally, those messages travel through the loopback network driver, `WinQuake/net_loop.c`.
 
 `Loop_SendMessage` (`WinQuake/net_loop.c:154-186`) does not send anything — it copies the message into the *peer* qsocket's receive buffer with a 4-byte header (type byte, 16-bit length, one alignment pad byte), then clears `canSend`:
 
@@ -338,9 +342,9 @@ They do not share state; they share a process and communicate exclusively by mes
 
 `Loop_GetMessage` (`WinQuake/net_loop.c:127-152`) pops one message off the front, memmoves the remainder down, and — crucially — re-arms the sender's `canSend` when it consumes a reliable message. Reliable-message flow control, the same "one in flight at a time" discipline the datagram driver enforces over a real socket, is faithfully reproduced over a `memcpy`.
 
-The payoff is enormous relative to its cost. Single-player Quake is a network game with a zero-latency link. There is no "local play" code path to keep in sync with the networked one; QuakeC never knows whether the client it is talking to is on the same machine; a bug that only manifests over the wire will usually also manifest in single player if the message sizes get large enough. `SV_WriteEntitiesToClient` builds and PVS-culls the same delta-compressed entity stream whether the destination is a loopback buffer or a 28.8k modem. Carmack made the same architectural choice in every engine after this one, and the loopback driver is where it starts.
+Single-player Quake therefore uses the network protocol over an in-process transport. There is no separate local-play update path to keep in sync; QuakeC does not know whether its client is local; and `SV_WriteEntitiesToClient` builds and PVS-culls the same entity stream for loopback and datagram sockets.
 
-The cost is the coupling this section opened with: because both halves are driven by one `host_frametime` inside one `_Host_Frame`, a listen server's simulation rate is the host player's framerate — capped at 72 Hz, but also *floored* by whatever the host machine manages. A host player with a slow video card slows the world down for everyone connected to them. That defect is precisely what QuakeWorld was built to fix, by moving the server to a fixed tick and letting the client predict.
+The cost is that the two halves share a cadence. Both run from one `host_frametime` inside one `_Host_Frame`, so a listen server ticks only when the host player completes a frame: a slow renderer on the host lowers the simulation rate for everyone connected to it. Simulated time itself still tracks wall time, because `host_frametime` is variable — up to the 100 ms clamp, past which stall time is simply discarded. QuakeWorld's answer was to decouple the server tic from the client's frame and add client-side prediction.
 
 ## Call graph
 
@@ -392,7 +396,7 @@ main / WinMain                                  sys_win.c:692, sys_linux.c:354, 
 - `host_frametime` (double) — `WinQuake/host.c:40` — the simulation timestep for this frame; read by the server physics, the client clock, and QuakeC via `pr_global_struct->frametime`.
 - `realtime` / `oldrealtime` (double) — `WinQuake/host.c:42-43` — unfiltered accumulated wall clock, and the timestamp of the last accepted frame; their difference is the raw delta before clamping.
 - `host_time` (double) — `WinQuake/host.c:41` — host clock, initialized to `1.0` (`WinQuake/host.c:235`) so zero-valued `nextthink` fields never fire.
-- `host_framecount` (int) — `WinQuake/host.c:44` — frames since startup; used as the renderer's per-frame visited marker.
+- `host_framecount` (int) — `WinQuake/host.c:44` — accepted frames since startup; used by demo playback and `timedemo` accounting.
 - `host_abortserver` (`jmp_buf`) — `WinQuake/host.c:52` — `longjmp` target for `Host_Error`/`Host_EndGame`; the only unwinding mechanism in the engine.
 - `sys_ticrate` (cvar, "0.05") — `WinQuake/host.c:60` — dedicated-server tick period; also the drift threshold in the Linux loop.
 - `host_framerate` (cvar, "0") — `WinQuake/host.c:57` — when nonzero, overrides the measured delta for slow motion.

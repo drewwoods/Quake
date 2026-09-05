@@ -1,6 +1,6 @@
 # Sound, plus misc engine plumbing
 
-Quake's audio path mixes up to 128 simultaneous "channels" (looping ambients, dynamic entity sounds, and static level sounds) into a fixed-size paint buffer once per frame, entirely in integer math, then blits the result into the OS sound device's DMA buffer. The server never sends audio data — it sends a tiny `svc_sound` message naming a precached sound and an origin, and every connected client mixes it locally with its own stereo panning and distance attenuation. This section also tours the load-bearing plumbing that has nothing to do with any one subsystem but that every subsystem leans on: the status bar HUD, the console text buffer, the `Cbuf`/`Cmd`/`Cvar` command pipeline, the three custom memory allocators (Zone/Hunk/Cache), and the `setjmp`/`longjmp` error-recovery path that keeps a single bad frame from taking down the whole engine.
+Quake's audio path spatializes up to 128 channels, mixes their samples into a fixed-size integer paint buffer, then copies the result into the sound device's DMA buffer. The server sends a compact `svc_sound` event naming a precached sound and an origin; each client mixes PCM locally. This section also covers the HUD, console and command pipeline, Zone/Hunk/Cache allocators, and `setjmp`/`longjmp` error recovery.
 
 ## Where it sits in the frame
 
@@ -269,7 +269,7 @@ The lookup order is fixed and significant: registered engine commands (a linked 
 
 ## Brief: Hunk/Zone/Cache allocators (zone.c)
 
-Quake predates `malloc`/`free` being a workable strategy for a real-time engine on 1996-era machines: general-purpose heaps of that era fragment badly under long alloc/free churn, offer no visibility into where memory went, and have no notion of "throw this away if we need the room" — all things a game that loads/unloads whole levels every few minutes needs. `zone.c` implements three allocators layered over each other, each suited to a different lifetime pattern:
+Quake takes one large allocation from the OS at startup and layers three allocators over it, each matched to a different lifetime: the engine gets explicit control over when memory is reclaimed, plus an asset cache it can evict from under pressure.
 
 - **Zone** (`Z_Malloc`, `WinQuake/zone.c:142`) is a classic best-fit free-list allocator over a fixed-size arena (`DYNAMIC_SIZE` = 0xc000, `zone.c:24`) with block headers carrying a size/tag/id and a trash-detection sentinel (`ZONEID`, `zone.c:26`) checked by `Z_CheckHeap` (`zone.c:247-262`). It's for small, short-lived, arbitrarily-freed allocations — strings, cvar values — the doc comment says as much: "The zone calls are pretty much only used for small strings and structures, all big things are allocated on the hunk" (`zone.c:59-60`).
 - **Hunk** (`Hunk_AllocName`, `WinQuake/zone.c:399-427`) is a two-ended bump/stack allocator over one huge arena (`hunk_base`/`hunk_size`) — permanent, load-time data (server/client game state, the current level's BSP) grows up from `hunk_low_used`, and short-lived per-frame/per-scope temp allocations grow down from the top via `hunk_high_used` (`Hunk_HighMark`/`Hunk_FreeToHighMark`, `zone.c:452-474`). There is no per-block free; you only ever roll the mark back to a previous low/high watermark, which is why it's essentially free (a pointer subtraction) and immune to fragmentation — the tradeoff is that anything on the hunk must be freed in strict LIFO order relative to what was allocated after it.
@@ -420,7 +420,7 @@ Mod_Extradata (model.c:64) -> Cache_Check (zone.c:849) -> Mod_LoadModel on miss
 - `sfxcache_t` — `WinQuake/sound.h:42-50` — decoded PCM sample data (length, loop point, rate, width) for one sound effect, itself stored inside the `zone.c` Cache system.
 - `cvar_t` — `WinQuake/cvar.h:56-64` — name/string/value plus `archive`/`server` flags and an intrusive `next` pointer for the global cvar linked list.
 - `cmd_function_t` / `cmdalias_t` — `WinQuake/cmd.c` — intrusive linked lists of registered console commands and user aliases consulted in order by `Cmd_ExecuteString`.
-- `sizebuf_t cmd_text` — `WinQuake/cmd.c:66` — the single global command-text ring buffer that `Cbuf_AddText`/`Cbuf_InsertText`/`Cbuf_Execute` operate on.
+- `sizebuf_t cmd_text` — `WinQuake/cmd.c:66` — the linear command buffer that `Cbuf_AddText` appends to and `Cbuf_Execute` compacts from the front.
 - `memblock_t` / `memzone_t` — `WinQuake/zone.c:29-43` — Zone allocator's free-list block header and arena descriptor.
 - `hunk_t` — `WinQuake/zone.c:268-273` — Hunk allocator's per-block header (sentinel, size, 8-byte debug name), used only for consistency checking since the hunk has no per-block free.
 - `cache_system_t` / `cache_head` — `WinQuake/zone.c:557-568` — Cache allocator's block header (dual-linked into both an address-order list and an LRU list) and its sentinel head node.

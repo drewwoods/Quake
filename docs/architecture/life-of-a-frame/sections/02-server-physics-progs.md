@@ -1,6 +1,6 @@
 # The Server Stage: Physics, the QuakeC VM, and Entity Transmission
 
-`Host_ServerFrame` is where the world exists. In roughly 1600 lines of `sv_phys.c`, 700 lines of `sv_user.c`, and a 250-line bytecode interpreter in `pr_exec.c`, Quake runs a complete rigid-body-ish simulation of every entity in the level, executes game logic written in a custom scripting language, turns each connected client's byte-packed intentions into player movement, and then delta-compresses a visibility-culled snapshot of the world down a 28.8k modem — all in the sub-millisecond budget left over after the software rasterizer has taken its cut. This section follows one server tick from `pr_global_struct->frametime = host_frametime` to the last `NET_SendMessage`.
+`Host_ServerFrame` is where the world exists. In roughly 1600 lines of `sv_phys.c`, 700 lines of `sv_user.c`, and a 250-line bytecode interpreter in `pr_exec.c`, Quake simulates every entity, executes game logic in QuakeC, turns byte-packed client commands into player movement, and builds a visibility-culled entity update for each client. This section follows one server tick from `pr_global_struct->frametime = host_frametime` to the last `NET_SendMessage`.
 
 ## Where it sits in the frame
 
@@ -50,7 +50,7 @@ Three structural facts fall out of this loop.
 
 **Player physics is chosen by index, not by movetype.** `if (i > 0 && i <= svs.maxclients)` routes to `SV_Physics_Client` before movetype is ever consulted; the movetype switch inside that function is a second, narrower dispatch. This is what makes `PlayerPreThink`/`PlayerPostThink` player-only hooks without any per-entity flag.
 
-**There is no broadphase and no ordering.** Entities are simulated in array order, each one moving and colliding against the *current* state of every other. Simulation results therefore depend on edict index. Quake never pretended otherwise; determinism comes from doing the same thing in the same order every time, not from order-independence.
+**There is no dependency scheduler and no second pass.** Entities are simulated in edict-array order, each one moving and colliding against whatever state the others are in when its turn arrives, so results can depend on edict index. This is about ordering, not about culling: collision itself still goes through the areanode broadphase described in the next section.
 
 `sv.time += host_frametime` at the tail (`WinQuake/sv_phys.c:1563`) is the world clock. Note it advances *after* the pass, so every entity in a given frame sees the same `sv.time`.
 
@@ -187,7 +187,7 @@ The `numbumps = 4` cap is a hard budget, not a convergence criterion. In a compl
 
 `SV_CheckVelocity` (`WinQuake/sv_phys.c:90-114`) clamps each axis to `sv_maxvelocity` (2000, `WinQuake/sv_phys.c:45`) and — notably — explicitly tests for NaN in both velocity and origin, printing the offending entity's classname and zeroing the component. That check is defensive engineering born of experience: a single NaN propagating into `SV_Move` would poison the BSP hull traversal and crash the server, so the engine scrubs it every frame rather than trying to find the source.
 
-Note that the clamp is **per axis**, not on the magnitude — a diagonal move can exceed 2000 units/s by √3. This is the same class of shortcut that made diagonal running faster than straight running in the original games.
+Note that the clamp is **per axis**, not on the magnitude — a diagonal velocity can reach `2000√3` units/s.
 
 ## Water
 
@@ -245,7 +245,7 @@ Pushers get their own timebase. Every `MOVETYPE_PUSH` entity carries `ltime`, a 
 
 This is why a Quake door stops precisely at its open position rather than a frame's worth past it, at any framerate. The cost is that `ltime` can lag `sv.time` when a pusher is blocked, and `SV_PushMove` (`WinQuake/sv_phys.c:439-557`) explicitly rewinds it (`pusher->v.ltime -= movetime`, `WinQuake/sv_phys.c:535`) when it cannot complete.
 
-`SV_PushMove` itself is the crush handler. It moves the pusher first, then scans every other edict for one now embedded in the pusher's new volume, tries to shove it along by the same delta, and if that fails restores *everything* it has moved so far and calls the pusher's QuakeC `blocked` function (`WinQuake/sv_phys.c:539-551`). The rollback arrays `moved_edict[MAX_EDICTS]` and `moved_from[MAX_EDICTS]` are stack-allocated per call (`WinQuake/sv_phys.c:446-447`) — 600 edicts × 16 bytes of stack per pusher per frame, which was a real consideration on a machine with a fixed 64 KB DOS stack, and is one reason `MAX_EDICTS` stayed at 600. The corpse special case at `WinQuake/sv_phys.c:521-528` — collapsing a blocking non-solid entity's bounding box to a point rather than failing the move — is pure pragmatism: a dead body should never stop a door.
+`SV_PushMove` itself is the crush handler. It moves the pusher first, then scans every other edict for one now embedded in the pusher's new volume, tries to shove it along by the same delta, and if that fails restores *everything* it has moved so far and calls the pusher's QuakeC `blocked` function (`WinQuake/sv_phys.c:539-551`). The rollback arrays `moved_edict[MAX_EDICTS]` and `moved_from[MAX_EDICTS]` are stack-allocated per call (`WinQuake/sv_phys.c:446-447`), bounding rollback storage by the 600-edict limit. The corpse special case at `WinQuake/sv_phys.c:521-528` collapses a blocking non-solid entity's bounding box to a point rather than failing the move, so a dead body does not stop a door.
 
 ## `SV_Physics_Client` and player movement
 
@@ -630,7 +630,7 @@ byte *SV_FatPVS (vec3_t org)
 
 The per-entity leaf list (`ent->leafnums[]`, up to `MAX_ENT_LEAFS` = 16, `WinQuake/progs.h:34`, `WinQuake/progs.h:40-41`) is maintained by `SV_LinkEdict` in `world.c` — the same call that keeps the areanode tree current for collision also records which BSP leaves the entity's bounding box straddles. So the visibility test is a 16-iteration bit test against a bitfield, per entity, per client. No frustum, no distance, no occlusion queries: a static precomputed cell-to-cell visibility matrix does all the work, at the cost of a lengthy `vis` compile step and the classic Quake artifact of entities in an adjacent-but-visible room being culled when they shouldn't be.
 
-Two consequences worth naming. First, this is also an anti-cheat measure by accident: a wallhack cannot show you a player the server never told you about. Second, an entity with no model (`!ent->v.modelindex`) is *never* transmitted, which is why QuakeC's invisible logic entities — triggers, spawn points, path corners — cost zero bandwidth despite existing in the edict array.
+Two consequences are worth naming. First, a client cannot inspect entities outside its fat PVS, although the conservative PVS still includes some occluded entities. Second, a non-client entity with no model (`!ent->v.modelindex`) is not transmitted, so QuakeC's invisible logic entities — triggers, spawn points, path corners — cost no entity-update bandwidth.
 
 ### Delta against baseline
 

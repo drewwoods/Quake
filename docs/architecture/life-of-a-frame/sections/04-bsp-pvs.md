@@ -1,6 +1,6 @@
 # BSP and PVS
 
-Every Quake level is a single binary-space-partitioned tree baked at compile time by `qbsp`/`vis`/`light`, then loaded verbatim into a handful of flat arrays. The BSP tree gives the engine two things it cannot afford to compute per frame on 1996 hardware: a way to walk the world strictly front-to-back (or back-to-front) without sorting, and a precomputed potentially-visible-set (PVS) that turns "which leaf is visible from here" from an O(leafs) visibility test into a byte-array lookup. This section covers the on-disk format, the loader in `model.c` that turns it into the in-memory `mnode_t`/`mleaf_t`/`hull_t` graph, how the renderer marks visible leaves from the PVS, how the server reuses the exact same PVS machinery to decide what to network to each client, and the two lighting subsystems (`r_light.c`) that ride on top of the same BSP walk: static lightmap sampling and dynamic light surface-marking.
+Every Quake level is a binary-space-partitioned world baked by `qbsp`/`vis`/`light`, then converted from disk structures into flat runtime arrays. The BSP provides an ordered world walk, while the precomputed potentially-visible set (PVS) replaces per-frame portal visibility work with bitset decompression and lookup. This section covers the on-disk format, the `model.c` loader, client and server PVS use, static lightmap sampling, and dynamic-light surface marking.
 
 ## Where it sits in the frame
 
@@ -10,14 +10,14 @@ On the server side, PVS is consulted once per client per frame inside `SV_WriteE
 
 ## On-disk BSP format
 
-The whole map file is one blob: a `dheader_t` (`WinQuake/bspfile.h:82-95`) holding a version number and 15 `lump_t` `{fileofs, filelen}` directory entries (`WinQuake/bspfile.h:59-80`), version-locked to `BSPVERSION` 29 (`WinQuake/bspfile.h:56`). There is no per-lump alignment or compression beyond the visibility lump's own RLE scheme — everything is packed contiguously and referenced by byte offset, which is what lets the loader `mmap`/read the whole file once and then just point structures at offsets into it (see `mod_base` usage below).
+The map file begins with a `dheader_t` (`WinQuake/bspfile.h:82-95`) containing a version and 15 `lump_t` `{fileofs, filelen}` directory entries (`WinQuake/bspfile.h:59-80`), version-locked to `BSPVERSION` 29 (`WinQuake/bspfile.h:56`). Each lump is addressed by byte offset. `Mod_LoadModel` reads the file into a temporary buffer; the lump loaders then copy or convert its contents into hunk allocations.
 
 The key on-disk structures:
 
 - `dplane_t` (`WinQuake/bspfile.h:128-133`): a normal + distance + `type` (whether the plane is axis-aligned, used to fast-path dot products).
 - `dnode_t` (`WinQuake/bspfile.h:155-163`): a render-tree node — `planenum`, two `children[]` (a non-negative index is another node, negative is `-(leaf+1)`), a 16-bit bounding box for frustum culling, and `firstface`/`numfaces` into the face list. Note `children` are `short` — capped at `MAX_MAP_NODES` 32767 (`WinQuake/bspfile.h:32`) specifically because negative shorts double as leaf indices.
 - `dclipnode_t` (`WinQuake/bspfile.h:165-169`): the *collision* tree node — just `planenum` and two `children[]`, where negative values are literal `CONTENTS_*` constants, not leaf indices. This is a much thinner structure than `dnode_t` because clipping only needs to answer "solid or not," not "which surfaces are here."
-- `dleaf_t` (`WinQuake/bspfile.h:213-225`): `contents` (a `CONTENTS_*` enum, always negative — `WinQuake/bspfile.h:137-151`), `visofs` (byte offset into the decompressed-on-load visibility lump, or -1), a 16-bit bbox, a marksurface range, and four `ambient_level` bytes used for distance-attenuated ambient sound (water/sky/slime/lava hum).
+- `dleaf_t` (`WinQuake/bspfile.h:213-225`): `contents` (a `CONTENTS_*` enum, always negative — `WinQuake/bspfile.h:137-151`), `visofs` (byte offset into the RLE-compressed visibility lump, or -1), a 16-bit bbox, a marksurface range, and four `ambient_level` bytes used for ambient sound.
 - `dface_t` (`WinQuake/bspfile.h:188-200`): `planenum`/`side`, an edge range (`firstedge`/`numedges` into the surfedges indirection list), `texinfo`, up to `MAXLIGHTMAPS` (4) light `styles` bytes, and `lightofs` — offset into the lighting lump where this face's lightmap samples begin.
 - The visibility lump (`LUMP_VISIBILITY`, `WinQuake/bspfile.h:68`) is one big RLE-compressed bit matrix — see below.
 
@@ -50,7 +50,7 @@ The key on-disk structures:
 	Mod_MakeHull0 ();
 ```
 
-This order matters: leafs must load before nodes because `Mod_LoadNodes` resolves a node's negative child index directly into a `loadmodel->leafs` pointer (`WinQuake/model.c:884-886`), and planes/visdata must precede leafs and nodes for the same reason. Every `Mod_Load*` function follows the same shape — validate the lump size is a multiple of the on-disk struct size, `Hunk_AllocName` the in-memory array, byte-swap fields with `LittleLong`/`LittleShort`/`LittleFloat`, and convert any disk-relative index into a resident pointer. This upfront pointer-fixup pass is exactly what buys the renderer branch-free tree walks later — no per-access swap or bounds check.
+This order matters: leafs must load before nodes because `Mod_LoadNodes` resolves a node's negative child index directly into a `loadmodel->leafs` pointer (`WinQuake/model.c:884-886`), and planes and visibility data must exist before structures point into them. Most `Mod_Load*` functions validate the lump size, allocate a runtime array, byte-swap fields, and convert disk indices into resident pointers. Later tree walks can therefore follow pointers without repeated endian conversion or index resolution.
 
 `Mod_LoadVisibility` and `Mod_LoadLighting` are trivial raw copies — the vis and light lumps are opaque blobs at this stage, decoded lazily per-leaf/per-surface:
 
@@ -314,7 +314,7 @@ The comment block right above this code in `sv_main.c` explains the "why" direct
 				continue;		// not visible
 ```
 
-This is the server-authoritative form of visibility culling in Quake's client/server model: the server never sends state for an entity the client can't currently see, which both saves bandwidth (a hard constraint on 1996-era 28.8k modems) and — importantly for anti-cheat robustness — prevents a modified client from ever learning where an out-of-sight entity is, since the information is never transmitted at all.
+This is coarse server-side visibility culling: the server omits an entity when none of the leaves it touches intersects the client's fat PVS, which is where the bandwidth saving comes from. It is not an anti-cheat boundary. A PVS is conservative rather than exact, so a client is still told about entities that are in a potentially visible leaf but occluded from where it actually stands.
 
 ## Contents types: collision hulls vs. render nodes
 

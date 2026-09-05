@@ -4,7 +4,7 @@ Quake ships two complete renderers behind one interface: a CPU-only, palette-bas
 
 ## Where it sits in the frame
 
-`SCR_UpdateScreen` is called once per `Host_Frame` (from `CL_SendCmd`/`Host_Frame`'s draw step) and is the top of the rendering pipeline. The software build's version locks the video buffer and calls the view code:
+In the baseline loop, `_Host_Frame` calls `SCR_UpdateScreen` once per accepted frame. It is the top of the rendering pipeline. The software build's version locks the video buffer and calls the view code:
 
 ```c
 // WinQuake/screen.c:884-891
@@ -264,7 +264,7 @@ The surface stack sort is the payoff: because the world BSP is walked front-to-b
 		if (surf->key > surf2->key)
 			goto newtop;
 ```
-Whenever the topmost surface on the stack changes (a new front surface becomes visible, or the current front surface's edge ends), the span accumulated so far is closed off and appended to that surface's `spans` linked list — so **each surface ends up owning exactly the horizontal pixel runs where it is the frontmost thing on screen**, with no depth buffer and no overdraw at all. This is the entire point of the architecture: on hardware with no z-buffer acceleration and a slow FPU, guaranteeing each pixel is textured/lit exactly once is worth a fair amount of edge-list bookkeeping. See Abrash, *Graphics Programming Black Book*, chapters on "Adventures in Sorting" and "The Genesis of a General-Purpose Polygon Engine" for the derivation of this exact structure: https://www.jagregory.com/abrash-black-book/
+Whenever the topmost surface on the stack changes, the accumulated span is appended to that surface's `spans` list. Opaque world surfaces therefore own only the horizontal runs where they are frontmost, without a depth buffer. This avoids world-surface overdraw during texturing; later entity, particle, sky, and turbulent passes can still draw over existing pixels. See Abrash, *Graphics Programming Black Book*, chapters on "Adventures in Sorting" and "The Genesis of a General-Purpose Polygon Engine": https://www.jagregory.com/abrash-black-book/
 
 Once a scanline's spans threaten to exceed the preallocated `MAXSPANS` budget, or at end of frame, `D_DrawSurfaces` (declared `WinQuake/d_iface.h:154`) is called to actually texture each surface's span list.
 
@@ -299,7 +299,7 @@ surfcache_t *D_CacheSurface (msurface_t *surface, int miplevel)
 			&& cache->lightadj[3] == r_drawsurf.lightadj[3] )
 		return cache;
 ```
-The cache is keyed by mip level (surfaces closer to the camera get sampled at higher resolution) and invalidated only when the texture animates, a dynamic light touches the surface this frame, or a lightstyle (flickering torches, etc.) changes intensity — otherwise the previously-rasterized `surfcache_t` (`WinQuake/d_local.h:37-49`) is reused untouched. On a cache miss it allocates from a dedicated heap (`D_SCAlloc`) sized by `SURFCACHE_SIZE_AT_320X200` (`WinQuake/d_local.h:35`) and calls `R_DrawSurface` to actually light and blit the texel data in. This is a textbook instance of trading memory for the CPU time the software rasterizer cannot spare — Abrash's Black Book chapters on the surface cache ("Quake's Hidden-Surface Removal" / caching chapters) explain the LRU eviction and thrash-avoidance heuristics (`r_cache_thrash` at `WinQuake/d_surf.c:26`) in detail.
+The cache is keyed by mip level and invalidated when the texture animates, a dynamic light touches the surface, or a lightstyle changes; otherwise the existing `surfcache_t` (`WinQuake/d_local.h:37-49`) is reused untouched. On a miss, `D_SCAlloc` allocates from a renderer-private heap sized by `SURFCACHE_SIZE_AT_320X200` (`WinQuake/d_local.h:35`) and `R_DrawSurface` rebuilds the pixels. Eviction is not LRU: a single rover pointer sweeps the heap in address order, freeing and coalescing whatever blocks it lands on until the request fits, and wrapping to the start when it runs off the end. `r_cache_thrash` is set when that wrap happens more than once in a frame — the signal that the working set no longer fits.
 
 ### Perspective-correct span texturing (`d_scan.c`)
 
@@ -608,7 +608,7 @@ void R_DrawAliasModel (entity_t *e)
 	VectorCopy (currententity->origin, r_entorigin);
 	VectorSubtract (r_origin, r_entorigin, modelorg);
 ```
-but instead of rasterizing triangles itself, it delegates to `GL_DrawAliasFrame` (`WinQuake/gl_rmain.c:289`), which walks a **precompiled command stream** built once, offline (at model-load time), by `gl_mesh.c`. Rather than emitting one GL primitive per triangle, Quake's tools (`BuildTris`, `WinQuake/gl_mesh.c:194-282`) greedily chain adjacent triangles into the longest possible `GL_TRIANGLE_STRIP` or `GL_TRIANGLE_FAN` runs (`StripLength`/`FanLength`, `WinQuake/gl_mesh.c:58`/`127`), amortizing per-vertex transform/lighting cost across a whole strip instead of resubmitting shared vertices per triangle — this was still a meaningful savings on the fixed-function, immediate-mode `glBegin`/`glVertex3f` pipeline of the era, where every `glVertex` call had real per-call overhead. The strip/fan length is sign-encoded into a single `commands[]` int array (positive = strip length, negative = fan length):
+but instead of rasterizing triangles itself, it delegates to `GL_DrawAliasFrame` (`WinQuake/gl_rmain.c:289`), which walks a command stream built once at model load by `gl_mesh.c`. `BuildTris` (`WinQuake/gl_mesh.c:194-282`) greedily chains adjacent triangles into `GL_TRIANGLE_STRIP` or `GL_TRIANGLE_FAN` runs (`StripLength`/`FanLength`, `WinQuake/gl_mesh.c:58`/`127`), reducing repeated vertex submissions. The strip/fan length is sign-encoded into a single `commands[]` int array (positive = strip length, negative = fan length):
 ```c
 // WinQuake/gl_mesh.c:245-249
 		if (besttype == 1)
@@ -651,7 +651,7 @@ but instead of rasterizing triangles itself, it delegates to `GL_DrawAliasFrame`
 		glEnd ();
 	}
 ```
-Per-vertex lighting here is not a Phong/Lambert dot product against a live normal — `shadedots` indexes a precomputed table of dot products between a fixed set of 162 quantized vertex normals (`r_avertexnormal_dots`) and the current light direction, another classic "trade a table lookup for a floating point transcendental" move consistent with the whole codebase's era-appropriate frugality.
+Per-vertex lighting here does not compute a dot product against each live normal. `shadedots` indexes a precomputed table for 162 quantized vertex normals (`r_avertexnormal_dots`), trading repeated vector math for a lookup.
 
 ### The GL frame in one call
 
