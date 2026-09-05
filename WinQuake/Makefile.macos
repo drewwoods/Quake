@@ -19,7 +19,7 @@ OBJCFLAGS        := $(CFLAGS) -fobjc-arc $(OBJCFLAGS)
 GL_CFLAGS        = $(CFLAGS) -DGLQUAKE
 GL_OBJCFLAGS     = $(OBJCFLAGS) -DGLQUAKE
 unexport CFLAGS OBJCFLAGS
-LDLIBS            = -framework Cocoa -framework CoreGraphics \
+LDLIBS            = -framework Cocoa -framework CoreGraphics -framework CoreVideo \
 	-framework AudioUnit -framework AudioToolbox -framework CoreAudio \
 	-framework QuartzCore -framework OpenGL -framework ApplicationServices -lm
 

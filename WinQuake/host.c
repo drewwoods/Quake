@@ -44,6 +44,8 @@ double		oldrealtime;			// last frame run
 int			host_framecount;
 
 #define	HOST_MAX_CATCHUP	8	// simulation steps before abandoning a backlog
+#define	HOST_VSYNC_GRACE	4	// refresh intervals of silence before giving
+					// up on the display link and using the clock
 
 static double	host_lastrender;
 
@@ -587,6 +589,24 @@ static float Host_RefreshInterval (void)
 }
 
 
+
+/*
+===================
+Host_VsyncSerial
+
+Display refreshes counted so far, or 0 where the platform cannot count them.
+===================
+*/
+static unsigned long long Host_VsyncSerial (void)
+{
+#ifdef __APPLE__
+	return VID_VsyncSerial ();
+#else
+	return 0;
+#endif
+}
+
+
 /*
 ===================
 Host_FilterRender
@@ -594,14 +614,25 @@ Host_FilterRender
 Rendering is paced to the display rather than to the simulation, so a
 simulation step the display will never show does not pay for a frame.
 
-Returns false when no frame is due.  With no display cadence to follow --
-a dedicated server, a benchmark, or a backend that cannot report a refresh
-rate -- this falls back to stock behaviour of one render per step.
+Where the display can be asked when it refreshed, follow that directly: one
+frame per vsync, drawn immediately after it, which leaves most of an interval
+of slack before the compositor wants the next one.
+
+Otherwise fall back to a wall clock ticking at the refresh interval.  That
+keeps the right *rate* but not the right *phase* -- see the resync below --
+so it is a second choice, not an equivalent one.
+
+Returns false when no frame is due.  With no display cadence at all -- a
+dedicated server, a benchmark, or a backend that cannot report a refresh
+rate -- this is stock behaviour of one render per step.
 ===================
 */
 static qboolean Host_FilterRender (qboolean stepped)
 {
-	float	interval;
+	static unsigned long long	lastserial;
+	static double			serialtime;
+	unsigned long long		serial;
+	float				interval;
 
 	if (cls.state == ca_dedicated)
 		return false;
@@ -609,6 +640,20 @@ static qboolean Host_FilterRender (qboolean stepped)
 	interval = Host_RefreshInterval ();
 	if (cls.timedemo || interval <= 0)
 		return stepped;
+
+	serial = Host_VsyncSerial ();
+	if (serial != lastserial)
+	{
+		lastserial = serial;
+		serialtime = realtime;
+		return true;
+	}
+
+// Watchdog.  A display link stops if its display goes away, and a game that
+// renders only on vsync would then stop drawing entirely.  Give it a few
+// intervals, then pace from the clock instead.
+	if (serial && realtime - serialtime < interval * HOST_VSYNC_GRACE)
+		return false;
 
 	if (realtime - host_lastrender < interval)
 		return false;
@@ -840,6 +885,7 @@ void _Host_Frame (float time)
 
 	if (!Host_FilterRender (stepped))
 		return;
+
 
 // update video
 	if (host_speeds.value)

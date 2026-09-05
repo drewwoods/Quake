@@ -4,10 +4,13 @@
 
 #import <Cocoa/Cocoa.h>
 #import <CoreGraphics/CoreGraphics.h>
+#import <CoreVideo/CoreVideo.h>
 #import <QuartzCore/QuartzCore.h>
 
 #include "quakedef.h"
 #include "d_local.h"
+
+
 
 #define BASEWIDTH  320
 #define BASEHEIGHT 200
@@ -22,6 +25,27 @@ unsigned d_8to24table[256];
 
 void (*vid_menudrawfn)(void);
 void (*vid_menukeyfn)(int key);
+
+/*
+Presentation cadence.
+
+The window server composites on the display's own clock.  A renderer paced by
+a wall clock is right on average and wrong in detail: its phase against vsync
+is whatever the last stall happened to leave behind, and a phase that lands on
+the compositor's frame boundary turns every frame into a coin toss -- some
+make their vsync, some miss and are shown twice or dropped.  So take the
+cadence from the display instead of guessing it.
+
+    CVDisplayLink thread          main thread
+    --------------------          -----------
+    vsync -> vsyncSerial++        serial changed? -> render, then commit
+
+The callback does nothing but bump a counter.  Nothing in the software
+renderer is thread safe, so no renderer state is touched off the main thread.
+*/
+static CVDisplayLinkRef displayLink;
+static volatile uint64_t vsyncSerial;
+static void StartDisplayLink(void);
 
 static NSWindow *quakeWindow;
 static NSView *quakeView;
@@ -536,6 +560,7 @@ void VID_Init(unsigned char *palette)
     [quakeWindow makeKeyAndOrderFront:nil];
     [NSApp activateIgnoringOtherApps:YES];
     UpdateMouseCapture();
+    StartDisplayLink();
     }
 }
 
@@ -556,6 +581,7 @@ The image borrows the buffer rather than copying it, so frames alternate
 between two: the compositor is still reading the one handed over last.
 ================
 */
+
 void VID_Update(vrect_t *rects)
 {
     if (headlessMode)
@@ -594,10 +620,70 @@ void VID_Update(vrect_t *rects)
         (size_t)renderWidth * 4, rgbColorSpace,
         kCGBitmapByteOrderDefault | kCGImageAlphaNoneSkipLast,
         provider, NULL, false, kCGRenderingIntentDefault);
+// Hand the layer over now.  Left to the implicit transaction it would commit
+// on whatever runloop turn came next -- which is inside Sys_SendKeyEvents, on
+// the simulation's 72 Hz grid.  That scattered the handover across a 12 ms
+// window and left 40% of frames either dropped or shown twice.
+    [CATransaction begin];
+    [CATransaction setDisableActions:YES];
     [[quakeView layer] setContents:(__bridge id)image];
     CGImageRelease(image);
     CGDataProviderRelease(provider);
+    [CATransaction commit];
     }
+}
+
+/*
+================
+VsyncCallback
+
+Runs on the display link's own thread.  Bumping the counter is all it may do.
+================
+*/
+static CVReturn VsyncCallback(CVDisplayLinkRef link, const CVTimeStamp *now,
+    const CVTimeStamp *output, CVOptionFlags flagsIn, CVOptionFlags *flagsOut,
+    void *context)
+{
+    (void)link; (void)now; (void)output;
+    (void)flagsIn; (void)flagsOut; (void)context;
+
+    vsyncSerial++;
+    return kCVReturnSuccess;
+}
+
+/*
+================
+StartDisplayLink
+
+Bound to the main display, like VID_RefreshInterval: moving the window to a
+monitor with a different refresh rate will not be noticed.
+================
+*/
+static void StartDisplayLink(void)
+{
+    if (CVDisplayLinkCreateWithCGDisplay(CGMainDisplayID(), &displayLink)
+            != kCVReturnSuccess)
+        return;
+    if (CVDisplayLinkSetOutputCallback(displayLink, VsyncCallback, NULL)
+            != kCVReturnSuccess
+        || CVDisplayLinkStart(displayLink) != kCVReturnSuccess)
+    {
+        CVDisplayLinkRelease(displayLink);
+        displayLink = NULL;
+    }
+}
+
+/*
+================
+VID_VsyncSerial
+
+Counts display refreshes since startup, or 0 where there is no display link to
+count them.  The caller renders when it changes.
+================
+*/
+unsigned long long VID_VsyncSerial(void)
+{
+    return vsyncSerial;
 }
 
 /*
@@ -641,6 +727,12 @@ void VID_Shutdown(void)
     @autoreleasepool {
     int i;
 
+    if (displayLink)
+    {
+        CVDisplayLinkStop(displayLink);
+        CVDisplayLinkRelease(displayLink);
+        displayLink = NULL;
+    }
     SetMouseCapture(false);
     [quakeWindow orderOut:nil];
     quakeView = nil;
