@@ -1,0 +1,105 @@
+From: "John Van Essen" <vanes002@maroon.tc.umn.edu>
+Newsgroups: comp.sys.ibm.pc.games.action,alt.games.doom
+Subject: Doom news from David Taylor
+Organization: University of Minnesota, Twin Cities
+Date: Thu, 17 Mar 1994 05:00:23 GMT
+
+I e-mailed David Taylor at id software, reminding him of his Barney contest
+(following is an exerpt from his Feb 12th post to the newsgroups), and
+I also asked for an update on Doom 1.3.  Reply follows exerpt...
+
+>  This is a personal thing as I hate Barney, but I saw the Barney
+>  patches to Doom and... er... he's flat.  I'll offer an official Doom
+>  tee to the artist who can draw the best Barney graphics patches by
+>  March 11.  Not interested in straight scans.  Want to see your
+>  artistic talents (used for Good).  Good sfx and death frames a big
+>  plus.
+>
+>	=-ddt->
+
+----- Forwarded message begins here -----
+From: David Taylor
+Tue, 15 Mar 94 23:27:59 -0600
+
+>     So - it's March 15th.  Who won?
+
+Nobody sent me anything.  No one so far.  Will keep it open until I
+get a juicy one.  :)
+
+>     BTW, time to rev up the e-mail magnet up a few gauss, eh?
+>     Can you update the masses on c.s.i.p.g.action and alt.games.doom
+>     with one of your little newsletters soon?  How's the progress on 1.3?
+
+It's pretty-much stymied.  The problem is this.  The last great
+frontier of bugs on Doom is the DOS-specific stuff, specifically
+sound code and serial code.  The sound code needs replacing to fix,
+too large a fix for v1.3.  I'm actually considering this for an
+alternative release (not in the normal version stream) for those
+that want to try for stabler sound support.  The serial code needs
+massaging, but because the source code is out, it tends to put out
+its own fires.
+
+We are not putting any new features in v1.3.  We want it to be the
+last version.  It'll be done when we get a warm-mushy feeling about
+it and can play it without it crashing on our machines (which it
+does right now).
+
+>     Don't mention any time frame for releasing it (!!!!!!)
+
+Will be sure not to.  :)
+
+>     When you upload 1.3, don't forget about ocf.unt.edu.
+
+Will try to remember.
+
+>     Thanks.   Bye.
+
+Could you send up the previous status to the net?  Thanks...
+
+	=-ddt->
+
+------ Forwarded message ends here ------
+
+I then asked for some clarifications - here is his reply:
+
+----- Forwarded message begins here -----
+From: David Taylor  <ddt@idcube.idsoftware.com>
+Wed, 16 Mar 94 11:01:54 -0600
+Subject: Re: News for the net - need clarifications :)
+
+> Before I post your previous response per your request, a few clarifications?
+> There are some questions that come immediately to mind:
+>
+>     Does this mean id hasn't fixed any sound problems?  Or does this
+>     mean that the *best* solution is a rewrite, but what's there
+>     works better than before, but not perfect?  Which problems are
+>     known about but will have no solution in 1.3?
+
+Changes have been made to the sound code.  For instance, it now
+runs under Windows again.  It works for a while under OS/2 but cuts
+out after a while unless you have the latest patches for OS/2 2.1.
+But the code isn't totally stable.  It still crashes in net games
+in random places.  The sound library will probably never be totally
+stable.  By replacement, I mean a different third-party sound
+library.
+
+>     It's nice that the serial code being out helps put out fires.
+>     That's fine for netters, but how about mail-order people?
+>     What will they be getting?  A few ambitious souls have written
+>     their own interface programs, apparently.  Do you plan to
+>     supply any of these freeware programs with Doom?
+
+Doubt it.  When you distribute other people's code, you tend to
+get the tech support calls for it, whether you cover the stuff with
+disclaimers or not.
+
+Hope this clarifies things.  Don't have time for much else.
+
+	=-ddt->
+
+------ Forwarded message ends here ------
+
+So - there you have it.  If you have questions, mail to help@idsoftware.com.
+
+   John Van Essen <vanes002@maroon.tc.umn.edu> (`finger' plan is Mini-FAQ)
+

@@ -1,0 +1,32 @@
+From: ddt@daisy.cc.utexas.edu (David Taylor)
+Newsgroups: comp.sys.ibm.pc.games.action
+Subject: idNews: GUS & other stuff
+Date: 11 Dec 1993 03:34:19 -0600
+Organization: id Software
+
+Wow.  Er.  It seems we've sorta clogged the net.
+
+First off, thanks for the congrats and support!  We're tired and
+need it.  :)
+
+Secondly, to those of you not getting any GUS music, that's because
+there's one line I commented out of the game and forgot to put back in
+while debugging it last night.  Included at the end of this post is a
+file to get that to work for you.  The file must be named DMXGUS.INI.
+It's included at the end of this post.  Someone please put this on ftp
+sites when the bandwidth comes back.  No one's here tonight except me
+and I don't know what our account is on AOL, CompuServe, etc., so if
+someone could upload this file to these places, I'd appreciate it.
+Stick it in your DOOM directory, and when you run doom, run it from
+that directory (don't stick c:\doom in your path and run it from
+somewhere else).  When you start up doom with this, you should notice a
+difference.  It'll hit the disk after you see the DMX_Init thing in the
+DoomOS startup stuff.
+
+Thirdly, we're trying to keep up with the net-posted bugs.  We're
+trying to get a SoundBlaster 1.0 to our sound guy so that he can
+figure out what the deal is (they're not made anymore).  Those
+V_DrawPatch() errors will take a little while.
+
+The follwing is DMXGUS.INI (uuencoded):
+

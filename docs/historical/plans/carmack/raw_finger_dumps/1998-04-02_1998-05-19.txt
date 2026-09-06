@@ -1,0 +1,212 @@
+[idsoftware.com]
+Welcome to id Software's Finger Service V1.4!
+
+Name: John Carmack
+Email: johnc@idsoftware.com
+Description: Programmer
+Project: Quake 3
+Last Updated: 05/19/1998 23:01:08 (Central Standard Time)
+-------------------------------------------------------------------------------
+5/19/98
+-------
+A 94 degree day at the dragstrip today.  Several 3drealms and Norwood
+Autocraft folk also showed up to run.  We got to weigh most of the cars on
+the track scales, which gives us a few more data points.
+
+11.6 @ 125 Bob Norwood's ferrari P4 race car (2200 lbs)
+11.9 @ 139 John Carmack's twin turbo testarossa (3815 lbs)
+11.9 @ 117 Paul Steed's YZF600R bike
+12.1 @ 122 John Carmack's F50 (3205 lbs)
+12.3 @ 117 Brian's Viper GTS (3560 lbs)
+13.7 @ 103 John Cash's supercharged M3
+14.0 @  96 Scott Miller's lexus GS400
+15.0 @ ??? Someone's volkswagon GTI
+15.1 @ ??? Christian's boxter (with Tim driving)
+
+Weight is the key for good ETs.  The TR has considerably better power
+to weight ratio than the P4, but it can't effectively use most of the power
+until it gets into third gear.  The viper is actually making more power than
+the F50, (Brian got a big kick out of that after his dyno run) but 350 lbs
+more than compensated for it.
+
+I wanted to hit 140 in the TR, but the clutch started slipping on the last
+run and I called it a day.
+
+I was actually surprised the F50 ran 122 mph, which is the same the F40 did
+on a 25 degree cooler day.  I was running with the top off, so it might
+even be capable of going a bit faster with it on.
+
+The F50 and the viper were both very consistant performers, but the TR and
+the supercharged M3 were all over the place with their runs.
+
+Brian nocked over a tenth off of his times even in spite of the heat, due to
+launch practice and some inlet modifications.  He also power shifted on
+his best run.
+
+It was pretty funny watching the little volkswagon consistantly beat up on
+a tire shredding trans-am.
+
+George Broussard had his newly hopped up 911 turbo, but it broke the trans
+on its very first run.  We were expecting him to be in the 11's.
+
+We probably won't run again until either I get the F50 souped up, or my
+GTO gets finished.
+
+
+4/17
+----
+Yes, I bought an F50.  No, I don't want a McLaren.
+
+We will be going back to the dragstrip in a couple weeks, and I will be
+exercising both the F50 and the TR there.  Cash's supercharged M3 will
+probably show some of the porsches a thing or two, as well.
+
+I'll probably rent a road coarse sometime soon, but I'm not in too much of
+a hurry to run the F50 into the weeds.
+
+My TR finally got put back together after a terrific nitrous explosion
+just before the last dragstrip.  It now makes 1000.0 hp at the rear wheels.
+Contrast that with the 415 rear wheel hp that the F40 made.  Of cource, a
+loaded testarossa does weigh about 4000 lbs...
+
+My project car is somewhat nearing completion.  My mechanic says it will
+be running in six weeks, but mechanics can be even more optimistic than
+software developers. :)  I'm betting on fall.  It should really be something
+when completed:  a carbon fiber bodied ferrari GTO with a custom, one-of-a
+kind billet alluminum 4 valve DOHC 5.2L V12 with twin turbos running
+around 30 lbs of boost.  It should be good for quite a bit more hp than my
+TR, and the entire car will only weigh 2400 lbs.
+
+---------
+
+The distance between a cool demo and production code is vast.  Two months
+ago, I had some functional demos of several pieces of the Quake 3 rendering
+tech, but today it still isn't usable as a full replacement for ref_gl yet.
+
+Writing a modern game engine is a lot of work.
+
+The new architecture is turning out very elegent.  Not having to support
+software rendering or color index images is helping a lot, but it is also
+nice to reflect on just how much I have learned in the couple years since
+the original Quake renderer was written.
+
+My C coding style has changed for Quake 3, which is going to give me a nice
+way of telling at a glance which code I have or haven't touched since
+Quake 2.  In fact, there have been enough evolutions in my style that you
+can usually tell what year I wrote a piece of code by just looking at
+a single function:
+
+/*
+=============
+=
+= Function headers like this are DOOM or earlier
+=
+=============
+*/
+
+/*
+=============
+Function Headers like this are Quake or later
+=============
+*/
+
+{
+// comments not indented were written on NEXTSTEP
+// (quake 1)
+
+	// indented comments were written on
+	// Visual C++ (glquake / quakeworld, quake2)
+}
+
+for (testnum=0 ; testnum<4 ; testnum++)
+{	// older coding style
+}
+
+for (testNumber = 0 ; testNumber < 4 ; testNumber++) {
+	// quake 3 coding style
+}
+
+
+4/8
+---
+Things are progressing reasonably well on the Quake 3 engine.
+
+Not being limited to supporting a 320*240 256 color screen is
+very, very nice, and will make everyone's lives a lot easier.
+
+All of our new source artwork is being done in 24 bit TGA files,
+but the engine will continue to load .wal files and .pcx files
+for developer's convenience.  Each pcx can have its own palette
+now though, because it is just converted to 24 bit at load time.
+
+Q3 is going to have a fixed virtual screen coordinate system,
+independant of resolution.  I tried that back in the original
+glquake, but the fixed coordinate system was only 320*200, which
+was excessively low.  Q2 went with a dynamic layout at different
+resolutions, which was a pain, and won't scale to the high resolutions
+that very fast cards will be capable of running at next year.
+
+All screen drawing is now done assuming the screen is 640*480, and
+everything is just scaled as you go higher or lower.  This makes
+laying out status bars and HUDs a ton easier, and will let us
+do a lot cooler looking screens.
+
+There will be an interface to let game dlls draw whatever they want
+on the screen, precisely where they want it.  You can suck up a lot
+of network bandwidth doing that though, so some care will be needed.
+
+--
+
+Going to the completely opposite end of the hardware spectrum from
+quake 3...
+
+I have been very pleased with the fallout from the release of the
+DOOM source code.
+
+At any given spot in design space, there are different paths you
+can take to move forward.  I have usually chosen to try to make a
+large step to a completely new area, but the temptation is there
+to just clean up and improve in the same area, continuously
+polishing the same program.
+
+I am enjoying seeing several groups pouring over DOOM, fixing it
+up and enhancing it.  Cleaning up long standing bugs.  Removing
+internal limitations.  Orthogonalizing feature sets.  Etc.
+
+The two that I have been following closest are Team TNT's BOOM
+engine project, which is a clear headed, well engineered
+improvement on the basic DOOM technical decisions, and Bruce Lewis'
+glDoom project.
+
+Any quakers feeling nostalgic should browse around:
+
+http://www.doomworld.com/
+
+
+4/2
+---
+Drag strip day!  Most of the id guys, John Romero from ION,
+and George and Alan from 3drealms headed to the Ennis
+dragstrip today.
+
+Nobody broke down, and some good times were posted.
+
+11.9 @ 122	John Carmack F40
+12.2 @ 122	George Broussard custom turbo 911
+12.4 @ 116	Brian Hook Viper GTS
+13.4 @ 106	John Romero custom turbo testarossa
+13.6 @ 106	Todd Hollenshead 'vette
+13.9 @ 100	Paul Steed 911
+14.0 @ 99	Tim Willits 911
+14.3 @ 101	Bear Turbo Supra
+14.4 @ 98	Alan Blum turbo rx-7
+14.7 @ 92	Brandon James M3
+15.3 @ 92	Christian Boxster
+15.5 @ 93	Jen (Hook's Chick) Turbo Volvo
+16.1 @ 89	Ms. Donna Mustang GT
+17.4 @ 82	Anna (Carmack's Chick) Honda Accord
+18.1 @ 75	Jennifer (Jim Molinets' Chick) Saturn
+
+We had three significant no-shows for various reasons:  my TR,
+Adrian's viper, and Cash's supercharged M3 were all in the shop.
+

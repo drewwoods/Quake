@@ -1,0 +1,83 @@
+From: ddt@huey.cc.utexas.edu (David Taylor)
+Newsgroups: alt.games.doom,comp.sys.ibm.pc.games.action
+Subject: idNews: help w/ v1.2 & UNIX ports
+Date: 14 Jan 1994 02:36:09 -0600
+Organization: id Software
+
+Howdy.  Long-time, no write.  Actually, did write, but post, she no get
+posted.  So again, a post but with slightly newer stuff, but mostly the
+same if it already got to your site somehow.
+
+help us test v1.2:
+
+  On ftp.uwp.edu:/pub/games/id is a file called testv12.zip.  It is a
+  small test program which contains the sound library used in Doom
+  v1.2.  Please download it and test, especially if you have a card
+  which was not behaving in v1.1.  It now supports PAS-16,
+  SB-compatibles using the ES488 chip, and SB's at IRQ 2.  Keep in mind
+  when testing it on PAS stuff that you need your IRQ at 7 or below (I
+  do not think this is the default).  Sorry, but it's a limitation of
+  DOS4GW.
+
+  Please mail me at ddt@idsoftware.com if you've tested this, and for
+  few other reasons, please.  Something about posting makes me an
+  e-mail target for the next several days.  If you've got some Doom
+  bug or other problem/question, please mail help@idsoftware.com.  I'm
+  supposed to be doing Jag stuff and am having a wee-bit of trouble
+  when I get bunches o' mail.  Thanks!  (No offense to those who've
+  mailed- I like mail, just can't afford the time right now)
+
+v1.2 status:
+
+  The serial and modem-specific stuff is finished and being tested a
+  bit right now.  We want to do a little more testing for a few days
+  before releasing v1.2.  Please don't ask for specific dates.  They're
+  no fun.  Besides, Usenetters are the first to learn everthing anyway-
+  promise!  Betcha dollars-to-donuts that Hank will beat me to the
+  punch.  ;)
+
+On UNIX ports:
+
+  I would do ports to different UNIX platforms if the right platforms
+  were given to us on indefinite loan (that doesn't mean forever- it
+  just means I don't know when we'd be finished with it).  Depending on
+  my familiarity with the platform (Sparc & RS/6k is very high- others
+  low), I can probably get Doom ports done for them within a couple of
+  months.
+
+  Example machines: all w/ 32Mb min and enough disk space for the
+  operating system, gcc binaries, all online development docs available,
+  and about 50 Mb for doom development space.  A Sparc 10, an
+  RS/6k x40 or better, an HP Snakes (*), or an SGI Iris (*).  Note
+  that I'm not sure of the exact model that'd be appropriate
+  for the latter two, mainly because I do not know which are
+  slightly-more-powerful-than-the-norm models.
+
+  Probably won't consider fringe flavors.  Want to reach an audience as
+  long as I'm going to put the effort on this.  No, we won't be
+  releasing source code which is why we'd need the machine on loan.
+  We can't justify the cost of purchasing those machines due to (lack
+  of) market size.
+
+  If interested and serious, contact me soon, and we can talk details.
+  Can't afford the time to port it to many platforms as I'm busy on the
+  Jag port.  However, can get a couple done in a reasonable time.
+
+Shameless plug for Something Completely Different:
+
+  If you're a college undergraduate student of any nationality, know
+  English, know C/C++, are a damn hot coder, and have two hot coder
+  friends, apply to the 1994 International Programming Contest being
+  held in Austin, Texas by the local IEEE CS Chapter in March.  Send
+  e-mail to binford@npc.ece.utexas.edu.  Hurry, 'cause they're only
+  accepting 16 teams.
+
+  It's a fun contest format where the coder writes a program to control
+  a player in a (very sweet) net game.  The prizes this year include
+  three 486's to the winning team.. big :)'s
+
+  Will be crashing it along w/ other game coder types- besides being
+  cool, it's a yummy scouting opportunity.  Hope to see you there!
+
+	=-ddt->
+

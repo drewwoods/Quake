@@ -1,0 +1,32 @@
+From: ddt@idcube (David Taylor)
+Newsgroups: alt.games.doom,comp.sys.ibm.pc.games.action
+Subject: idNews: v1.2 released
+Organization: id Software
+Date: Fri, 18 Feb 1994 12:53:07 GMT
+
+Doom v1.2 released
+
+  Isn't this nice?  No release date announced, and it comes out by
+  itself!  :)
+
+  Doom v1.2 was uploaded last night all over, including ftp.uwp.edu.
+  It contains tons of new stuff, including modem play, nice-to-the-net
+  network play, several gamma correction levels, a Nightmare difficulty
+  mode for that uppity bunch who claims the game is too easy, changes
+  to a couple of the maps to enhance net play, several changes to
+  setup.exe, native Pro Audio Spectrum support, and lots of other
+  nifty stuff.
+
+  However, although the GUS bug was squashed quite a bit, it wasn't
+  quite killed.  It still hangs on occasion.  However, those
+  occasions are less often now than they were last week.  Solution:
+  save your game often.
+
+  However, there are buttloads o' fixes that are 100% killed.  The
+  list is quite long, so the best thing to do is to just download
+  the new stuff and see if it works out for you.
+
+No other big news right now comes to mind.
+
+	=-ddt->
+

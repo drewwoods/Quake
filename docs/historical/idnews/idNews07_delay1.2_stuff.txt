@@ -1,0 +1,80 @@
+From: ddt@daisy.cc.utexas.edu (David Taylor)
+Newsgroups: alt.games.doom,comp.sys.ibm.pc.games.action
+Subject: idNews: v1.2 release delayed
+Date: 12 Feb 1994 01:21:09 -0600
+Organization: id Software
+
+Sorry for the extended net absence.  As usual, things have been very busy.
+
+Doom v1.2:
+
+  I'm afraid Doom v1.2 has been delayed due to complications with the
+  Gravis UltraSound support.  We enjoy only one thing less than making
+  a release date and not being able to meet it- releasing a product
+  with bugs in it.  In that light, I can only say that we will try our
+  hardest to expediate the GUS fixes and get v1.2 out as soon as
+  possible.
+
+  The overanxious can help us a great deal by not tying up our e-mail
+  and voice-mail boxes with "when will it be out?" messages.  Please
+  internalize the strain and let it come to a boil on your pillow or
+  perhaps some nasties in v1.1.  It's nice as a developer to be on the
+  net, but as of yet, we have no virtual secretaries to filter out the
+  volumninous one-word answer mail and the actual mail we need to run
+  the company.  When it is released, we will announce it simultaneously
+  on many online services and of course, the Usenet.
+
+  The NEXTSTEP version of Doom v1.2 has been released.  It is residing
+  on cs.orst.edu: /pub/next/submissions.  We have already received
+  feedback on it and made minor fixes & changes for the DOS v1.2.
+  However, any further feedback (on bugs only- not feature adds) is
+  appreciated.
+
+xDoom:
+
+  I am getting a lot of supportive mail on my port of Doom to XFree86
+  under Linux.  Thanks for your mail- the port is shaping up well.  To
+  answer the most common mail I get:
+
+    o- Probably $40, released the same way as the DOS version.
+    o- Those owning the DOS version will only need the new executables
+       which will probably be sent to them for only the charge of
+       shipping and handling.
+    o- Don't hold me to the above two answers.  They're the most sensible
+       solutions that present themselves.  We shall see.
+    o- No, the source code will not leave id, even w/ NDA's-o-plenty.
+    o- Yes, I look forward porting it to other UNIX's.  However, to do
+       this, I will need a development workstation on loan.  If you like
+       Doom and work for Sun, SGI, HP, IBM, etc, and can convince someone
+       that this is a noble cause (it is), there's an excellent chance that
+       I can get it ported in short order after the Linux port.  You and
+       your company will be mentioned in the game for this honorable deed.
+
+Doom movie scripts:
+
+  If you would like to post public domain movie script ideas for Doom
+  to the Usenet, feel free.  However, do not e-mail us with ideas.  We
+  have been contacted by Hollywood types on the possibility of a movie,
+  and we do not want anyone to claim we stole ideas from their scripts
+  if it comes to pass.  Thanks..
+
+Quake:
+
+  Rumors are already flying about our next game, Quake.  We have ideas
+  and theories.  Some of them get out.  Please do not take them too
+  seriously.  Doom is almost completely different from the original
+  spec.  It can be assumed that Quake will follow suit.  It will not be
+  out until some time in 1995.  We don't have the vaguest idea on
+  timeframes for it yet.
+
+Not related:
+
+  This is a personal thing as I hate Barney, but I saw the Barney
+  patches to Doom and... er... he's flat.  I'll offer an official Doom
+  tee to the artist who can draw the best Barney graphics patches by
+  March 11.  Not interested in straight scans.  Want to see your
+  artistic talents (used for Good).  Good sfx and death frames a big
+  plus.
+
+	=-ddt->
+

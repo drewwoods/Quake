@@ -1,0 +1,246 @@
+[idsoftware.com]
+Login name: johnc       (messages off)  In real life: John Carmack
+Directory: /raid/nardo/johnc            Shell: /bin/bash
+On since Jul 27 12:27:46                7 hours 26 minutes Idle Time
+   on ttyp1 from idnewt
+On since Aug  1 18:22:39                1 hour 2 minutes Idle Time
+   on ttyp4 from idcanon1
+Plan:
+
+===============================================
+
+aug 8:
+
+Romero is now gone from id.
+
+There will be no more grandiose statements about our future projects.
+
+I can tell you what I am thinking, and what I am trying to acomplish, but
+all I promise is my best effort.
+
+
+John Carmack
+
+===============================================
+
+aug 10:
+
+QuakeWorld structural addendum:
+
+After hearing many arguments against the single master server, ranging
+from coherent and well reasoned to paranoid whining, I now agree that the
+single global master server isn't sufficient.
+
+During the R&D phase, there will still be only the single server, but
+after all the kinks get worked out, I will allow a small number of sites
+to run private master servers.  This will not be a general release, but
+only to properly licensed third parties.  That will still allow me to
+collect my 100% coverage data, and it will prevent a single
+network/computer/software failure from preventing all QuakeWorld play.
+
+QuakeWorld technical addendum:
+
+I am reining in the client side prediction to a fairly minimal amount.  It
+has too many negative effects in different circumstances.  The problem of
+running away from or in front of your missiles was so bad that I
+considered simulating the missiles on the client side, but that is the
+second step on a slippery slope.  If just the missiles were simulated,
+then a missile would fire through an enemy until the server informed you
+it exploded on them.  Then you consider simulating interactions, but then
+you have to guess at other player inputs (which is hopeless)...
+
+Lesson learned: Simulating 300 ms on the client side in a Quake style game
+is just out of the question.  It probably works fine for flight sim or
+driving sims, but not in out twitch reaction games.
+
+I am currently using client side simulation to smooth out the beat
+frequency interactions between server packet arrival and client frame
+times.  In the shipping version of Quake, some latency was introduced on
+purpose to keep the displayed frame simulation time between the last two
+packets from the server so that the variability in arrival time could be
+smoothed out.  In QuakeWorld, I am always starting with the most current
+packet, and using simulation to smooth out the variability.  This <100ms
+of client side motion seems to be very manageable, and cuts out some real
+latency as well as doing the gueswork.
+
+It looks like I am going to split the QuakeWorld client into multiple
+threads to reduce the avg 1/2 frame latency between input and packet
+sending.  This is also a step towards building a multi-threaded Quake
+renderer, which will let multi-cpu NT machines render twice as fast.  Lets
+hope the windows thread scheduler is decent...
+
+I have been cutting down the message sizes a bit here and there as well.
+On a modem link, every couple bytes I save translates into a millisecond
+of latency saved.  I cut an average of 17 bytes from the server to client
+and 8 from the client to server today.
+
+===============================================
+
+Aug 12:
+
+Apogee's Prey team (and Duke's Levelord) leave 3drealms to work with Quake
+technology as Hipnotic Interactive.
+
+:-)
+
+===============================================
+
+Aug 13:
+
+I am considering increasing the default sv_friction value for QuakeWorld
+from 4 to 6 or 8.
+
+It might take a little getting used to, but I think it gives more precise
+control for wide area network play.
+
+If anyone wants to run some experiments with different friction levels on
+a current Quake server, I would be interested in hearing some feedback.
+
+===============================================
+
+Aug 17:
+
+The remote server console commands are fully implemented for QuakeWorld.
+
+To allow remote administration, the server must set the "password" cvar.
+By default, remote administration is turned off.
+
+On a client, if you set the "password" cvar to the same value, you can
+issue "rcon" commands to the remote server :
+
+rcon <server command> <arguments> ...
+
+You can go to different levels, shut the server down, change cvars, ban
+people, etc.  The output from the command is redirected over the net and
+will be echoed on the remote console.
+
+You can also execute commands without even connecting to the server (if it
+was full) by setting the "rconadr" cvar to the full internet address
+(including port) of the system you want to administer.
+
+
+2:00 in the morning:
+
+My testarossa snapped another input shaft (the third time).  damn dman damn.
+>1000 HP is bad for your drivetrain.
+
+===============================================
+
+Aug 18:
+
+PACKET FILTERING
+
+QuakeWorld supports two types of filtering: IP packet filtering and user
+id filtering.  Userid filtering is the most convenient way to keep a
+specific person off of a server, but because anyone can create as many
+accounts as they want, a malicious user could just keep logging back in
+with a new account.  If their ip address is banned, they won't be able to
+log on with any account from that computer.  Unfortunately, most dialup
+accounts give a different ip address for each connection, so you may be
+forced to ban an entire subnet to keep a specific person off.
+
+You can add or remove addresses from the filter list with:
+
+addip <ip>
+removeip <ip>
+
+The ip address is specified in dot format, and any unspecified digits will
+match any value, so you can specify an entire class C network with "addip
+192.246.40".
+
+Removeip will only remove an address specified exactly the same way.  You
+cannot addip a subnet, then removeip a single host.
+
+iplist
+Prints the current list of filters.
+
+writeip
+Dumps "addip <ip>" commands to iplist.cfg so it can be execed at a later date.  The filter lists are not saved and restored by default, because I beleive it would cause too much confusion.
+
+filterban <0 or 1>
+
+If 1 (the default), then ip addresses matching the current list will be
+prohibited from entering the game.  This is the default setting.
+
+If 0, then only addresses matching the list will be allowed.  This lets
+you easily set up a private game, or a game that only allows players from
+your local network.
+
+===============================================
+
+Aug 22:
+
+The rendition 3d accelerated version of Quake looks very good.
+
+The image quality is significantly better than software - dithered,
+bilinear interpolated textures, and subpixel, subtexel polygon models.
+
+It is faster than software even at 320*200, and at 512*384 it is almost
+twice as fast.
+
+We do take a bit of a hit when we have to generate a lot of 16 bit
+surfaces, so occasionally the framerate gets a bit uneven, but overall it
+is a very solid improvement.
+
+===============================================
+
+Aug 27:
+
+I haven't been working on QuakeWorld for the past week, because Michael
+has been working on the rendition port, which backburnered the win32
+native port, which is a prerequisite for the QuakeWorld release.
+
+Instead, I have been working on some better graphics code.
+
+I now have a radiosity replacement for ligting quake maps.  This will have
+a good effect on our Quake 2 maps, but probably won't be feasable for
+homebrew use.
+
+I am finishing up a shadow volume pre-subdivision stage right now, and I
+need to do the resampling to quake light maps a bit better than I
+currently am, but I am very pleased with how it has turned out.  A lot of
+the work will play into the next generation (NOT quake 2) game technology,
+for things like colored radiosity and dynamic shadows, but it is still
+cool just for calculating quake light maps.
+
+Instead of placing lots of floating light entities, certain textures are
+tagged as being light emitters, so if you draw a flourecent light in the
+ceiling, it will automatically emit light from it's entire area.  Lava
+emits light from the entire surface.
+
+The simulation of the light is realistic now, instead of just hacked
+together.  Light reflects off of surfaces, so ceilings will get lit even
+if there is no light pointing directly at them.  The way light flows
+around corners looks eerily realistic.
+
+I fixed the sky volumes so missiles dissapear inside them again, which was
+necessary to implement a new lighting feature:  you can specify the
+position of the sun (or moon) in degrees, and the amount of light it will
+emit.  The light then comes out completely parallel and at a constant
+intensity, passing through sky volumes to light up all outdoor areas in a
+consistant way. (this could be retrofited onto light.exe for people unable
+to run qrad)
+
+Now for the bad news: a full size level takes several minutes to process
+on our quad alpha, and you MUST do a vis before running qrad (otherwise it
+would take about 1000 times longer).  This wouldn't be out of reach even
+on mortal pentium systems (you can ask for a rough aproximation instead of
+the full job), except for the working set size.  >100 megs.  I'm NOT being
+wasteful here, either.  I use a halved bit array for visibility
+interconnects, and sparse scaled shorts for energy transference.
+
+I will release the source after we have been using it in production for a
+while, in case anyone wants to take a shot at reformulating it to be less
+memory intensive.  It would be possible to get it down to 32 megs with
+some reduction in quality and a lot more wasted time, but then the run
+time would be obnoxious.  I expect homebrew levels are going to have to
+stick with light.exe.
+
+I am looking forward to doing a little more work on the other utilities as
+well.  I want to break qbsp up into three seperate programs, so it will be
+able to run on machines with <32 megs of memory.  Light can be sped up
+significantly if the PVS information is taken advantage of the way I did
+in qrad.  I also have some theories on changing the algorithmic order of
+full vis processing time that I want to look into, especially now that the
+vis stage is put before production lighting.
+

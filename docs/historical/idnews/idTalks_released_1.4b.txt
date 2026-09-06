@@ -1,0 +1,29 @@
+From: johnr@idcube.idsoftware.com (John Romero)
+Newsgroups: alt.games.doom,comp.sys.ibm.pc.games.action
+Subject: DOOM v1.4
+Date: 29 Jun 1994 11:13:34 -0500
+Organization: UTexas Mail-to-News Gateway
+
+To All Fine Net Citizens:
+
+Yes!  The DOOM1_4.ZIP is a VALID, LEGAL upload of DOOM v1.4.  I uploaded it
+last night, but didn't mention it until today so the lines will hopefully not
+be so clogged.  Please don't upload the file to Compuserve, Delphi, Software
+Creations, etc. as we want only the Internet to be the beta testing "site" for
+this version.
+
+Any bugs found we will try to fix, and as of now there seem to be mostly sound
+bugs.  Any bugs you come across, please email me at romero@idsoftware.com.
+
+If you don't know where the .ZIP is, look for it at:
+	ftp.uwp.edu			/pub/incoming/id
+	infant2.sphs.indiana.edu	/pub/doom/incoming
+
+---
++-------------------------------------------------------------------+
+| John Romero (romero@idsoftware.com) id Software                   |
+| Send questions about id software to help@idsoftware.com           |
+| ftp.uwp.edu[131.210.1.4]        id "Official" anonymous FTP site  |
+| >>>>>>>>>>> Coming Fall '94: DOOM II: Hell on Earth!  <<<<<<<<<<< |
++-------------------------------------------------------------------+
+

@@ -1,0 +1,57 @@
+From: ddt@daisy.cc.utexas.edu (David Taylor)
+Newsgroups: comp.sys.ibm.pc.games.action
+Subject: idNews: ipx and serial source code
+Date: 22 Feb 1994 22:21:57 -0600
+Organization: id Software
+
+DOOM IPX and serial TSR source code available at ftp.uwp.edu:
+
+  (see above)
+
+v1.2 bugs:
+
+  sigh.  yes, we're aware of them (note lowercase broken-back type).
+  Can only ask that you please be patient.  This is really the first
+  release with the complete set of features we intended.  Regarding
+  comments (from those who can run it) on serial play; the reason
+  only 9600 baud is provided is that it's all we need.  Although 14.4k
+  would improve responsiveness, it would not really improve speed.
+  Those who are experiencing extremely slow games are exeriencing a bug.
+  We are aware of the PS/2 mouse bug and also the network problems.
+  By the way, not being able to play netDoom over a router is not a bug.
+  It starts out by doing a broadcast packet to find others in the
+  game.  If you want to change it to specify IPX addresses on the
+  command line, be our guest.
+
+UNIX/X versions of Doom:
+
+  When ready with the UNIX/X versions, I'll let you know.  Don't need
+  Beta-testers right now and am not keeping a list.  And to answer this
+  FAQ, no we are absolutely not releasing the Doom source code.
+
+pay-per-play:
+
+  Do not setup pay-per-play services for Doom.  We have not yet
+  determined how to arrange licensing for that or whether we will
+  at all.
+
+movie scripts:
+
+  Please do not send me or anyone else at id ideas for movie
+  scripts.  Any mail attempts with movie ideas will be deleted
+  without being read.  (yes, there is considerable interest in
+  producing a Doom movie)
+
+Internet Beta-test group:
+
+  If you have reliable access to the Internet, would be interested in
+  becoming an id Beta-tester, have a unique or useful computer setup,
+  and are willing to put in some serious play at a moment's notice,
+  write help@idsoftware.com (I repeat- do not write me- write help@).
+  You must not only know your way around DOS but must know how to hack
+  around a bit to find workarounds to typical problems.
+
+  By the way, this is only for the DOS version of Doom.
+
+	=-ddt->
+

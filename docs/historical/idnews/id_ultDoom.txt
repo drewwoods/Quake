@@ -1,0 +1,53 @@
+From: John Romero <johnr@idpentium.idsoftware.com>
+To: doom-editing@nvg.unit.no
+Subject: The Ultimate DOOM from id
+Date: Wed, 12 Apr 95 21:45:52 -0500
+Company: id Software, inc.
+
+WADMeisters:
+
+Today we cut the master of "The Ultimate DOOM" - DOOM gone retail. This
+is a Special Edition of DOOM v1.9 that includes the NEW FOURTH EPISODE -
+yes 9 more original levels from id!  This 4th episode is titled "Thy
+Flesh Consumed" and takes place after the 3rd episode and before Hell on
+Earth.  Also included in this Ultimate DOOM is 5 hours of DWANGO time on
+the server nearest you.
+
+If you already have a registered copy of DOOM and want The Ultimate
+DOOM, you can call our 1-800-idgames # and pay a nominal amount (not
+known yet) for the upgrade to The Ultimate DOOM (your name should be in
+our database and you will receive the new Ultimate DOOM box w/DWANGO
+certificate). Otherwise, you can just buy it in the stores.
+
+You may all be interested in who did what level and what the map names are;
+this is prerelease info since The Ultimate DOOM hasn't been released yet:
+
+Map  Who?		Name
+------------------------------------------------------
+4-1  American McGee	Hell Beneath
+4-2  John Romero	Perfect Hatred
+4-3  Shawn Green	Sever The Wicked
+4-4  American McGee	Unruly Evil
+4-5  Tim Willits	They Will Repent
+4-6  John Romero	Against Thee Wickedly
+4-7  John Anderson	And Hell Followed
+4-8  Shawn Green	Unto The Cruel
+4-9  Tim Willits	Fear (secret level)
+
+Tim Willits is the reknowned Raven WADs creator and has been hired by
+Rogue Entertainment (developers of Strife for id Software). Tim had some
+spare time to create a couple cool maps for this Special Edition of
+DOOM.  John Anderson, aka Dr. Sleep, also did a very, very nice job on
+4-7 (which he originally titled CHIRON.WAD).
+
+Amazingly enough, 4-3 was Shawn Green's VERY FIRST MAP!  And 4-8 was his
+second map -- you can definitely see the improvement!
+
+---
++-------------------------------------------------------------------+
+| John Romero (romero@idsoftware.com) id Software                   |
+| Send questions about id software to help@idsoftware.com           |
+| ftp.idsoftware.com                Official id anonymous FTP site  |
+| www.idsoftware.com                Official id Web site            |
++-------------------------------------------------------------------+
+

@@ -1,0 +1,3548 @@
+=============================================================================
+ - the log as first released, up to april 16th (added dates)          -- b.
+=============================================================================
+
+[idsoftware.com]
+Login name: johnc                       In real life: John Carmack
+Directory: /raid/nardo/johnc            Shell: /bin/csh
+Never logged in.
+Plan:
+
+This is my daily work, starting about a week before qtest was released.
+
+When I accomplish something, I write a * line that day.
+
+Whenever a bug / missing feature is mentioned during the day and I don't
+fix it, I make a note of it.  Some things get noted many times before
+they get fixed.
+
+Occasionally I go back through the old notes and mark with a + the things
+I have since fixed.
+
+--- John Carmack
+
+= feb 18 =================================================
+
+*       page flip crap
+*       stretch console
+*       faster swimming speed
+*       damage direction protocol
+*       armor color flash
+*       gib death
+*       grenade tweaking
+*       brightened alias models
+*       nail gun lag
+*       dedicated server quit at game end
+
++ scoreboard
++ optional full size
++ view centering key
++ vid mode 15 crap
++ change ammo box on sbar
++ allow "restart" after a program error
++ respawn blood trail?
++ -1 ammo value on rockets
++ light up characters
+
+vsync on high framerates
+
+= feb 19 =================================================
+
+*       fixed vanished bmodels at startup
+*       fixed getting stuck problem
+*       fixed the sound out of range problem
+*       hack patched the dissapearing under water
+
++ remove look spring
++ fix radius damage
++ too many people on status bar
++ invis in water
++ multiple pain sounds started
++ shift jumps while in console
++ less blood time
++ gone armor icon
++ look up/down keyboard modifier
+
+clamp velocity on respawn
+clear damage flash on respawn
+bad changeup
+bob speed kept on restart
+no puffs in sky volumes
+id copyright seal
+teleport screen warp
+
+= feb 20 ==================================================
+
+*       rewrote sound packet communication
+*       fixed multiple pains from a single shotgun
+*       qcc -copy option for sounds and models
+*       fixed up pak file support
+*       removed .rc files
+*       screen size over status bar
+
++ monsters need to be pushed into teleporters
++ blue frag pieces
++ NaN impact time is a crasher
++ looking down on weapon bounces away from bottom
++ timing preventing attacks at startup
+
+fix hardwired vid_uopdate
+remove redundant death sounds
+teleport warp
+torches
+cpuid?
+monsterblock entity
+multiple sky textures in a level
+
+= feb 21 ====================================================
+
+*       frag bar
+*       start profile on late frame
+*       fixed relinking bug
+*       improved prediction bounding
+*       change weapon chooses supers first
+*       ammo pictures on status bar
+*       drop pain flash again and bound
+*       tweak armor and spike damages
+
++ don't pick up equal armor
++ ceiling doors don't cause damage
++ demons crash when jumping
++ monsters need to use bsp clipping
++ need to save memory...
++ Fatal error: NaN impact time from entity
++ change armor damage
++ drop weapons
++ face to face with nailgun does no damage
++ +pointfile from cmdline doesn't work
++ conglomerate hunk printing
++ shoot triggers
++ missing a Z update on rockets sometimes?
++ firing after net games
++ negative scores on frag bar and frag board
++ world backpack and armor model
++ weapon bounce down
++ center look key
++ check change levels in high res mode
+
+show ammo counts in single player frag screen
+radius damage should open secret doors
+five point font on kills
+rocket poke into walls
+shoot open connected doors
+gib bounce sound
+
+= feb 22 ====================================================
+
+*       fix incorrectly updated origin bug
+*       added alias backpack and armor
+*       fixed weapons sticking into wall
+*       changed "connected to server" to "connected to map"
+*       fixed console
+*       armor skin numbers
+*       fixed "not shooting" bug
+*       changed sound back to origin based instead of entity based
+
++ swimming directions
++ quit scores are wrong
++ screen flicker crap
++ radius damage sight check
++ crushing issues
++ bodies stopping in midair
+
+dimmed out weapons
+follow killer
+spin head inside gib
+
+= feb 23 ===================================================
+
+*       fixed sound origins again
+*       fixed crushing stuff
+*       added "wait" to triggers
+*       added startup stuff for demo
+*       swimming direction stuff
+*       added '+' sizeup as well as =
+*       changed "unnamed" to "player"
+*       fixed skinnum clearing
+
++ gibbs need to fall after trap doored
++ ambient
++ make bubble sound while swimming forward
++ server speed
++ case insensitive on key names
++ hunk alloc
++ nans
++ better notify scrolling
++ final score dumping
++ negative frags
++ reconnect problems
+
+backpack dropping underlava
+"hostname" makes gane think it is a server
+swimming models
+weapon cycling
+dedicated server stuffcmds
+
+= feb 24 ====================================================
+
+*       added case insensitive key names
+*       skipped license check on dedicated servers
+*       changed prog score sorting some
+*       took out autofire
+*       fixed negative frags
+*       cleaned up connection management
+*       fixed hunk_alloc
+*       no sutch alias frame problem when leaving server
+*       "map test1" on system with enough memory
+*       flickering side crap when level restarting
+*       added base directory to path
+*       changed heads to tosstop
+
+****** RELEASE QTEST1 ******
+
++ unupdated Z problem is still in there
++ flickering weapon icon
++ blood trail to respawn
+
+= feb 25 ======================================================
+
+*       emit bsp files
+
++ idle loop on disconnect
++ key sticking
++ fix noclip in the water
++ modelgen scale option
++ run a single level for a long time, then connect hangs
++ grenade radius check
+
+gibs stuck in walls in low G
+flash blinding
+turbulent texture direction
+space in smiley talk message
+talk sounds
+full chat mode
+
+= feb 26 ======================================================
+
+*       ogre sounds
+*       made 180 turns go left for better ogre dragging
+*       error checked and extended qbsp
+
++ drop green slime percentage
++ ram chip overlapps turtle
++ do DEC quote
++ nolerp update
+
+caps-lock = full speed
+no particle effects on sky
+
+= feb 27 ========================================================
+
+*       expand qbsp to 32 bit values for edges and faces. sigh.
+*       fixed key sticking problem
+
+seperate mouse sscaling values to allow negative up/down reversal
+frag bar shows first two digits, not last two when >= 100
+randomize head direction
+slime less damage
+drop to knees when crunched
+check deathmatch flags before precaching
+
+= feb 28 ========================================================
+
++ upper health bound
++ keyboard freelook
++ more air acceleration
+
+can a hostile monster hit it's movetarget and turn away?
+check scirk and smotte
+don't cache player model in single player
+"fair" mode with syncronous clients
+kill timers on all spawned objects
+
+= feb 29 ========================================================
+
+*       increased air acceleration
+
++ don't allow up/down move at all without noclip
++ weird fall out of level in sbad
+
+= march 1 =======================================================
+
+*       added ping command
+*       fixed time warp from overloaded dedicated servers
+*       rotate binaries
+*       respawning items
+
++ clean model flags on remove
++ tim's color
++ weapon ammo not redrawn sometimes
++ no sutch alias frame after gibbing
++ give more feedback during the connection process
++ set absolute screen size command
+
+safe allocation failures from vid / zbuffer
+send full pathnames from server to client, not findfile
+make all commands remote if priveledged
+unique names
+inquire about server rules (teamplay, fraglimit, timelimit,
+         maxspeed, gravity, ticrate)
+is vid still flushing the entire screen?
+empty path causes error in quake?
+don't need to update frame of target entity
+
+= march 2 ======================================================
+
+* wrote sgi test demo
+
+= march 3 ======================================================
+
+* added precache_file qcc option for -copy files
+* capped health at 250
+
++ solid, invisible brushes
++ don't send linear entities in signon message
++ write a message trace printing mode
++ is 256 angle quantization from client hurting us?
++ sky animations use the wrong time base
++ centralize the connection process
+
+weapon switching is wrong
+no twitch in god mode
+if a linear update entity doesn't get an update in a packet, remove it
+bound upper client message sends properly
+RELEASE: bump protocol version numbers just before releasing
+
+= march 4 ======================================================
+
+* got new internet code running
+* server protocol number
+* stopped printing name change message for first message
+* put usleep back in
+
++ an entity model is being cleared out from underneath it
++ rotating body parts
++ binary bit fields
++ damage in datagrams
++ push back at edges when moving slow?
++ twirling gibs
++ bit fields for binary objects
++ never reuse binary object slots
++ fix connect to a bad map
++ noticed water to dm only clipping prob in tim13
++ no sutch alias frame problem
+
+magic8ball.rogue-ent.com = 38.252.190.8
+ability to make custom plat activation triggers
+
+= march 5 =======================================================
+
+* basic zombie actions
+* added dog
+* fixed bug in QuakeEd that caused a crash when setting a bad classname
+* changed health stat to a short to fix negative numbers
+* added binary object bit update
+
++ zonbies need to change size when down
++ secret doors need to crush damage, and return to open
+
+negative health
+fish have problems
+cycle general updates in wasted badnwidth
+
+= march 6 ==========================================================
+
+* fixed all network play issues
+* better monster combat
+* monsters don't activate plats
+* shambler shoot up
+* stubbed enforcer
+* soldier standing frames
+* monster use function makes them hostile towards activator
+
++ drop ammo
++ monsters see farther
++ negative ammo
++ extra friction near edges
++ fracs aren't right in single player
++ use monsters = wake up
+
+set ideal yaw upon first sighting
+temp object updates
+check size on teleport destinations
+player only teleporters
+puff of smoke when shooters fire
+weird high look up on romero's level
+step on grenades
+flyers look down
+eagle eye checkbox
+monsters not trigger plat
+flying change height
+monster jumping
+make tents for shotgun puffs
+leave level running too long problem
+shambler range
+
+= march 7 ==========================================================
+
+* increased max portals on edge in bsper
+* NT gl testing
+* fixed path walking
+
++ clear static objects for restarts
+
+= march 8 ==========================================================
+
+* dropping ammo
+* zombie gib non-solid
+* all zombie attacks
+* scrolling notify text
+* shooters that fire superspikes
+* keys
+* increased monster sight distance
+* fixed noclip in water
+
++ fix sound code
++ item only in dm flags
++ shoot through complex bmodels
++ NaN stuff
++ change impulse over to impule # instead of impulse1
++ dog frames
++ demos!
+
+fix noclip underwater
+all zombie pain issues
+duplicate impulse events
+status bar art needs work
+jrbase3 teleporter can be hit behind dmonly
+do pain well on all monsters
+don't blit the entire screen when sized down!
+clean up headers
+
+= march 9 ==========================================================
+
+* wrote cl_shownet 2 dump
+* rebuilt qcc to take $scale parm
+* worked on demon
+* cleaned up obsolete utilites
+* fixed super shotgun size for sbad
+* moved wadfile to hunk
+* added colormap grab to qlumpy and got rid of vid_256.h
+* finaly gave dec quote
+* spread monster thinking times
+
++ fix angle on spike shooters
++ pick up super nailgun == illegible server message?
++ damaging trains
++ sandy: sally, don't put all the weapons on it, and help the PVS at start
++ get rid of surface->drawnframe now?
+
+fix weapon switching
+fix sound mixing
+climb out of water
+weapon pickup can overmax ammo
+staticly define sound arrays
+lightning client entity
+fly move to goal
+checkbox
+stop repeat jump
+check DAMAGE_YES on dead bodies
+func_oscilating
+teleport warp
+is  surface->texmultab[MIPLEVELS] worth the space?
+combine surface->texture and ofs into texinfo?
+
+= march 10 ==========================================================
+
+* fixed static object update bomb
+* fixed crazy speed guys
+* allow restart after objerror
+* fixed bug with restarting droped out of world messages
+* spread standing frames more for groups
+
++ remove precache_item
++ ogres that won't wake up
++ spawn flags
+
+pause turn speed
+army guys don't wake up by touch?
+jump velocity shouldn't make head bob
+
+= march 11 ==========================================================
+
+* fixed backpack dropping in deathmatch
+* fixed monster sighting PVS problem
+
++ fix dos qcc
++ demon landing frame
++ trigger activated train
++ enforcer
++ dog
++ -1 ammo, 1 ammo on super shotgun, etc
++ invisible brushes for clip hull
++ grenade launcher shouldn't aim move
+
+update ammo when picked up grenade launcher with rocket running
+damage value on trains and secret doors
+player stayed on console after leaving
+jctest1 door fuckups
+grenade open secret doors
+
+= march 12 ============================================================
+
+* got new alias stuff sort of working
+
++ pause message needs to stay up
++ change level trigger
++ knight bodies are solid
+
+lighting hidden objects
+level loading pacifier
+weapon switch button
+doors that stay shut on some multi levels?
+mouse button stuck down
+monster shouldn't get key door messages
+
+= march 13 ==============================================================
+
+* got new alias stuff (mostly) debugged
+* optimized BoxOnPlaneSide
+* stoped generating backwards planes
+* demon jump higher, fixed melee attacks
+* made knight corpse non-solid
+* crunched progs.dat file structure
+* culled unused edict fields
+
++ shoot trigger
++ alias clipping still isn't right
++ reverse dmonly / not_dm?  combine with spawn only flags?
++ work on sound code!
++ fixed secret doors stop working
++ make objects fall when floor is removed
+
+make #ifdef PARANOID checks
+lightweight entities to save space?
+grenade / rocket damage to triggers
+
+= march 14 ==============================================================
+
+* new trigger code with delay
+
++ jrbase3 spawn problem
+
+jump triggers
+dragon path
+uncache player on single player
+monster missile checking for race relations
+gib pack
+wizard partical trail
+multiple sky maps
+non-bleeding takedamage
+
+= march 15 ==============================================================
+
+* made an execution stack for progs
+* spawn flags
+
++ fix NaNs!
++ proper level changing
+
+door no backup option
+PVS for net update
+check entity relinking for excess
+good tempents.
+
+= march 16 ==============================================================
+
+* made -1 wait doors not return when blocked
+* made secret doors and trains do damage
+* added edge friction
+* fixed reset self bug that caused jrbase3 not to load
+* loading pacifiers
+* split out some of the physics code
+
++ do from-the-beginning demos
++ why are NeXT fullbright colors still bad?
++ not starting up at american's house?
++ move the if(deathmatch) remove (self) statements before monster precaches
++ trigger start trains
+
+shambler and wizard need idle frames
+bump all version numbers before final release, so no maps work with qtests!
+general sound objects?
+mouse button sticking
+win95 startup with map
+eliminate MAX_FACES from qbsp? (johncm1.map)
+
+= march 17 ==============================================================
+
+* triggered trains
+* began work on sound code
+
++ edge friction jumping
++ edge friction in air?
+
+ambush guards
+temp ent precache
+does pacifier not work on net games?
+
+= march 18 ==============================================================
+
+* fuxed button triggered delays
+* added classname to light error message
+* demon more damage
+* sounder objects
+* light_switchable
+
++ grenade proximity explosions
++ fix jumping off edges
++ wizard fast shots
++ target lights for controling them
++ plat hit on head bug
++ ambient light
+
+spiral the view when gibbed
+level based gravity
+
+= march 19 ==============================================================
+
+* switchable lights
+
++ changed light program to unique switchable styles
++ target usable monsters
++ toggleable doors
++ leaf lighting
++ F2 reload crashes
++ grenade radius
++ spikeshooter directions
++ sound cache shouldn't be cleared all the times
++ demon jumping
++ demon death frames
++ chain activators for monster deaths
++ crawl out of water
++ ambient from map
+
+autosavemap?
+different teleport flash
+linked doors still have problems
+work on swimming
+control triggers for player only, or with monsters
+better knight code
+turn off regular shooters when used?
+once trigger on door_start_up?
+ctrl-alt-delete reset?
+remove r_fullbright in deathmatch
+sound streaming
+fix "couldn't allocate Z buffer" error
+reduce sound latency
+
+= march 20 ==============================================================
+
+* deathmatch onyl spawn doesn't work
+* drowning damage
+* changed QuakeEd to get progs from id1_
+* added colors to QuakeEd entities
+* got rid of /lquake, moved QuakeEd caches to /qcache
+
++ don't take datagrams until acked second message
++ not-dm is intangible
++ sally torches not spawning
++ client called twice?
++ combine damage messages from super shotguns
++ gib zombies lying down?
++ more water friction
++ swimming bubble noise
++ light the weapons differently in bright areas
++ keyboard freelook
++ move QuakeEd start position to playerstart
+
+stop wall climbing
+sleeping pause
+raise rocket launcher with 0 ammo
+
+= march 21 ==============================================================
+
+* fixed quakeed bug to allow carrying selection to new map
+* fixed updated static bug
+
++ demons that fall through world
++ "wait" exec command
++ end of line exec bug
+
+do style lighting for alias models
+for release: Id Trademark graphic
+
+= march 22 ==============================================================
+
+* fixed bug with "alias" command that failed to add a newline
+* fixed bug in command execution that sometimes mashed commands together
+* added "impulse #" command to replace impulse0 impulse1, etc
+* allowed "bind" and "alias" to grab the rest of the line, not just arg(3)
+* don't clear impulse events every frame, so a weapon change will wait
+                for attack completion
+* added "wait" command.  These changes allow:
+        bind g "impulse 5 ; +attack ; wait ; -attack ; impulse 2"
+* got demos mostly working
+
++ worry about shutting down listen servers before connect / demo playback
++ remove item precache
++ finish switching lights
++ keyboard freelook
++ do clients need keepalives?
+
+spikes coming through walls
+explosive nails
+change thresholding on trimapper in higher res!!!!!
+muzzle flashes
+
+= march 23 ==============================================================
+
+* lots of cleanup in cl_ code
+* killed looping sounds at disconnect
+* faded palette back down at disconnect
+* fixed bobj miscount and added bobj count error check
+* interpolated angles and velocities for low update connections
+* finished demo code
+
++ sound caching....
++ looping sound still doesn't work on my system
++ can't throw out spawned sounds too far away, because of teleporters
++ ammo box on sbar doesn't allways update after death
++ two state door
++ allocate translations on the hunk to save single player memory
+
+remove headless / legless death frames
+swimming frames
+server viewpos problem
+relinking by size still isn't right
+explosion core
+precache_auxsound for non-essential
+don't cache player model in single player
+
+= march 24 ==============================================================
+
+* level to level transitions
+* finished light modifications for switchables
+* fixed bug that caused some entities to not appear
+
++ weird field trashing bug
++ don't clear sound precache on non-progrestart
++ stuff not showing up in jccode
++ savegames
++ nail angles are wrong
++ cought on buttons in johnc99
++ is anything confused by sv.active on clients during a net game?
+
+stereo positioning is wrong
+nograv
+handle coop games
+make lightning a tent
+worry about security risks with pathnames for demos and savegames
+need to save lightstyles in savegames
+non-convex bsp output
+
+= march 25 ==============================================================
+
+ * fixed bug with bobj miscount
+ * most of savegame working
+
++ ambient levels
++ -1 flechettes
++ hunk isn't getting cleared properly
++ proper switchable lighting
+
+demo fast forward
+connect spectator
+weird pauses in demo recording
+death follow
+
+= march 26 ==============================================================
+
+* no BLASTER variable equates to -nosound
+* fixed up/down spike angles
+* dynamic sound caching
+* removed drip sound
+
++ send view angles to client
++ telefrags
++ interpolated angles
++ soundlist explodes
++ decimate drip fuckup?
+
+multi-level demo record
+are fakeplayers not working?
+checksum levels and progs for savegames
+alias model texture stripe
+problems with /r from dos save files
+fake dma shouldn't be called
+don't use fread / fwrite
+mip level changing on floor when dead
+missing sprites
+sound latencies
+lru models too, but never cache out bsp models
+compact sound memory before failing totally
+precache priority
+mouse button sticking
+
+= march 27 ==============================================================
+
+* fixed soundlist
+* explosion through walls doesn't damage
+* monsters don't melee through walls
+* fixed memory trash from restarts
+* changed signon messages to more client requests, removed buffers
+* invisible clip solids
+
++ wake up monsters through walls
++ is vid palette setting fixed?
++ remove up/down movement from non-noclip
++ entity bsp clipping for shots and monster moves
++ make QuakeEd center on start position
++ climb out of water
++ light switches?
+
+bsp sticking point
+no aim key
+don't include trigger and clip mip textures in files?
+
+= march 28 ==============================================================
+
+* fixed efrag allocation on restart (really)
+* fixed static sprite placement
+* fixed light casting from torches
+* fixed spawning angles
+* fixed savegame and multi player baseline object startup
+* made QuakeEd go to info_playerstart at level load
+
++ fix damage trace through entities
++ keyboard freelook
+
+spinning gibs on floor
+very high framerates mess up
+extra back attack damage
+buffered IO problem on romero's machine
+stereo still isn't right
+partical puffs
+
+= march 29 ============================================================
+B(CGDC was from march 30 - april 2)
+
+<CGDC meeting>
+
+= march 30 ==============================================================
+
++ dynamic lights....
++ grenade activation size
++ entnum optimization
++ make progs use pointers for edicts?
++ sideways spikes
+
+esc = floating menus, with console option
+remove avelocity?
+track down the _SCR_UpdateScreen <cycle 2> [23] from profile
+clean up search path syntax
+fix style lighting on alias models
+more #ifdef PARANOID
+
+= march 31 ============================================================
+
+* changed edicts from indexes to pointers
+* fixed byte order problem in qcc
+* fixed backward movement dies after many savegames
+* fixed bus error in edict linking after a model remove
+* cleared rotate flag on CL_SetModelFlags
+* made items move with pushers
+
++ animating textures
++ vis problems out of water in jrbase2
++ get trail characteristics from model name? (now a model flag)
++ switched lights don't work right after restart
++ aiming at fast moving entities
++ center view key
+
+light filter in quakeed is broken
+per-entity ambient light value
+don't play door trigger sounds if full up
+shoot over fallen zombies
+no changeup to grenades
+add targets to doors
+auto pause when console
+player gib packages
+null bobjmodel in singleplayer
+wizard bombs through walls
+drowning time?
+shambler lightning
+hang when starting a mistyped level (time based?)
+old deathmatch rules?
+lockup overnight
+don't hook keyboard on dos dedicated server
+cycle edict allocation so spikes aren't reused frequently
+make spikes rotate
+
+= april 1 ============================================================
+
+* added $flags to models for client side stuff (rotations, trails)
+* allowed coop play
+* started using Host_Error for client errors
+* lint
+
++ animating textures
++ NULL connect
++ connect while in a game crashes
+
+different sfx cache size for client only?
+frame chnaging while paused?
+item targets
+respawn in coop
+
+= april 2 ============================================================
+
+* exploded wizard bombs on death
+* server optimization
+* fixed angle on loadgame and coop
+* average monster velocity for aiming
+* made wizard fall properly
+
++ running into nails
++ can still get shot out of the world
++ dynamically allocate color translation tables
++ pause work
++ backpack dropping
+
+water stair climbing
+check door linking , regarding the partial closing
+restart level spawn parms
+dead player save que
+quakeed magnified texture view
+ambient + gravity attributes
+load fames
+restart without killing server
+no-aim option
+
+= april 3 ============================================================
+
+* made func_wall and removed the dm_only / not_dm
+
++ sky fuckups
++ single pixel movement quantization?
++ falling out of world
+
+auto aiming sucks
+remove superscaling
+s->relasecount error
+.cfg default for exec
+frame too fast bug causing lockups
+last request/reply
+registration trademark!!!
+explosion cores
+check side to side movement for big attacks like the shamblers?
+change backpack content messages
+combine model and sound cache!
+better PVS with more leafs?
+
+= april 4 =============================================================
+
++ teleport flash is broken
++ order of monster fall to ground
+
+multiple input drivers (hard coded)
+save cfg
+bounce head gib?
+wall scaling is step up?
+
+= april 5 =============================================================
+
++ sound loop points
+
+multi life / level demos
+precache_sound return string value
+make jump buffered edge triggered
+clipping hull lips
+hang after sitting overnight on dos
+
+= april 6 =============================================================
+
+use PVS to speed line of sight checks?  Is that any faster than doing
+        the line check, because it involves two point checks?
+swooping ai movement by checking distance to impact with forward trace?
+make minimum frame time a cvar, so you could clamp to 10fps
+runmove() builtin for progs?
+draw triggers debugging option (z buffer it)?
+look towards killer when dead
+
+= april 7 =============================================================
+
+* fixed tfog
+* fixed removal of entities over net
+
+= april 8 =============================================================
+
+* fixed stray rocket trails
+* fixed coordinate integralization problem
+* identified the Aim() time sink
+* fixed smooth step up
+* got new clipping code running
+
++ sound looping prob is due to decimation
++ expand numtextures to a word from a byte
++ remove FL_ONGROUND after being pushed
++ still damage through walls
++ counting trigger
++ paused graphic
++ demon freeze jump
+
+add s and t vectors to the plane description in .map files
+remove the pad around bmodels bounds
+make pushmove area check instead of linear search
+server pass full pathnames to client
+dos crashes overnight (timing wraparound bug?)
+quake logo screen needs filtering
+shoot all the way through walls with objects
+wizard fireball
+plat problem in tim17
+shambler lightning
+weird grenade launch spot
+auto pause on console
+hold "other" on delay triggers
+gib stuff
+
+= april 9 =============================================================
+
+* fixed crash when -NXHost on quake
+* added +precache 0 option to speed up WAN loading
+* fixed sound loading bug
+* added loop lengths to sound loading
+* increased MAX_MAP_ENTSTING
+
++ quakeEd filter brushes
++ 16 bit looping sounds hang the dos game
+
+QuakeEd showed "Helvetica-Bold" in entity comment field.  Scary.
+maake treading water better
+trigger to turn off spikeshooters
+save the entity string memory
+blocked bmodels are conveyors?
+
+= april 10 =============================================================
+
+* made no-light levels auto fullbright
+* finished second clipping hull
+
++ zombies on the ground can't be gibbed
++ listen servers not working?
+
+error check all strcpy in QuakeEd
+slow slide clipping with ogre hull?
+grenades should trigger shootable triggers / objects
+looping sound that didn't stop
+
+= april 11 =============================================================
+
+* fixed damage through walls
+* fixed gibbing downed zombies
+
++ KEY_SEMICOLON
+
+pointing?
+ten second max looping sound?
+integral sound stepping?
+the damage byte stream is what is causing packet overflows
+debounce jump
+is there a mouse call to find the number of buttons?
+fix palette after vid change...
+too many vid_palette calls
+DON'T FLUSH THE ENTIRE DAMN SCREEN!
+fix snd_next to be snd_none
+change sys_loadfile to com_loadfile
+"system is little endien" message as optional verbose debug
+sometimes shotgun sound doesn't play
+double doors independantly closing
+server speed went back up
+fix auto aiming
+no gun aiming
+no change to grenade launcher
+ogre grenades
+zombie gibs
+r_ambient
+fixed angle for grenades when stopped
+client side shambler lightning
+gravity on corpses pushed into blocking positions
+slime darkness value
+sky time problem
+integrate dirpack with qcc
+check precedence of test directories and pak files
+rocket auto aiming is not working right
+amtele2 teleport problem
+no save when dead
+memory fail to console, not dos
+still overrun nails
+
+= april 12 =============================================================
+
+<at raven>
+
+= april 13 =============================================================
+
+<at raven>
+
+= april 14 =============================================================
+
+* fix 8 bit palette in NS
+* modified modelgen to allow multiple models in one file
+* fixed qbsp to detect cases of no entities placed and skip fill outside
+* new wizard spike attacks
+fix corrected palette at mode change
+make dos utility tree
+make QuakeEd's menu commands variable length
+debounce console
+debounce jump
+remote slist
+slist with user names
+fall out of world when dead
+s_releasesound: s->refcount < 0
+sound cache parameters
+clear pause on restart
+check pak file overriding
+
+= april 15 =============================================================
+
+* lowered slime cshift
+* wizard slide move
+* dog frames
+* fixed auto aiming when dead on
+* soldier less hp + tuning
+* various gibs
+* dynamically allocated scores structure
+* trigger_counter
+* door TOGGLE
+* fixed forking bug that trashed pointfiles
+* fixed sky fuckup
+
++ fix demon pop jump
++ zombie get up inside other
++ zombie gib throwing
++ lose onfloor when pushed
++ animating textures
++ schurch weirdness
+
+make light styles global prog vars
+base4 entrance door sucks
+back attack damage
+fix dynamic light values of players
+aim up at nearby monsters
+load pcxs in lbmlib
+text triggers
+swim slow straight up?
+temp entities
+client sound calls
+zombie heads bouncing
+bouncing monsters out of the world
+gib bodies between pushers
+
+= april 16 =============================================================
+
+* reduced bodies to points on squash
+* turned off onground when pushed
+* new demon jumping
+* fixed zombie stand ups
+* fixed zombie standing off floor
+* fixed uninitialized vector in movestep
+* fixed scr_ofs cheat
+* fixed upjump cheat
+* _field names are ignored by quake
+* fixed bottom checking
+* fixed up fov
+* moved icons into view screen
+* added pause icon and showpause cvar
+* renamed SOLID_EDGE to SOLID_TRIGGER
+* delayed monster drop to floor
+
++ mbug.map texture toastage
++ save / loadgame start view angle
++ fix demon popjump
++ flickering ammo box on restart
++ weapons not following to next level?
++ knights not coming off paths when angered
++ load / save games are broken
++ pause veloicty spin
++ reset lightstyles on level load
+
+more screen turbulent warps
+default fields in /*QuakeEd header
+is draworder working in deathmatch?
+enforcer no melee attack, side step
+triangle transition size
+open secret doors with area effects
+alias model racing stripe
+shoot over grounded zombies
+activatable trigger
+wizard altitude changes
+enforcers need to drop ammo
+player torso gib shouldn't be used for most monsters
+teleportation issues
+some keyboard keys make it in while changing levels
+make a base directory variable for all util scripts?
+invisibility (remove weapon)
+flyjumping up slopes
+better polygon lighting
+track killer when dead
+allocate cl_entities on the hunk
+start dead zombies
+cvar changing buttons
+invulnerability powerup
+raise / lower weapons
+is qc pausetime needed?
+delay item drop to floor?
+run first second of game before entering player
+
+= end ==================================================================
+The log has been cut on april 28 here by John Carmack, to reduce
+the unevitable finger bandwidth. See continued log.             -- b.
+========================================================================
+
+=============================================================================
+ - continued log since april 17 to april 30                          -- b.
+=============================================================================
+
+[idsoftware.com]
+Login name: johnc                       In real life: John Carmack
+
+Plan:
+
+This is my daily work.
+
+When I accomplish something, I write a * line that day.
+
+Whenever a bug / missing feature is mentioned during the day and I don't fix
+it, I make a note of it.  Some things get noted many times before they get
+fixed.
+
+Occasionally I go back through the old notes and mark with a + the things
+I have since fixed.
+
+--- John Carmack
+
+==============================================================
+(april 17)
+
+* fixed memory trash in bsper and added error check for excessive textures
+* forbid savegame with a dead player
+* fixed memory trash bug in sound channel management (also the caching bug)
+* fixed 255 wrap around super shotgun ammo bug
+* fixed no/blinking ammo box on restart in a net game
+* added centerview command (bound to K_END)
+* removed impulse0, impulse1, ...  in favor of "impulse 0", "impulse 1", etc
+* made shift a consolekey, so it doesn't do game actions
+* add K_SEMICOLON
+* added keyboard freelook
+* added mouse_yscale and mouse_pitchscale
+* fixed spawning angle from loadgame
+
++ teleport issues
++ keyboard freelook2
++ button pushing underwater is difficult
++ shambler dropping from sky into player
++ jump down on ogre heads gets stuck
++ remove grenade randomness?
++ super slow console bug
++ backpack not dropping in tim18
+
+block mouse movement on hitching frames > 0.2 seconds
+have server send fully resolved quake paths
+dynamically cache miptex
+vomitus spray with acid
+fix level transitions
+auto return to level start
+fix light runoff calculations!
+carry over movement after respawn?
+dissalow rotated bmodels alltogether
+are live monsters being squased to points?
+better lightning
+don't change palette until console is all the way down after death
+
+= april 18 =============================================================
+
+* finished new bsp portalization process: 20% faster, 1/5 the memory
+* fixed monster repeat teleport
+* klook and mlook
+* fixed monster stepping up into mid air
+* what breaks switchable lights is a bsp->entities without running light
+* changed network startup to use signon ready flags
+* added extra face-on wall friction
+
++ fix ammo between levels
++ dark knight
++ message wasn't a nop
++ schurch zombie graves
++ sandy's bug1
++ slow drifting spikes
++ kill wizard spikes after their death
++ s_refcount bug still exists
++ wizard spike starters spawn inside walls
++ plat dmg fields
++ longer pause for ogre first shot
+
+should demons step up before leaping?
+shooting spikes out of rockets
+need mouse configuration in the menus
+try removing bounding pad on bmodels
+add fadable light switches
+ability to bind specifically to key up / down ?
+bound ammo on weapon pickup
+lava damage for monsters
+error check add to reliable messages
+less accurate ogre tossing
+
+= april 19 =============================================================
+
+* fixed world/entity clear allsolid flag bug
+* tracked down problem with zombies popping out of graves
+* fixed path follow when in combat mode bug
+* fixed standing on top of monster stuck bug
+* animating textures
+
++ don't report surface cache size when caching sounds
++ pick up items multiple times when on dropping plat
++ pause continues across restarts, but plaque doesn't
++ overnight lockups
++ debounce jump
++ wizard spikes start in walls
+
+overbright light palettes?
+slope auto pitch needs work
+secret area counters
+don't slide on slopes
+zombies need to be gibed by pushers
+monsters trigger plats
+trigger_notouch
+warnings on coplanar brushes in bsp?
+only disable auto center when head is under water, not feet
+debounce escape
+lightstyles in savegames
+sticky bsp corners
+wizard partical centers
+make triggers use BSP models?
+better sky management
+
+= april 20 =============================================================
+
+* added hell knight
+* Hunk_ReportSurfaceCache() instead of automatic
+* fixed multiple touch on items riding plats
+* helped non-solid and trigger items push better
+* cleared pause on map restart
+* fixed level change parms
+* dynamic lights!
+* special wide box for missiles against monsters
+
++ larger rocket radius
++ slow motion screwups
++ nailgun stops rotating when riding a plat
++ stuck roll angle
+
+use knight kneeling frames
+zombie crucified frames
+looping sound while invisible
+make running direction changes smoother
+error check all file opens?
+load temp file on stack if possible?
+remove SOLID_SLIDEBOX
+put auto aiming back in?
+move rule checking to end of frame
+quicksave / quickload
+dissallow spawn parms on deathmatch
+make connect to server send version number
+make temp entities auto remove
+no body que?
+water up swim speed
+tim was getting stuck in deathmatch
+
+= april 21 =============================================================
+
+* fixed texture animation cycling roundoff bug
+* fixed up missile clipping
+* fixed super spike -1 ammo and use 3 ammo bugs
+* checked deathmatch before precache on monsters
+* jump out of water
+* debounced jump
+
++ check extranious messages on connect
++ continuous looping sounds
++ button texture changing
++ state textures for buttons?
++ remove the legless / headless player death frames
+
+why is shambler lightning funny colors under NS?
+extra point radius shoots through walls
+big sound cache for deathmatch
+abort load command?
+is max_health ever used in progs?
+don't go to frag scoreboard when single player dies
+clipping against surfaces causes multiple slime damages in multiplayer only?
+treading water less bouncy
+jetpack model is saved wrong
+super size boss
+
+= april 22 (release of log ) ================================================
+
+* server now sends clientdata in first spawn message
+* S_LocalSound
+
++ overnight lockups!
++ half damage from own grenades
++ QuakeEd isn't linking
++ clamp superhealth on level change
++ forced direction change when another client enters the game
++ mode X sets don't work on sandy's machine
+
+dump all cvars into savegame?
+make strafe not a default mouse button?
+noclip shouldn't activate triggers
+debuglevel cvar for more messages
+add escape character parsing to commands for bind / alias?
+bindings for ctrl-key or alt-key?
+swimming / flying frames
+make monsters not walk into water/slime/lava
+make client connections persistant through server changes
+restart from different search path option?
+combine cvars with qc globals?
+shooting spikes in flight
+some spikes come out with the wrong angle
+messages stoped working after a while
+disconnect messages aren't allways making it
+PLAYERS_ONLY flag for all triggers
+no ] prompt when not key_toconsole
+need to cut down network packet size
+
+= april 23 =========================================================
+
+* changed network update to client PVS specific
+* fixed broadcast svc_setangle on player connect
+* fixed "Message was extranious" connection bug
+* partical fields
+* invisibility model switching
+* effects passing from server
+* invincibility
+
++ self.modified is no longer needed with PVS updates
++ empty space back fill Z buffer bug
+
+vertical aiming sometimes shoots at a farther object
+over long latency lines, should shots come from the position the player was
+        viewing, or the true position?
+combine client->active and client->spawned into a client->state
+backpack message should include weapon gainsed
+throw monsters around from explosions
+drop wizard by half gravity
+make tri subdividing rasterizer based on screen size! (huge models go slow)
+american got a prog to crash
+allow listen servers to have a sys_ticrate?
+cut back on use of global host_client
+new teleport surface warp
+body que is broken
+
+= april 24 =============================================================
+
+* muzzle flashes
+* eat keys between levels
+* added new pain frames for soldiers
+* fix savegames with PVS update
+* new status bar updates
+* fixed packet overflow and noclip with PVS update
+* synced zombie throws from exact position
+* put in new ogre grenade
+* no span lighting in subdivided triangle code
+* better gibbing code
+* vid_size for nextstep
+* determined the hang is in the sound mixing loop never exiting
+
++ auto pause with console
++ more time for ogres before launching grenades
++ is restart doing a progrestart?
++ fix gib head bbox
++ head outside level
++ backpacks don't drop when floor is pulled out
++ movetype_missiles need to be intangible against owners
++ gib dogs
++ teleport flashes aren't in the pvs
++ soldier3 new pain frames
++ fix high framerate bug
+
+minimum ambient light field for bmodels
+make it easier to jump out of water
+default water treading
+better discrimination of slime and water
+need to cycle allocations of temporary entities to prevent false reuse
+repeating bounce sound on dropping plats
+crush monsters extremely by plats
+about to drown warning noise
+load last savegame by default
+monsters burn in lava
+float particals from tport pads
+don't switch to frag bar on single player death
+slope lookup
+got stuck in a downed zombie
+make an error message in qcc for function calls inside a parm list
+polygon torches
+need to make impulses reliable, or looping sounds may not be killed
+restart game with entrance spawn parms
+allways test demos and savegames after a net change!
+option to match ping times for fair deathmatches?
+get bonus items on top of doors spawning deterministically
+selective cheat for testing
+
+= april 25 =============================================================
+
+* increased spread on super shotgun
+* rewrote sound loading and mixing
+* fixed sound refcounting bug
+* fixed sound not playing bug
+* fixed sound hanging bug
+
++ axe
+
+colored lighting sample
+lightning gun
+light bmodels
+don't let the view model go full dark
+
+= april 26 =============================================================
+
+* bringing down console auto pauses in single player
+* fixed ultra-slow motion console movement bug on bad bat file startup
+* fixed slow motion when > 72 hz framerate
+* added axe
+* never change up to grenade or rocket launcher
+* added lower sample rate and bit sound loading
+* stored the fullbright index out in the colormap lump
+* new enforcer pain frames / code
+* added alternate animation sequences for textures
+
++ still running into spikes
++ fix host_framerate
++ drop backpacks when floor removed
+
+bound ammo maxs on weapon pickup as well as ammo
+diminish sounds through walls
+partical puff and light flash from spike shooters
+do a disk icon when caching
+proper alias model bbox efrags
+allow monster hearing at farther distances
+animating texture speed control
+slipgate lightning sprite
+winking out door in tim6
+pusher problem on smotte (climbing out of water on a bmodel)
+need to allocate as large a sound cache as possible
+wizards die on top of spikes in mid air?
+doors shouldn't start move sound if blocked open
+don't slide down slopes
+cache alias models
+
+==============================================================
+(april 27)
+
+* alternate texture animation sequences for depressed buttons
+* dropped knight and ogre melee damage
+* arbitrary texture axis on surfaces through all the utilities
+
++ remove .modified
++ need to make qbsp do 256 subdivision based on texture axis
++ monsters still hit pathcorners when hostile
++ demon jumps don't do damage
+
+triggering an open door still makes a noise
+allow turning off styled lights
+QuakeEd texture x size field is clamping at 64 min
+faster mouse forward/backward?
+is it jumping higher when running?
+gun puffs still hit sky
+get all visible entities into the low 256 or 128 edicts
+force low quality sounds on low memory machines
+still have some light edge blobs
+
+= april 28 ======================================================
+4-28: I removed the older entries to reduce finger bandwidth.
+
+* QuakeEd: added texture rotation / scaling
+* QuakeEd: fixed entity panel up/down angles
+* QuakeEd: make brush select also set current texturedef
+* QuakeEd: texturedef modification resets firstresponder to quakeed_i
+* QuakeEd: added -extra to relight command
+* QuakeEd: cmd-shift-click entity connect now works in camera view
+* QuakeEd: entities now draw with solid color in rendered view
+
++ make counter triggers ignore extra events
++ missiles shouldn't clip against owner...
+
+any key in demo playback should bring up the menu
+make func_wall and func_illusionary toggle frame on use
+make clipper tool use current selection height?
+floor textures at start of tim6 alias
+change numbers on weapon icons
+cliphull.map has a problem
+
+= april 29 =========================================================
+
+* fixed light sample determination for all rotations and scales
+* pulled wizard shot starts inside bounding box
+* fixed demon jump damage
+* objects never clip against their owner, and vice versa
+* ogre pain frames
+* fix pathcorner bug
+* don't let monsters see into water
+* don't allow dead monsters to be used by triggers
+* reset player's gib head to proper bounding box
+* gib dogs
+* killed avelocity when bounce objects stop
+* toss objects drop with plats now
+* remove progrestart
+* wizard spikes don't fire if dead
+* make wizard drop altitude
+* better stereo seperation
+
++ check message triggers
+
+alpha qlumpy still has wrong type numbers
+help screen?
+auto reload savegame
+add pak building to qcc
+let doors target other items
+guys gibbed by boxes go to no such frame?
+is axe view skipping frames?
+do player pain frames cause weapon frame skipping?
+highlight current weapon in status bar
+dynamically light bmodels
+swimming motion
+explosions need to reveal secrets
+
+= april 30 ==========================================================
+
+* clamp health and ammo on level changes
+* removed modified field from edicts
+* added pause before ogre first attack
+* counter triggers don't fire on -1 or less
+* added "give" command for testing
+* added highlight on active weapon on status bar
+* fixed message triggers
+* styled light now correctly light alias models
+* restart level with entering items
+* increased rocket radius damage
+* new swimming code
+* changed sizedown aspect ration to mimic full screen instead of status bar
+
+fix progrestart
+sound streaming
+klook is broken
+don't slide on slopes
+optimize server code more
+get fakeplayer spots working again as monster targets
+longer pause for ogre first shot
+knights run up ramp on tim7 and stand in air
+style light alias models
+ogre only fall down when surprise pain
+monsters should get angry at each other more often
+increment sound channels so items never collide
+powerups
+vomitus
+hell knight
+blobs
+work on dogs
+monsters sim up/down
+jump triggers
+low grav aiming ogres
+throw monsters with explosions
+per level-gravity setting
+explosion cores
+monsters take damage in lava
+turn towards killer when dead
+slope lookup needs to match stairs
+no monster pain frames in ultra-hard mode
+monster moves after killing player
+disk icon during savegame
+smooth center instead of snap center
+sometimes multiple death sounds don't start
+don't use stdio lib from savegame
+"player switches to " messages
+info bar in single player: current secrets, kills, level name, etc
+load game unpauses
+pick up own grenades without explosions?
+monsters fight each other after player death
+allways switch to picked up weapons
+switch to super weapons automatically?
+light styles in savegame
+prog access uninitialized edict field causes bus error
+get 64 bit clean (progs overlay pointers and floats)
+allow multiple pack files
+
+=====================================================================
+ - I do another cut here, monthly                             -- b.
+=====================================================================
+
+=============================================================================
+ - continued log since may 1 to may 31                               -- b.
+=============================================================================
+
+[idsoftware.com]
+Login name: johnc                       In real life: John Carmack
+
+Plan:
+
+This is my daily work.
+
+When I accomplish something, I write a * line that day.
+
+Whenever a bug / missing feature is mentioned during the day and I don't fix
+it, I make a note of it.  Some things get noted many times before they get
+fixed.
+
+Occasionally I go back through the old notes and mark with a + the things
+I have since fixed.
+
+--- John Carmack
+
+= may 1 =============================================================
+
+* background noise track code
+* fixed swimming nan bug
+* fixed Sandy's quakeed crahser
+* QuakeEd: turn region off when going to new map
+* automatic sound decimation based on available memory
+* explosion sprite cores
+* QuakeEd: don't go to worldspawn
+* qcc is now fully recursive
+* buttons only pressable by player
+
++ the explosion cores are still MOVETYPE_TOSS, not MOVETYPE_NONE
++ set gravity on secret level
++ host_framerate cvar is broken
++ shootable buttons
++ wizards on paths go to wrong heights
++ make knights not move when in melee range
++ light styles in savegames
++ QuakeEd: filter world
++ QuakeEd: remove check for filtered brush
+
+fish fly out of water
+make door triggers not box sized
+check respawning on tim5 armor that drops down
+make an end of frame call for each player
+allow sprites to have a faked forward Z value?  allways?
+key alias models
+
+= may 2 =============================================================
+
+* changed grenade cores to MOVETYPE_NONE
+* set gravity in worldspawn
+* fixed host_framerate
+* stopped sounds before server shutdown
+* clear all controls on first client frame
+* view.map, viewmodel, viewframe, viewprev, viewnaext commands
+* dropped ogre backpack to 2 grenades
+* fail soft on video mode memory allocation
+* checked console resize in vid mode set, so size messages never get lost
+* shootable buttons
+
++ edge light seams
++ increase max packet size during development?
++ rotate dogs slower?
++ monsters drop to floor after teleport
++ need very obvious sound for sequence completion
++ model viewer inside quake
++ cache alias models, if only to help level to level change speeds
++ cache heap compaction
++ remove bsp->leaktest from QuakeEd
++ dog leaping
++ sight sound on monster use
++ allways switch to picked up weapons
++ blink weapon icons on status bar when picked up
++ climb out of water bug
++ water warp option in all vid modes
++ make qcc 64 bit clean by using doubles instead of floats on 64 bit archs?
+
+intermission levels
+spritegen has funny pathname determination
+demo fast forward
+seperate impact from damage
+combine some of the state flags in both client_t and server_t
+ambient light option on bmodels
+palette should be reset whenever console goes full creen
+should all +- binding have the keyname prepended to avoid the multiple downs?
+seperate mouse scaling for turning and moving
+make a "soundshot" option fortesting soundcode in ansi spec makefile?
+raise / lower weapons
+change weapon after firing last round
+flying fish
+change entity flags to effects
+should host_error try to cleanup aborted servers and clients?
+how many hunk allocs are there?  save memory by combining?
+QuakeEd: filter based on skill levels
+check trigger firing when spawned inside one
+remove input line completely when not accepting input
+data checksums for remote servers
+shrink net packet sizes
+
+= may 3 =============================================================
+
+* reduced rocket refire rate
+* removed ogre wait after awake
+* added shambler pain finished time
+* new caching code
+
++ staircase rail on tim6 needs to be taller
++ normal server disconnect is reported as a host_error
++ jrbase1 up arrow out of slime is near a step
++ bad changeup to green armor from yellow? level transition?
++ are demo playback speeds correct?
++ stair walking underwater
++ ogre explosions need cores
++ teleporting monsters left a statues
++ shootable buttons don't anger monters properly
++ cycle weapon command
++ pain channel is same as weapon channel
+- cut swimming speed some
+- go through more get up frames on zombie before failing
++ got stuck in a dropping zombie
++ wizads on paths drop to ground
++ torch models
++ remove keys on use
+- different keys on status bar for different levels
++ all items in inventory need to blink on pickup
++ soldiers seeing into water on tim6?
+
+savegames cause enemy items...
+different color console fonts
+monsters need to hear from farther away
+think about patch / update plan
+precache_ambient
+alternate surface warp
+killing ogre while on falling platform left him in the air
+better treading water
+better search path handling
+make a progs / models test directory for kevin
+blink key icons on doors
+default.cfg allways goes to knwon state
+animate key icon on doors when failing to open
+
+= may 4 =============================================================
+
+(may 4)
+
+* allow "quake f:\quake\id1" for better ISDN development
+* dynamic caching of alias models
+* fix the surface cache size instead of letting it fluctuate
+* explosion cores for boxes and ogre grenades
+* transfer monster anger from button press
+* fix trigger message printing for secret level
+* added notouch flag for triggers
+* added nomessage flag for counter triggers
+* fixed secret counter triggers that are fired instead of touched
+* fixed fired button activator handling
+* fixed wizard path following
+
++ alias model torches...
++ don't spawn triggers for key doors, just use touch
++ make sound channel 0 never match
++ jrbase1: don't put guard inside ammo box, superhealth at end is no good,
+        bridge delay is wrong, can still fall into slime
++ debug the stdio library problems!
+
+tim5 armor drop on ogre fucks up
+remove UPDATE_BINARY and pushmove
+make +_ key commands pass source as second parameter
+cace console background?
+more alert monsters?
+demo cycling breaks netgames
+automatic treading water
+squish to bloody paste on interference
+
+= may 5 =============================================================
+
+* removed player entity from own entity set
+* fixed memory trash bug from not flushing surface cache before changelevel
+* use all memory between the hunks as dynamic cache
+
++ dump time between levels
++ sticky bsp corner
++ fix wall jump scaling
++ better backpack messages
+
+QuakeEd is doing something over the net on NXPings
+bloody face health indicator?
+crosshair?
+don't pass angles, frame, etc on viewentity
+rockets spawn past point blank
+Single player names on qsockets are backwards
+make dead player still solid to monsters to prevent seeing inside models?
+
+= may 6 =============================================================
+
+* removed MOUSE1, MOUSE2, MOUSE3, added K_MOUSE1, etc for binding
+* check for spurious mouse buttons
+* fixed stair climbing underwater
+* trigger_onlyregistered
+* fixed door sound loopinhg problems
+* button configuration
+* made monsters stand still at point blank range
+* idle view motion
+* monsters get mad at each other on any damage
+
++ cache movement on hunk allocs
++ hi res modes with new code are broken
++ dead guy still firing / pushed into floor
++ fake pause causes problems when map from console
++ zombie shouldn't go into pain frame when down
++ change weapon command
++ is DMA left enambled in sound code?
+
+respawning of items that dropped down with a plat
+rocket points block plats
+don't clear text on vid mode change
+grenade bounced off ogre
+bind # option for weird controllers
+key sticking
+investigate the vis problems
+make monsters head for their spawn points after they kill the player
+camera follow killer
+destroy backpacks when doors close on them
+lightning gun model
+lightning gun no damage to shambler
+does shambler bolt hurt monsters?
+
+= may 7 =============================================================
+
+* fixed point / point missile interactions
+* don't change weapons on pickup in deathmatch
+* made vis 30% faster
+* fixed falling in floor
+* fixed and armor plated the jump out of water code
+* fixed jump monkey climbing
+* dissalow "kill" when allready dead
+* all hell knight actions
+* COM_LoadStackFile
+* cache movement
+* fixed shambler pain frame
+
++ stair climbing clipping against walls is messed up a bit
++ monsters need to drop to floor after teleport
++ menu01
++ loading on stack causes errors on dos
++ flashing disk icon
++ make caching perfect
++ monsters not fight each other if not seen player yet
++ make lighting gun consume cells
++ falling into floor bug
++ zombie clipping
++ cycling channel allocation
++ no Host_Error: for valid disconnect
++ body que isn't working
+
+shooting rockets at point blank
+deathmatch switch to better weapon again
+lightning needs to pitch
+control animating texture speed
+need to cut the update message size
+sfx volume option
+player only checkbox for doors and triggers
+launch lightning from exact spots
+finalize HMD interface
+repeating grenade bounce on some slopes
+jump out of water automatically when swim up to an edge, no need to jump
+new ground explosions
+auto pitch went into look down for no reason
+gib velocity reletive to damage?
+
+= may 8 =============================================================
+
+* fixed crash on machines with no sound card
+* made texmake grab new palette
+* removed tent generated soudns from progs
+* fixed enemy anger on damage
+* sound channel 0 never overrides another sound
+* basic blob
+* light styles in savegames
+* Cash's fix for savegame slowness
+* door messages
+* fixed door retriggering sound and mixed size letdowns
+* changed zombie pain / clipping code
+* enforcer backpacks and alt death frames
+* trigger monsters play awake sound
+* longer ogre aim time
+* fixed checkattacks crossing water
+* new bit coding on entity updates
+
++ lightstyles in savegames
++ broke multiple message triggers
++ key door sounds
++ messages on double doors
++ messages on secret doors
++ 3 digit frag bar
++ light edges
++ change weapon command
++ center print messages
++ hell knight slice
++ more wizard death frames
++ underwater noise
+
+make gib entity rotation client side only
+ambient level on doors
+decouple weapon animations from pain, etc
+light bmodels
+point blank rockets
+look at killer monster
+swing weapons down
+turn view when axe fighting
+grenade destroy bodies
+lightning/rocket shooter
+swimming frames
+teleport warping
+teleporter surface warp
+blow up corpses
+get all visible enttites into low 128 or 256
+
+= may 9 =============================================================
+
+(may 9)
+
+* fixed door linking / messages / targeting
+* remove onground after teleport
+* fixed zombie pain and getting up inside players
+* hell knights don't anger each other
+* added source entity to prog traceline
+* fixed point blank rocket bug
+* new light sample point determination
+
++ no host_error on proper disconnect
++ change weapon
++ powerups
++ cell packs
++ fix pausing on menu / console
++ make key doors touch activated instead of triggered
++ lightning gun use ammo
++ word wrap consoke
++ monster jump triggers
+- blob spit attack
+
+is turning not happening when in contact with monsters?
+client side lightning
+lightning gun
+enforcer bolt
+more pain feedback
+setting up the vid mode then changing levels can cause out of memory
+give a spike when hit by spikeshooter
+monsters burning in slime
+hknight throw a spike occasionally when charging
+demon jump down from higher
+higher demon jumps
+enforcers still see underwater
+
+= may 10 =============================================================
+
+* fixed undead demon bug
+* new main menu
+* everything splashes on entering water
+* bounded ammo on weapon pickup
+* added cell models and stats
+* Cash's screenshot error check
+* Cash's Host_EndGame
+* Cash's net packetsize bump
+* disc icon during IO
+* monster jump triggers
+* cache optimizations in edge refresh
+
++ cycle new allocation numbers
++ make qcc do pack files to a destination
++ dog leaping
++ wizard death frames
++ death popping
++ step up wall clipping
++ crucified zombie
++ nudge weapons with sized down screens
++ 64 bit clean qcc
+
+remove drop to floor?
+make Quit go back to demos and reset controls for E3
+lots of demos
+slime damage for all monsters
+pass PVS list to refresh instead of passing efrags
+remap stupid entities (item_weapon)
+sound for all monsters hitting ground
+reset the bonus items in monsters
+refix the rocket stuff after demo
+
+= may 11 =============================================================
+
+* wizard death frames
+* dog leaping
+* make key doors touches
+* increased air time by two seconds
+* new keyboard pitch aiming aids
+* crucified zombies
+* cemter printing
+
++ tally monster deaths at end instead of counting at kills (monster on monster)
++ parse \n out of messages
++ status bar feedback
++ klook
+
+weapon dropping
+weapon jumping
+mess with configuration screen
+move all messages into a language qc file
+fix frag bar
+some side velocity on death
+check monster full turn before firing
+check exit hang on beta machine
+puff+light for spike shooters
+tim5 armor fall on ogre bug
+view track killer
+enforcer bolts
+less monster alertness when high or low
+blob spawn ceiling
+fix coop
+
+= may 12 =============================================================
+
+* catch overbackoff in movement sliding code
+* extended key/value size in utils
+* added flame alias model
+* \n in epair text
+* fixed slope by wall false step in movement code
+* hacked around sticky corner problem
+* weapon/item flashing on inventory bar
+* fixed soundinfo exploded on a no sound card system
+* optimized snd paint and transfer
+
++ change weapon
++ jrstart: no fall in water by medium
++ demo loops
++ player stats on frag bar
++ nail gun alternating
++ cycle edict allocations
++ jrstart: light up black corners
++ clear center print when console drops
+
+axe view tilt
+better underwater bubble control
+track killer
+kick monsters off edges in pain/death
+jump landing frames
+new explosions
+
+= may 13 =============================================================
+
+* weapon cuycling command
+* trapped bug with maps without textures
+* increase key/value size in QuakeEd
+* qcc -pak option
+* "flechettes" to nails
+* added "killtarget" on all SUB_UseTargets
+* secret doors do SUB_UseTargets
+* secret door touch messages
+* cycle entity allocation
+* versioning in savegames
+* save skill in savegame
+* don't set onground when standing on another monster
+* fixed loadgame during demo bug
+* put falling crunch on voice channel so it overrides pain sound
+* fopen demos inside packfile
+* automatic ambient sounds
+
++ bad recursive explobox?
++ ambient sounder tents
++ tab stats
++ center print sequence stuff
++ demo files in packfiles
++ powerups
++ underwater looping sound
++ pass source as parm for +defs
+
+coop start spot
+don't accept mouse view when paused
+"you got # shells" for item messags
+precache_ambient
+visbug.map
+seperate impact from damage
+create pak files with search path?
+tim5 drop item on monster bug
+texture animation speeds
+squash to paste
+doubled "clearing memory"
+parse /* */ comments in config files
+explosion has bad colors in it
+proof of purchase
+lightning gun
+treading water
+looking down towards ground bug
+deathmatch level transitions
+better lava balls
+is zbuffer precision maximized?
+alias subdivider used wrongly in zoomin mode
+permanently shifted view angle on restart
+optimized single channel ambient mixing
+are 0 volume sounds hanging around?
+jrbase3 old bsp explosion
+auto jump out of water
+demo file version numbers
+
+= may 14 =============================================================
+
+* fixed recursive barrel death
+* new characters
+* better ambient name parsing
+* con_dpritnf for developer messages
+* start messages out of maps
+* directional touch triggers
+* remove qtest license stuff
+* fixed off by one error with ambient leaf calc
+* level spawning messages
+* clear input line every time console goes up
+* moved all non-refresh vid.buffer access into draw.c
+* removed alphalumpy -- use qlumpy
+* automatic extension and dest file creation for qbsp
+* merged id1 and id1_ development hierarchies
+* Made QuakeEd projects directory independent
+
++ raven's bug map
++ static point ambients
++ hell knight smash
++ flameb1 - 11
++ explodes on manually going to bad map
++ play humm1 for teleport textures
++ parms for all + commands to identify source
+
+blood/chunk spray direction from claw attacks
+shootable base texture needs an off frame
+lint the utilities
+cache console background
+make all jump trigger targets have a land sound
+center menu in high res
+slipgate animations
+loading plaque, no console between levels
+supress input line
+fix timedemo with cycling demos
+gun jerking
+!cl.worldmodel is no longer valid?
+mike signon messages stay in notify lines
+break off anger at another monster if can't reach in ten seconds
+debounce all keys?
+center print level messages
+still dropping pack in single player?
+debug alpha modelgen
+
+= may 15 =============================================================
+
+* fixed bug with cl.disconnect not clearing worldmodel
+* linted and asnified qbsp/light/vis
+* changed sbar update model
+* powerup colors and icons
+* fixed console ] gets messed up with escape/escape
+* fixed weapon icon flash going from level to level
+* solo console
+* blob fly1-4
+
++ QuakeEd: don't allow retexture in wireframe mode
++ QuakeEd: clear wad on bad load
++ unfork qbsp
++ body que
+
+remove any remaining static limits in qbsp
+split client state into level - game - invocation
+eyes on status bar for invisibility
+accumulate damages so quad dmg shotgun can gib
+fix spit.map
+optional FOV cull for modem?
+super armor number
+server send prog checksum to clients
+fix hard coded location of status bar numbers in wad
+Cash's teleporter issue
+fake some angles to hide latency on movement
+faster mouse forward/backward
++ QuakeEd: clear brush heights on new level
+more edicts
++strafelook
+toughen up shambler
+no demon/demon blob/blob violence
+hell knight anims
+dopg death frames
+outside level plays all ambient sounds
+cl.active isn't good anymore
+demo loops crew multiplayer
+give for powerups
+make clip brush only models work
+fix bug_numpoints_on_hp.map
+
+= may 16/17 ===========================================================
+
+(wrap around day)
+
+* added stack checking support to sys_dos
+* moved trigger notarget checking to after setmodel
+* limited monster / monster fighting to other classes or soldiers
+* centerprint sequence messages
+* tracked memory trash with stack loading
+* remove keys when used
+* alternate spike positions during firing
+* hell knight magic needs to go up/down
+* hell knight only charge when level
+* new menu gfx
+* make modelgen store name in frame and add to viewprev/viewnext
+* new hknight magic animation
+* snd_noextraupdate for better host_speeds
+* got all flames in
+* static sounds
+* found alpha fp exception in qbsp
+* increades MAXEDGES/MAXPOINTS in qbsp
+* changed vis error to note on unable to open portal file
+* ported qbsp/light/vis to win NT
+
++ QuakeEd: remove clicked on regioned brush message
++ smoothly center with centerview
++ automatic ambients for torches
+
+is "paintedtime chopped off" ever happening?
+sound mixing subdivides more often than it should
+make an r_pos command
+client side object spin
+load all sounds as 8 bit and tablify
+viewcycle command
+make builting commands auto increment in qcc
+change prog state definitions to automatic shorthand?
+make utils load pcx
+clear all powerups between levels
+rotate and bounce lava balls
+need to get automatic alias cycling going agsin
+why do menu sounds sometimes not play?
+one noise track bombs
+noisetrack in world entity
+put trigger back on key doors?
+better alias bboxes for efrag determination of huge models
+Tim's NaN impact nan.map
+parm checking isn't done in progs???
+loading
+
+= may 18 =============================================================
+
+* make func_wall toggle frame on use
+* QuakeEd: remove bsp->leaktest
+* QuakeEd: filter world
+* QuakeEd: remove clicked on regioned brush message
+* QuakeEd: don't allow retexture in wireframe mode
+* QuakeEd: new brush heights are now snapped to grid
+* default .bsp extension to bspinfo
+
++ enforcer bolts
++ sound for all monsters hitting ground
++ 64 bit clean qcc
++ parms for all + commands to identify source
++ body que isn't working
+
+teleport effect
+global sfx volume option
+frag bar highlight
+permanently shifted view angle on restart
+goddamn dos \r text shit in output from NT tools messes up NeXT tools
+check for small area polygons and portals
+
+= may 19 (QuakeEd source release ) ===================================
+
+* enforcer bolts
+* snd_showambient
+* automatic hit ground sound for all monsters
+* spread start time of identical sounds started at same time
+* put QuakeEd.tar.qz on ftp://ftp.idsoftware.com/idstuff/source
+* added -src option to qcc
+* added DEF_SAVEGLOBGAL to qcc globals
+* archive prog globals in savegames
+* send current killed_monsters and found_secrets at connect time
+* increase size of exec buffer to 8k
+* removed last use of zone load file from cmd
+* converted all prog pointers to offsets to make 64 bit clean
+* QuakeEd: fixed crash when misselecting an entity angle
+* dynamically cache console background, paused, and loading
+* loading plaque between levels
+* fixed ambient sound fade down
+* laser shooter option on trap_spikeshooter
+* min light and dlights for view model
+
++ get noisetrack from world
+- fix bubbles
+- shoold spikeshooters have a model associated with them?
+
+load/save menu
+position all missile launches
+unify monster missile attacks
+make ambient area sounds into cvars
+ogre jump landing frames
+investigate high pitch whine in fire sound
+quaddamage attack sound
+coop
+copy directories for Michael's bug
+do attenuation before stereo scaling
+more weapon motion
+why is quad damage on jrbase1?
+tim's corner bug
+monsters are definately still shooting you while underwater
+no ambient sounds in leaf 0
+faster ambient texture tracking
+"map" should maintain connection to server for coop
+monsters need to die in slime
+is stairstepup in effect at level load?
+remove all continuous trap_shooter? (tim10, spit, sally)
+faster missile speeds on super-hard
+
+= may 20 =============================================================
+
+* server sounds parameter specifies soundtrack
+* fixed cursor bug when clearing input line on console raise
+* fixed problem with e4 ambient (32 bit overflow)
+* ambient teleporter sound
+* snd_show debugging tool
+* fixed underwater grenade sounds
+* fixed shambler hold attack until in range
+* ogre chainsaw on side swing
+* claw meat spray
+* f1 toggle help
+* no end of level stats on empty levels
+* fixed tilted head savegame bug
+* don't drop backpack in single player
+* wrote unpack utility
+
++ teleport static sound
++ refix rocket point blank
++ make fire animations non-syncronous
+
+make MAX_PACKNAME define and error check against it
+dissable qcache for release?
+death/restart from loadgame
+should mouse forward/backwards cause an auto-center?
+unpackdir
+load/save should not take full paths
+ambient val on bmodels
+dynamic lights on bmodels
+finale
+fix demo cycle problems
+player corner clipping can take too long
+option to report any unfilled pixels (jrmed2)
+QuakeEd: goto point in command window
+monsters shooting you underwater
+
+= may 21 =============================================================
+
+* passage research
+* fixed static sound start with -nosound
+* optimized SV_CheckBottom for easy case
+* sound optimization
+* fixed kill coutners for world kills
+* pop blood trails up higher
+* key doors need to have touch removed
+* added volume cvar to post scale all sound
+* underscale sound
+
++ make hell knight only send one dynamic light out
++ tim6: wordtype typo
++ bmodel pvs issue in tim6
+
+shotgun sound has dead time at end
+damage amp in jrbase1 is pointless
+easy to use "is drive readahead" test
+listen server bugs
+menu sounds
+weapon offsets are wrong again
+damage amplifier bug
+check cd removal issues
+tighten muzzle flash
+phantom nail boxes in tim6
+heads get stuck in ceilings sometimes
+is lightning owner set properly? sandy got stuck using the lighting gun
+
+= may 22 =============================================================
+
+* complete mouse configuration: m_pitch, m_yaw, m_forward, m_side
+* m_filter sample smoothing option
+* split non clearable parts of client_state_t into client_static_t
+* clear items at level exit
+* make hell knight only send one dynamic light out
+* fix klook
+* smooth centerview
+* properly handle multiple inputs on a button, got rid of +forward2, +attack2
+* exit game text screen
+* gave name to unconnected clients
+
++ make torch animation client side!!!
+
+is near Z clipping of alias models a bad idea?
+allow multiple packfiles to override one another
+better ideal pitch on slopes
+mouse pitch/strafe combo
+look at redbook audio
+restart shouldn't drop console.
+check for reloading the same level.
+noambient flag for low memory systems
+check zone memory allocation for bindings
+differentiate reconnect
+allow up/down in water
+swimming frames
+print bindings option
+more edge friction?
+reletive volumes for each ambient sound
+explicit bindings for key up / key down?
+teamplay totals
+level name in solo scoreboard
+
+= may 23 =============================================================
+
+* fixed body que
+* Michael's client side alias animations
+* Cash's fix for net connects
+* fixed bobbing pvs problem
+* fixed on-edge water grey problem
+* fixed console keys generating double release events
+* fix new pitching recenter
+* changed powerup effect to dim light
+
+partial screen updates
+bloody face?
+player induced meat chunks
+seperate soudntrack files into seperate download?
+check sighting into water
+scroll water textures?
+accumulate shotgun damage for powerup gibbing
+override help/sell and finale in registered pak
+victory music
+append sample rate to music filenames to match best
+rename jrstart to start
+rename the last I_ functions to sys_
+cache textures?
+dim out screen when menus are up?
+comment line on menu screens
+del in save field
+scan for all id1*.pak at startup
+reclaim entity string space after spawning
+change mins/maxs from floats to shorts in bspfile
+cut vertex numbers to shorts?
+marksurfaces to shorts?
+remove view model in weird FOVs
+ammo boxes not vanishing after reload
+change dynamic light attenuations for tighter spheres
+prog def for shareware only version?
+
+= may 24 =============================================================
+
+* added lookspring back
+* fixed client PVS for checkclient to be from viewofs
+* fixed no sighting underwater
+* no tarbaby damage to each other
+* blob explosion core
+* cleared prog stack on prog error, so recursion pverflow doesn't give error
+* fixed shalrath pain frame bug
+* settriggermodel() now does angle, movetype, and solid init
+* reduced client to server packet size
+* trigger_changelevel fires targets
+* end of level stuff
+
+write a multi-platfirn C shell script for makefiles
+360 jump trigger
+shootable triggers?
+take away all screen effects at completion
+intermission code
+more monster awareness to nearby carnage
+reduce monster accuracy with invisibility
+high res centerings
+remove counters if cheating
+rename cheat codes
+generalize button0 button1 to button 0 - button 7
+dynamically reconfigure listen clients
+weapon movement with screen aspect is broken
+option to not pause the game while console is down?
+longer underwater time in easy skill?
+set registered flag
+menu sound (pause issue?)
+remove shootable invisible triggers?
+go over all the prog code
+gamma in options menu
+allow attack to respawn as well as jump?
+put end screen in gfx
+killed by box restart bug
+video mode set bug
+finish invisibility in deathmatch
+intermission cameras
+QuakeEd view pos button
+save polygons by filling inside of sky volumes
+load / save game
+monster on plat issues
+fish
+shalrath
+good lightning gun
+escape twice to remove console
+centerspeed not used?
+optional center on mlook release
+need bigger surface cache in higher res modes
+run direct from cd working path option
+cull distant sounds / partical effects on the server side?
+change vector view_ofs to scalar viewheight
+is the view model pitching backwards?
+non-thrashing precache?
+rename host_client to sv_client
+check surface cache size performance figures
+
+= may 25 =============================================================
+
+* fixed savegame / phantom box bug
+* fixed underwater
+* allow monsters to sight other just-damaged monsters as clients
+* fixed lookspring
+
++ secrets and kills are backwards
+
+tighten dlight radius/attenuation
+copy center prints to console
+the portal bug
+cue music on completion
+
+= may 26 =============================================================
+
+* flipped secret and kill plaques
+* finish solo scoreboard
+* finale
+* optimized CL_CalcAmbientSounds
+* optimized ResampleSfx
+* reduced index sizes in .bsp files
+* flood filled away outside sky fragments in bsp files
+
++ fix cache dir
+
+demo loop issues
+modify qbsp to allow entities only option to generate new triggers
+randomize intermission spots
+conditional bars in jrstart?
+teleport sprite
+fish
+registration key
+light bmodels
+different quad damage effect
+slipgate animations
+lightning gun
+general "no move" flag for player server C code
+scaled texture lighting still has bugs
+
+= may 27 =============================================================
+
+* moved ambient sound calculations to vis program
+* moved file caching option to host_parms
+* removed keybindings[1]
+* added ambush flag to monsters
+* made precache_* functions also return their parameter
+* added precache_*2 functions for the registered version seperation
+* modified qcc for -pak / -pak2 option to build shareware / registered
+* random intermission_info selection
+* automatic configuration saving
+* angle 0 jump triggers
+* fixed solo map name centering
+
+artifact blinking before removal
+deathmatch invisibility
+blinking cursor for configuration screen
+automatic config saving
+sum quad damage for gibbing
+shrink cl_entities to be cl_update_entities + cl_baselines
+tim5 armor fall through bug
+radius damage opening secret doors
+only surpress autocenter when not on ground, not water check
+clearing memory twice, allow baselevel to move if not connected
+
+= may 28 =============================================================
+
+* QuakeEd: forbid dragging position / direction when textured
+* constrained all file writes to the game directory to close security holes
+* allow multiple pak files intermixed with directory trees in the search path
+* full specification with: -basedir, -game, -cachepath, or -path
+* moved demo list to cls, fixed efrag bug on second demo playback
+
++ bring up menu on any input during demos
++ do "loading" plaque from demo to demo
++ demo transition problem
++ automatic pak grabbing frame game dir
++ saving while in a trigger field kills it?
+
+bump edicts again
+acknowledge all - command line parms as they are accepted?
+QuakeEd: don't explode if /qcache isn't present
+qcc option to re-bsp models and maps
+shambler lightning needs to be exactly positioned
+joysticks
+keybinding saving isn't right
+claim all args from command line, or print warnings?
+
+= may 29 =============================================================
+
+* any key in demos brings up menu
+* demo transitions bring up loading plaque
+* added timeout for loading plaque
+* forced console away with loading plaque
+* regular restart uses loading plaque
+* disabled triggers now work properly after a savegame
+* cleared edict before parsing to fix door beeping bug
+* testing if(string) in qcc is not reliable, change to if (string != "")
+* fixed loadgame cursor problem after saving a typed in name
+* fixed dos savegame crash bug
+* automatic pak0.pak pak1.pak etc loading from game directories
+
+back to start after finishing each episode
+episode finished items
+ogre jumping frames
+load bmodels by lumps for less memory damage?
+does quake.qpr have to be in the root of the development directory?
+crosshair option
+wait on jump triggers?
+drowning warning
+cmd line load
+reformat text on vid mode change
+deathmatch level crossing
+nightmare mode
+death restart needs loading plaque
+map name on savegame comment line
+regular restart after a load game doesn't work
+bound load pointer
+swing up weapons
+lightning gun
+safe edict allocation failure
+remove view model in wide FOV modes
+give 9 faults
+
+= may 30 =============================================================
+
+* automatic setting of the registered cvar
+* demos play from pak file
+* delay SCR_EndLoadingPlaque until after cache report
+* added -minmemory parm for testing entry case
+* stopped demo loop on demo load error
+* stopped demo loop on connect and map
+* zbuffer torch dropout bug fixed
+* changed all remaining I_ functions to Sys_
+* chase network issues
+* colored light gel demo
+
+remove bspleaktest from quake.qpr
+can trigger_changelevel stuff two commands sometimes?
+remove powerup shifts before intermission
+gib code for the big monsters
+give wizards (hknights?) need a muzzle flash
+last_damage on zombie for cumulative gibs
+new explosion
+check min memory with large number of clients
+better treading water
+escape at a fulls creen console to restart demos?
+allways run checkbox in options
+instructions on configuration screen
+fish attack
+fish not leave water
+finish invisibility
+conditional registration message in jrstart
+monsters die in slime
+longer message triggers in jrstart
+take dogs by ramp out in jrbase1
+easier jump out of water
+remove jsilly rbase1 bonus items
+smotte light at start
+loadgame from pulldown menu
+amlev98 shambler needs red armor on easy level
+for release: don't forget to remove "developer 1" cvar and bound cheats
+
+= may 31 =============================================================
+
+* based load plaque removal on framecount instead of updates
+* fixed crash bug with zerod notify lines
+* load / save game menus converted to slots instead of file names
+* end1 / end2 shareware / registered end screens
+* triggered monsters no longer awake on invisible or notarget players
+* broke out default.cfg from quake.rc
+* fixed five way counter trigger message
+* fixed push triggers to be frame rate independent
+* translated spaces to _ in savegame comment to make stdio happy
+* escape in keygrab now justs turns it off
+* protected against recursive loop when Con_Printf inside SCR_UpdateScreen
+
+is model name caching being done correctly for the flushed world model name?
+centerprint message delay times
+fade screen behind menus
+gib big monsters
+cl itemgettimes aren't saved.  do they need to be?
+weapon nudges on different view sizes
+slime ambient sounds
+center everything in higher res modes
+got stuck by explosion near zombies
+return to jrstart stuff
+amtest98 needs new teleport textures
+reset defaults option
+reset to defaults option
+track down load failed comments
+why do menu sounds ometimes not work?
+combo look/strafe
+fix lightning
+push trigger directionality wierdness
+
+=====================================================================
+ - I do another cut here, monthly                             -- b.
+=====================================================================
+
+=============================================================================
+ - continued log since june 1, occasionally updated                   -- b.
+=============================================================================
+
+[idsoftware.com]
+Login name: johnc                       In real life: John Carmack
+Directory: /raid/nardo/johnc            Shell: /bin/bash
+On since Jun 12 17:56:42                12 hours Idle Time
+   on ttyp2 from idnewt
+Plan:
+
+This is my daily work log.
+
+When I accomplish something, I write a * line that day.
+
+Whenever a bug / missing feature is mentioned during the day and
+I don't fix it, I make a note of it.  Some things get noted many
+times before they get fixed.
+
+Occasionally I go back through the old notes and mark with a +
+the things I have since fixed. A - means I decided it wasn't a
+good idea.
+
+--- John Carmack
+
+4-28: I removed the older entries to reduce finger bandwidth.
+6-10: removed more old stuff
+
+= june 1 =============================================================
+
+* tracked loadgame problem to stack overflow
+* removed console cursor if key_dest != key_console
+* ignore all autorepeat keys except backspace
+* removed the extra unit of padding around bmodels that caused them to clip
+* build entity list for refresh instead of pushing efrags
+* fixed cells not carrying from level to level
+* nightmare skill item spawning is fixed
+* old deathmatch rules by setting deathmatch 2
+* options menu sliders
+* moved gamma correction out of vid systems into view
+
++ shambler lightning needs pitch
+- stop demo when menu comes up?
++ nightmare skill
++ integrate spritegen with
++ lookspring checkbox
++ make sure all menu options get saved
++ clear notify lines when in menu
+
+increase surface cache size?
+do knight swords do meat chunks?
+centerspeed slider
+
+= june 2 =============================================================
+
+* fish don't leave water
+* merged new CD code
+* shambler lightning pitch correct
+* cut number of cells in half
+* beam weapon entities only on client side
+* fixed sliding death/no retart bug
+* muzzle flash for wizards
+
++ regrab gold/silver keys on sbar
++ accumulate damage over a frame
++ dissalow more than two bindings to the same action
+
+flymonster in wall test
+jump cause center?
+non-linear mouse movement reponse?
+use 3 frames of gib3
+start using pcx for all utilities
+use slight for shambler setup
+replace all item_weapon
+lava damage on monsters
+transition to intermission
+warning sound on about to drown
+don't end demo when player is in menu
+
+= june 3 =============================================================
+
+(june 3)
+
+* gate_boss, gate_episode
+* item_sigil
+* fixed demo transition forcing console and menu away
+* setup for server transitions with connected clients
+
++ grab new explosions
++ console screen isn't coming down in deathmatch
++ non-pickup nails again
++ console cursor
++ check tim21
++ coop player starts
++ flip mouse y as a checkbox option
+
+monsters aren't telefragged?
+aim lighting gun up/down
+connect while demo is running fucks up
+sound for quad damage attack
+accumulate damage
+shoot flying gibs?
+add new gibs
+deathmatch intermission screen
+talk message buffer doesn't erase with sized down screen
+
+= june 4 =============================================================
+
+* allowed host_framerate to explicitly exceed the normal bounds
+* reduced cls.state to ca_dedicated, ca_disconnected, ca_connected
+* got consistant on when memory is dumped -- only at start, not end
+* increaded MAX_VALUE to 1024 for longer text messages in entities
+
++ dlight bmodels
++ escape with console down brings up menu in addition to removing the console
++ s_init should not be called on dedicated server
++ sound channel droppoff when lots going? combine torch sounds?
++ only allow two bindings to an action from menu
++ delete in options menu to unbind all
++ carry serverflags from level to level
++ make all items fire triggers
++ coop respawn
+
+check dedicated, listen, loadgame, recorddemo, restarting, timedemo, and demoloops with new server setup
+make hit ground sound entity reletive
+filling sky volumes causes rockets to explode on sky.  fix somehow
+make all teleporters have an "inactive" flag so an event makes them active
+QuakeEd: top trace for shearing is at 2048, increase to 8192
+remove relight for quad damage
+remove leading K_ from keynames
+player swimming frames
+flash ammo counts after picking up bonus items?
+shalrath doesn't attack zombies?
+
+= june 5 =============================================================
+
+* coop is mostly working
+* made snd_show give a total count
+* combined static sounds of the same type
+* demo record is now reord [demoname] [map]
+* intermission takes all players in coop
+* all players are invisible for coop intermission
+* coop telefrag
+* dead players are respawned on level change in coop
+* don't bound clinet only systems to sys_ticrate
+* fixed bug with monsters not sighting players after some level changes
+* keys aren't picked up in coop
+* moved colon on intermission
+* cleared effects on player respawn
+* fixed players 2+ not saving stuff on entering level
+* coop colors follow from level to level
+
++ backspace / delete to remove bindings in options screen
++ coop quit doesn't send disconnect
++ super spike: s_spike
+
+deathmatch weapon switching rules
+blue sparks for lightning
+check for splash before playing thump
+center or scale menus in hi-res
+change "gamma" to something else because of name clash with new djgpp
+angle jump at demo start
+coop should use solo scoreboard
+alphabetize cvars / commands for tab completion
+look for "backup past 0"
+fix "gravity changed" message
+powerup blinking
+frozen demons?
+timer on monsters mad at other players
+
+= june 6 =============================================================
+
+* carry serverflags from level to level
+* items fire targets when picked up
+* different spikes for super, knight, and wiz
+* removed requirement that triggers have a target
+* removed all references to update_type
+* lightning gun underwater explosion removes currentammo
+* fixed bug in fat pvs that caused entire world to show on some frames
+*.5 trigger only teleporters
+* delete key bindings and prohibit tripple bindings
+* blured savegame line
+* don't allow cmd buffer sizebuf overflow
+* behind menu fade
+* seperate cursors for console and menu
+* changed entity spawning to spawn-as-loaded
+* move light entity hack to pogs
+* draw sigils on status bar
+
++ remove self.running?
++ portal creation bug
++ make lightning gun more damaging again
++ sigil things on status bar
++ signon1 when at 1
++ weapon nudges
++ player faces
++ put talk.wav back in
++ wait before allowing intermission exit
++ teleport ambient sound?
+
+quad damage liughtning explosion
+menu4.wav for slider
+make a generic signon stream and subdivide svs.signon more
+velocity through levels?
+all projectiles need a t ent
+finish axe up
+pickup weapons while firing bug
+tick sound when pressing an unbound key?
+escape back through menus
+loadgame removes enemy state?
+deathmatch intermission
+texture animation speeds variable
+use different exiting water sound
+
+= june 7 =============================================================
+
+* three levels of gib velocity
+* accumulate damage to allow gibbing with shotguns when powered up
+* radius damage opens secrets
+* get Michael's bmodel lighting code
+* moved notarget check into progs code
+* removed self.running from progs
+* fixed weapon fov nudges, moved super shotgun
+* status bar faces
+* fixed single player loading plaques
+* auto center if on bmodels
+* sound and cd audio have big banners if not configured
+* grunt muzzle flash sync with attack
+* darkened blood
+* dog head
+* moved sound and cd init into non dedicated startup
+* moved message printing to SUB_UseTargets (buttons get messages)
+* moved delay to SUB_UseTargets so all activations can delay
+* trigger_relay entity
+* clear notify and center print when in menu
+* added svs.changelevel_issued to prevent possible double changelevel
+* changed NaN velocity / origin checks to warnings with clear to 0
+
++ take away stuff in jrstart
++ player head gib now has wrong view ofs
++ the tim5 bug
++ exactly position enforcer bolt launch
++ status bar faces
++ save game with powerups
++ monster target finding with prespawning is messed up
+
+make activator a parm to use functions instead of a global
+write a tool to search all maps for boolean queries on key/value pairs
+reformat console with vid changes
+start past skill select when returning to jrstart
+connect to bad map, then to a good map gives no free clients
+lava damage for monsters
+shambler hand lightning
+fade to intermission?
+meat spray from axe attack
+gamma prob at intermissions
+make a model fullbright flag for torches
+Add -safe for nosound, vidmode 0, exec default -nocdaudio, -nonet
+kill zombies with axe
+teamplay totals
+doesn't auto center if head out of water
+easier jump out of water
+can't record net demos any more
+solo status bar in dark font
+key config names in dark font
+print savegame comment line on save screen
+are you sure?  for quit
+spawn explosion for lightning gun pop
+invis face, invis + invuln face
+monsters aren't allways facing target when firing
+make the message prog functions take a destination: broadcast, static, single
+
+= june 8 =============================================================
+
+(june 8)
+
+* teleport triggers UseTqargets
+* fixed once triggers
+* cleared static sounds between levels
+* right justify options menu text
+* cells became rockets on level cross
+* changed teleport humm attenuation
+* lookspring checkbox
+* lookstrafe checkbox
+* mouse y invert checkbox
+* allways run checkbox
+* made fov not a saved cvar
+* wizspike and knightspike t ents
+* take away stuff after completing an episode
+* end of episode text
+* head gib eye in floor bug
+* blink cursor after messageboxes
+
++ everyone goes through the return teleporter in episode 4 jrstart
++ is bgm volume not working for cd?
++ make zoom a default configuration?
+
+quad damage shotgun doesn't gib zombies
+bonus item flashes
+no menu sounds when disconnected
+teleport ambient sound is no good
+auto center when treading water
+monster drowning
+blaster mismatch warning is misformatted
+axe kill zombies
+new game loading plaque not showing
+change zombie knock down code
+reformat console on vid change
+grenade launcher kicks too much
+surface cache size in weird aspect ratio modes
+prevent vid from allocing a big enough buffer to cause the next load to fail
+deathmatch invis eyes
+monster reduced accuracy during invis
+push for red super spikes
+monster death bubbles underwater?
+change name back to quad damage
+disconnect from netgame isn't being sent
+remove coop cheating
+centerprint time reletive to length?
+centerprint "entering ..." on level entry
+
+= june 9 =============================================================
+
+* boss damage only by lightning
+* enforcer bolt positioning
+* all gibs centered
+* lava splash
+* boss stop throwing when player is dead
+* fixed cl_backspeed for always run checkbox
+* fixed double talk sound on triggers
+* retain options menu cursor pos
+* nightmare mode: no attack_finished limits, and five second pain interval
+* triggered door message bug
+* weeded out the unused entities in misc
+* consolidated the four remaining sprite scripts into a single file
+* modified sprgen to allow multiple grabs in a single file
+* grabbed new explosions
+
++ level 1 gib needs work
++ is clipping detection for asm sound mixing working right?
++ items falling through other items bug
++ item on moving object respawn bug
++ models aren't checking dlight decay time
++ fix drop.map
++ status active/max is reversed
+
+coop against boss
+make qlumpy parse qc files as source?
+combine particals and temp entities
+fix gib rules
+slime burn down
+check edict return type
+flash weapon icons
+
+= june 10 =============================================================
+
+* more velocity on level 1 gib
+* no pain sounds when invincible
+* reduced lava coor shift
+* deterministically spawn items on bmodels
+* objects on blocked train no longer fall through
+* hell knights need muzzle flash
+* fixed flame offsets
+* three levels of screen update
+* erase exact lines of centerprint
+* shareware non-finale transitions
+* crash in _SV_TouchLinks
+* escape puts away console
+* laodgame from demo
+* backpacks in coop
+* floating gibs
+* made beta3 CDs
+
+"restart" in coop game drops to dos
+word wrapping needs to count extra notify lines
+telefrag isn't working sometimes
+put a save plaque up when game is saving
+demon died on top of player, left in air when moved
+door sounds are broken
+registered message shouldn't print at all
+menu hotkeys should return to game on escape, not main menu
+quickload shouldn't drop to console
+quit/end game confirmation
+split door is playing talk wav
+sound looping pop
+weapon frames should be decoupled from pain frames
+door touch
+take the k_ out of configs
+velocity between levels
+fish
+shub
+display key bindings command
+deathmatch intermission
+door messages
+zombie statues
+constant look down pitch bug is multi player related
+permanent head tilt in coop mode
+endscreen
+connect while in demo is a bug
+secret counts aren't broadcast
+half dead player
+frozen demon when dropped on player head
+swimming frames
+map e1m1 from a coop game gives loop qsocket used
+all player model axe frames
+sw version shouldn't allow path changes unless pop
+
+= june 11 =============================================================
+
+* fixed the vis portalization order problem!
+* allow attack to respawn as well as jump
+* fixed faulting
+* removed sprites directory and all references
+* new qcc code for damage, should fix statue monsters
+* new zombie pain code
+
+hang on laptop sound init
+boss needs to scan for coop players
+centerprint powerup messages
+change origin offset on fish for more fin
+fish move fail on tcross surface should still allow xy move
+fish should pull treading people underwater
+make good spot for weapon change rules
+8 bit sb output isn't using volume scale
+slider sounds (esp for sound volume)
+is e1m1 nailgun a trigger, or is it duplicated?
+play sound or something after intermission will allow exit?
+systems that translate blit need to update entire screen on palette changes
+
+= june 12 =============================================================
+
+* limit sound buffers to 4k, add extra mix points and mix full buffer
+* fixed only registered trigger messages
+* boss shouldn't spawn in deathmatch
+* cleared move commands across level transitions
+* 8 bit sound output volume scaling
+* key configuration didn't work for changeweapon "impulse 10"
+* options menu now resets string values of cvars
+* talk drawing properly updates with sized down screen
+* clear net connection ques on new connection
+* f5 cheat or's in items
+* removed error for unconnected buttons
+* power up status bar faces
+* armor number
+* increased surface cache size
+* end of game text
+* menu up/down wrapping
+* Sandy's menu suggestions
+* jrstart alternate start point if returning
+* play track 3 on intermission
+* drop backpacks in coop
+* got deathmatch invisibility working
+
+clip into sky problem
+demon smashed a player stuck into a sloping wall
+no cheat in coop
+automatic listen 2
+talk message printing code
+door sounds
+check fly/float move code
+check weapon changing while firing
+check messagemode bound keys
+"restart" on a client of a net game crashes
+serverflag only trigger
+gib head positioning
+ability to specify cd track on demo recording
+coop use solo scoreboard
+two presses to exit intermission
+deathmatch intermission screen
+harder nightmare
+name and color should be saved as cvars
+undead players?  fixed with new death code?
+QuakeEd: trigger texture setting should be automatic
+add colors to dm scoreboard
+forward changelevel commands?
+good POP
+add "serial/modem configuration" menu
+
+= june 13 =============================================================
+
+* slider sounds in menu
+* trigger counter's don't require targets now
+* fixed blaster mismatch warning message
+* net start menu
+* enter on full key config clears
+* ogre gib
+* quad damage face
+* quad damage powerup cheat
+* all gib heads
+* removed K_ from key names
+* bind   with no parms reports the current value
+
+can't give
+try partical effect for teleporters
+remove forward to server commands, use impulse for all?
+old rule deathmatch option in menu
+head in wall again
+no cheat in coop
+connect from demo
+checksum pak directory for shareware version
+shambler, wizard, ogre, voor heads
+allow arrow key repeats?
+item respawn on bmodel bug
+pitch jerk at startup sometimes.
+stuck heads bug
+"no messages" option
+axe weaponframe switch problem
+make "dropped datagram" a developer only printf
+player thump for ogre falling?
+centerprint entering message
+variable ceterprint wait time
+double nightmare attacks
+disallow new game during multiplayer?
+no player crush to point
+sinking into plats
+coop through episode end
+allow typing in savegame comment
+fix talk message display code
+keep commands in doubly linked MRU list to avoid linear scan?
+multiplayer end of episodes hang?
+centerview doesn't work in water
+make sure all menu vars are in default.cfg
+
+= june 14 =============================================================
+
+* removed all use of ai_dead in progs
+* fixed nailgun fire order
+* fixed double press to exit intermission
+* fixed sliding dead player bug
+* fix bonus item respawn on dropping plat
+* zombies don't go down again if already on the way down
+* fixed ambient sound looping problem
+* show looping sounds lin soundlist
+* combined rocket impact and explositon damage for reliable gibs
+* fixed stuttering on dropped packets
+* set teleport death size properly
+
+easier gib from rockets for players
+check telefrag for multi players stuck
+is sound buffer not being properly cleared?
+menu sounds
+dissallow some server forward messages
+internet reliable messages getting backed up?
+check for hard packet overflows
+flash items on status bar
+stop using gfx.wad?
+pickup rules
+teleport into monsters bug
+change away from axe bug
+
+= june 15 =============================================================
+
+* handle escape special to prevent unbinding, and pass through to menus
+* allow attack to restart as well as jump
+* copied more cmd_argv through recursion
+* boss lead player in hard mode
+* removed blaster warnings on v4 cards
+* blinking icons
+* protect all cvars and commands that could be deathmatch cheats
+* mvoed squish obit before fell to death
+* fixed static sound false combining bug
+* randomize axe swings
+* never go into pain frames during weaponframes
+* combined axe damage frames
+* prevent bmodel teleport
+* registered trigger only accepts players
+* fixed activated door beeping
+* fixed linked door messages
+
+player crushed on e1m2 bug
+make enter play slide noise on menu item adjustments
+no head bobbing when dead
+gib head look around
+sink into rising plats
+hack check for stuck
+no such frame for gibbed dog head
+bmodel dissapearing problem in e4m6
+gib by damage isntead of negative health
+option for listen servers to send out less packets?
+crank menu3 sound up in volume
+teleported monster flag
+fill sky volumes differently?
+shambler lightning hand frames
+top line of console is not clipped correctly
+door sounds / messages
+weapon change rules
+no gravity when in solid volume
+double shots for monsters in nightmare mode
+use multiple help screens
+swim bubbles on forard move as well as jump
+
+= june 16 =============================================================
+
+* removed hard coded number order for sbar
+* moved palette and colormap to discrete lumps
+* all help screens
+* delay enter sound until after menu frame drawn
+* delated recursive spawn death
+* changed sound override rules to prevent monsters from eclipsing player snds
+* delay monster use reaction to guarantee sound after teleport
+* added reliable_datagram
+* fixed powerup respawning
+* clear all of sv in spawn server
+* heads bounce from telefrag
+* fixed sizing bug with telefragging
+* fixed force retouch bug
+* bodyque objects get movetypes
+
+player lightning source 16+ higher
+check dead player coop transition
+talk message needs to clear background
+dissallow save from intermission
+different default player colors?
+kick clients off if unsent message gets too big
+powerup flashes
+demon and shambler rethink between claws
+make boss face direction of throw
+deathmatch weapon switching
+double shots for monsters in nightmare mode
+hot key menus should return to game with a single escape
+item respawn with no pickup problem
+floating heads
+view center snapping
+deathmatch intermission screen
+directory checks
+no frame bug with eyes
+head floating in air
+reliable broadcast
+no exit option for persistant deathmatch servers
+statue monsters
+change pak files to pakS0 pakR0
+triggered teleporters aren't working reliably
+play sound when menu goes away
+local sounds die sometimes
+teleport effect
+sounds on locked doors
+pops at end of sound buffer: not mixing entire thing?
+exp.tri spawn explosion frame
+func_episodegate print messages
+teleporter articles
+fix "load failed" message
+coop savegames
+lightning gun on secret doors.
+
+explain "kill" in manual
+explain dedicated servers for large coop games in manual
+
+= june 17 =============================================================
+
+* lighttning gun always activates secrets now
+* fixed coop level to level bug when player is dead
+* added final character animations
+* only server can changelevel or restart
+* fixed scoreboard color bars
+* fixed spawn death
+* changelevel from client faulted
+* pop verification
+* pak crc
+* min shells on level transition
+* voor spike
+* coop use solo scoreboard
+* teleport particals
+* menu sounds
+* frag.map
+*? view center snapping
+* scoreboard flags in higher res
+* dm weapon pickup rules
+* easier jump out of water
+* cd track change at finale boss
+* changed center print position for very long text messages
+* force cd track on demos
+
++ -14 cells????
+
+new sky filling
+client enter time
+end of e4 text crash
+deathmatch game exits should stay at intermission
+multiplayer boss ai
+axe impact sound
+rock ogre
+stuck spawn
+shambler recheck
+coop savegames
+talk message drawing
+broke teleport sounds
+stuck problem
+water stuck
+
+different pak naming structure
+combine mo strip build
+
+= june 18 =============================================================
+
+* fixed cells dropping below 0 with new lightning gun animation
+* tighteneed teleport particals
+* big hack to catch rare stuck occasions
+* prevent save in intermission
+* unbindall command
+* fixed strip makefile
+
+solo scoreboard not centered
+jump out window while looking down looses auto-centering?
+drop zombie, then crush it = unkillable zombie
+changelevel with a dead server can take away shotgun/axe
+knight first damage is too early
+
+= june 19 =============================================================
+
+* fixed "no such frame" invis bug
+* coop target tradeoff
+* boss target tradeoff
+* moved knight damage frames by one state each
+* cl_signon messages are now developer only
+* changed hell knight hit sound to sw data
+* allow onolyregistered triggers to be used as killtriggers
+* fencepost bug on name lengths
+* added S_ExtraUpdate to Draw_FadeScreen
+* ignore nointermission in deathmatch
+* notifications for quit and new game
+* created 0.9 SW RC distribution
+
+tilde key doesn't type (unbindall)
+monster counting bug
+net can fuck up with a join
+don't let demos change while in a menu
+menu sounds still don't work in all cases
+play menu sound on escape from menu
+stuck spawn
+disallow angle change during demo
+nail messages say "fell to death"
+rewrite buggy centering code
+rewrite buggy point squashing code
+color coded backpacks
+no finale when deathmatching
+fish
+credits
+
+= june 21 = (Shareware release, june 20th missing) ============
+(june 21)
+
+* fish do damage
+* fixed lightning prog crash after killing boss
+* added ctrl-alt-del check in key_event
+* found problem with saving com port enabled in config files
+* drop fish hp
+* added samelevel flag for persistant servers
+* auto advance to next level in ruled deathmatch
+* deathmatch rankings show for 5 sec minimum
+
+new game should bring up loading plaque
+rewrite buggy screen management
+big t dest
+pain field on shub
+stand in in center
+turn off messages option
+
+=====================================================================
+ - finished -                                                -- b.
+=====================================================================
+

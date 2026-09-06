@@ -1,0 +1,86 @@
+From: ddt@daisy.cc.utexas.edu (David Taylor)
+Newsgroups: comp.sys.ibm.pc.games.action
+Subject: idNews: Need advice, it wasn't me!, and other stuff
+Date: 20 Dec 1993 08:34:06 -0600
+Organization: id Software
+
+on Net-stuff:
+
+  We're re-doing the net code so that it doesn't use broadcast
+  packets.  Please don't angst about release dates.  It's a
+  high-priority thing, and when it's done, we'll get it out ASAP.
+  This goes for the serial code and most other fixes as well.
+
+  In the meantime, we're also wondering about PC BSD-ish TCP/IP
+  drivers.  What's common out there?  We'll prolly do BSD-style TCP/IP
+  next if it's common as we've already written the code for the NeXT
+  version.
+
+on this Listserv David Taylor saying strange things about the serial
+  release for Doom:
+
+  Wrong guy.  We're working on the serial code now, and we don't know
+  exactly when it'll be out, but it's coming right along.
+
+  Be warned future parents, David Taylor is just a super-unwise name
+  for your kids.  There's bunches of 'em.  There's a David Taylor of
+  Hewlett Packard, author of Elm.  There's another David Taylor, editor
+  of a (discontinued?) electronic gaming magazine (not Game Bytes-
+  that's this Dave Taylor).  There's some David Taylor Research
+  Somethingorother (hopefully, they're looking into this overused name
+  and the effect upon its owners).  And most unfortunately, there's
+  some monolothic David Taylor Cadillac dealer in Houston.  ew.
+
+on bug-fixing, new features, and a slightly overloaded coder:
+
+  We're doing lots of it.  I've been inundated with mail this last week
+  and am having a little trouble getting work done.  The problem is that
+  I'm a lot like a synchronous serial line and "from" is my NULL character.
+  This is why I get lots of compliments on speedy replies (sorry- it's
+  not so much responsibility as it is a disorder).
+
+  A quick run-down of the top-10 letters I get (in no particular order)
+  and how I sometimes feel like answering:
+
+    10.Q:"When is PAS-16 support going to be done?  I can't believe
+	  you supported GUS first.  There's <N>X more PAS-16 users!"
+	  (where <N> is some arbitrarily large and random number)
+       A:"Soon!  I don't know why, either.  Perhaps there was a mixup
+          at the hospital?"
+     9.Q:"When is serial support going to be in?"
+       A:"Soon!  We're working on it now."
+     8.Q:"Will Doom work on my <m>/<s> with <N> Mbs memory?"
+	 (where all variables are arbitrarily small numbers and
+	  none mention the video card or bus speed)
+       A:"Dunno!  Try it and see!  It's free!  Neat, huh?  :)"
+     7.Q:"My <m> does StRaNgE things with Doom like all the time."
+         (where <m> is a 386/40 or just about anything else)
+       A:"We all know DOOM's got a good chunk of evil in there.
+          We suspect the number of the beast to be 4GW."
+     6.Q:"My screen's dark."
+       A:"Turn it on.  If it's still too dark, get v1.1 and hit F11."
+     5.Q:"Are you going to release the map editor?"
+       A:"No, that was Real Work (tm).  We will release other utilities,
+          though and figure it'll be .. what.. two days? a week? before
+          there's 6 home-brew map editors in revision 0.99pl35z."
+     4.Q:"Are you going to fix the IPX broadcasting thing?"
+       A:"Yes."
+     3.Q:"Are you going to add TCP/IP support?"
+       A:"Someone will, perhaps us."
+     2.Q:"Are you going to do a <m> port?"
+       if (m=="Jag") answer="Why, yes! (with cartoon sparkle in smile even)";
+       else if (m=="3DO") answer="No sir, I don't like it!"; // - R & S
+       else if (m=="NeXT") answer="Already out";
+       else if (m=="UNIX/X") answer="MuHAHAHA... you ARE evil but i like it!";
+       else answer="Although this is an excellent machine with broad"
+         "support and a sizable market, we really just feel that"
+         "<13-bit CPU w/ superKluge goes here> really does not fit"
+         "quite right with long-range company goals.";
+     1.Q:"I realize you must be busy, but..."
+       A:"Can't ... Get ... Work ... Done-... Must... Warn ... Others!"
+            - Jason Yenawine of Origin Systems doing Captain Kirk of Star Trek
+
+  God Bless Hank and FAQ-maintainers everywhere.  :)
+
+	=-ddt->
+

@@ -1,0 +1,97 @@
+[idsoftware.com]
+Login name: johnc     	(messages off)	In real life: John Carmack
+Directory: /raid/nardo/johnc        	Shell: /bin/bash
+On since Jul  5 17:29:39		2 hours 58 minutes Idle Time
+   on ttyp7 from idnewt
+Plan:
+Quake is out.
+Finally.
+I think the end product is damn good, and I am proud of my 18+ months of
+sweating over it.
+I hope lots of you enjoy the shareware levels enough to register :-)
+
+While there will probably not be any about-faces in technical decisions,
+Quake will definately be growing and expanding over the next year or so
+as we gauge the user community reaction and release updates and the
+inevitable sequal.
+
+Some work that will be going on in the near future:
+
+Quake Advanced Server internet technology
+Fixing any serious problems with Quake 0.91.
+Release of tools and source code for user prog coding and level building.
+Writing a new map editor for win/NT + open GL
+Porting Quake to native win32 + DirectX
+Porting Quake on the metal to some 3D accelerator boards.
+Writing a proper full radiosity replacement for the light utility.
+Reasonable user suggested improvements
+	(keep it in the discussion groups please, I get enough mail as it is)
+Speed enhancements in the polygon model path.
+Adding support for various gadgets -- HMDs, controllers, maybe other
+	sound cards, etc.
+
+And of course...  The Next Generation Technology. (no, I won't give you a code
+name to talk about!)
+
+Vacation?  I don't need a vacation!
+
+John Carmack
+Id Software
+
+
+v0.94 -- Bugs fixed / Features added
+ (unreleased beta version)
+------------------------------------
+* Totally rewritten menus
+* New lighting model with overbrighting
+* Parsed lowercase BLASTER parms
+* Better Sound Blaster shutdown code
+* Rewrote sound blaster initialization
+* Fixed DMA channel 0 bugs
+* Added SBPro 8 stereo setup
+* Fix delayed sound on 8 bit Sound Blasters
+* Fixed speed key affecting angle-turning from keyboard
+* Fixed "no such Alias frame" bugs
+* Fixed Zombie not getting up bug
+* Checked for very high joystick values, signalling a failed read
+* Unstuck jumping Fiends and Spawn
+* Fixed large BModels blinking out in complex areas
+* Fixed s_localsound with no sound started
+* Saved spawn parms in savegame
+* Fixed screenshot save location
+* Bind with no arguments no longer clears value
+* Allow console in intermission / finale
+* Fixed false gib messages
+* Full-screen TAB scoreboard in DeathMatch
+* Fixed "+playdemo <demo>" from command line
+* Trapped overflow in sizebuf messages
+* Moveup / movedown in water!
+* Fixed-up Talk command
+* Added unsupported crosshair option ("crosshair 1" from console)
+* Colored chat messages with notify sound
+* Fixed "connect during intermission" bug
+* Changelevel while demos running no longer crashes
+* Fixed changelevel with no map left up loading screen
+* Fixed long names entered from the console causing crash
+* Stopped demos changing while in the menus
+
+* Fixed modem initialization from menu
+* Fixed serial reliable stream getting stalled
+* Serial/modem code fixes
+	16550a lost transmit buffer empty interrupts
+	fixed sometimes processing interrupts from com1 when using com2
+	added com3/com4 support from menus
+	fixed first character of modem init not getting sent
+	saved serial/modem settings in config.cfg
+* Fixed name and colors not always sent to server at startup
+* Fixed "stopdemo" crashing the system when there wasn't a demo playing
+* Added server's TCP/IP and IPX addresses (if available) to status command
+
+0.95 fixes
+-----------
+* more deathmatch start spots in e1m6 and end
+* print server version and prog crc on connect
+* -default starts start.map if nothing else specified
+* fixed lookspring function during net games
+* fixed rare crash during long running dedicated servers
+

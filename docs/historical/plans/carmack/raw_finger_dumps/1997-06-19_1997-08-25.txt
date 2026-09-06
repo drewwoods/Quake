@@ -1,0 +1,708 @@
+[idsoftware.com]
+Login name: johnc     			In real life: John Carmack
+Directory: /raid/nardo/johnc        	Shell: /bin/csh
+On since May 20 01:14:24		31 days Idle Time
+   on ttyp1 from idomni
+On since Jun 18 01:09:21		1 day 19 hours Idle Time
+   on ttyp2 from idnewt
+On since Jun 18 13:48:42		1 day 19 hours Idle Time
+   on ttyp4 from idnewt
+On since Jun 18 13:49:02		15 hours Idle Time
+   on ttyp5 from idnewt
+Plan:
+
+-------------------
+Jun 19:
+
+I'm pretty damn pleased with things right now.
+
+We are just buttoning up the E3 demo stuff, and it looks really good.  It
+is clearly way alpha meterial, but people should be able to project where
+it is going.
+
+The timing is a bit inconvenient for us, because we still aren't quite
+through with converting all the .qc work that Cash did over to straight C
+code in the new engine.  The monsters are just barely functional enough to
+show, with none of the new behavior in.  If E3 was a week or two later,
+the demos would almost be real playtesting.
+
+Q2 is going to be far and away the highest quality product id has ever
+done.  There are new engine features, but the strength of the product is
+going to be how everything is fitted together with great care.  (don't
+worry, next year will be radical new technology all over again)
+
+----
+
+Sound is being improved in a number of ways.
+
+All source samples are 22 khz / 16 bit, and you can restart the sound
+system for different quality levels without exiting the game.  High
+quality sound will require more memory than the base 16 meg system.  The
+system can automatically convert to 11 khz / 8 bit sounds, but we are
+probably going to include a seperate directory with offline converted
+versions, which should be slightly higher quality.  Homebrew patches
+don't need to bother.
+
+Sounds can now travel with a moving object.  No dopler effects, but it
+positions properly.  (well, spatialization is a bit fucked this very
+instant, but not for long)
+
+I finally got around to tracking down the little bug with looping sounds
+causing pops.
+
+I have intentions to do three more things with the sound engine, but the
+realistic odds are that they won't all make it in:
+
+Voice over network.  I definately don't have time to do a super-compressed
+version, but I can probably hack something in that the T1 players would
+have fun with.
+
+Radiosity sound solution.  It's obvious in retrospect, but it was a
+"eureka!" thought for me when I realized that the same functions that
+govern the transport of light for radiosity also apply to sound.  I have
+research plans for next-generation technology that include surface
+reflection spectrums and modeling the speed of sound waves, but I think I
+can get a simplified solution into Q2 to provide an ambient soundscape
+with the same level of detail as the lightmaps.  I'm a little concerned
+about the memory footprint of it, but I'm going to give it a shot.
+
+Syncronized, streaming sound from disk.  Special events and movie demos
+won't need to precache gigantic sounds, and they can rely on the timing.
+
+----
+
+Q2 has a generalized inventory structure and status display that should be
+adaptable to just about anything anyone wants to do in a TC.
+
+----
+
+On saturday, I give my 328 away at E3.  I know that there were lots of
+issues with the contest, and to be honest, I probably wouldn't have done
+the nationwide contest if I could have forseen all the hassle (I could
+have just given it away at #quakecon...), but the finals should still be
+really cool.  It just wasn't possible to make the contest "completely
+fair".  Not possible at all.  In any case, I don't think anyone will deny
+that the finalists are some of the best quake players around.
+
+----
+
+I doubt I can convey just how well things are going here.  Things probably
+look a little odd from the outside, but our work should speak for itself.
+I have been breaking into spontanious smiles lately just thinking about
+how cool things are (of course, that could just be a sleep deprivation
+effect...).
+
+We have a totally kick-ass team here.
+
+We are on schedule.  (no shit!)
+
+We are doing a great product.
+
+Everyone watch out!
+
+-------------------
+Jun 22:
+
+Ok, I'm finally updating my .plans at the top like everyone else...
+
+E3 was interesting, and the tournement went extremely well.
+
+You would think that the top deathmatchers would be an evenly matched
+group, seperated by mere milliseconds of response time, and the matches
+would be close.
+
+Its not like that at all. There are master players. And there is Thresh.
+
+We were watching him play with our jaws hanging open. I don't think he was
+killed a single time in the finals. He did things we had never seen
+before. It was amazing to watch.
+
+I feel a lot better about the contest now, because even if the sixteen
+finalists weren't necessarily the sixteen best players due to internet
+issues, I do think that the grand prize winner IS the best single player.
+
+The level of sportsmanship was gratifying, especially given the stakes. No
+sore losers, no tantrums. Everyone was cool.
+
+After the finals, a japanese champion (highroller) asked for a match with
+Thresh. I expected him to pass, considering the pressure of the
+tournement, but he happily accepted, and delivered an eighty-something to
+negative-three beating (which was accepted with good grace).
+
+I don't see much point to any more big tournements until a few more of
+these mutant superpowered deathmatchers show up...
+
+As far as everything else at E3 goes, I saw a bunch of good looking games,
+but I am fairly confidant of two things:
+
+Nobody is going to eclipse Quake 2 this christmas. Different tradeoffs are
+being made that will appeal to different people, and there are going to be
+other products that are at least playing in the same league, but Q2 should
+be at the top of the pile, at least by the standards we judge games.
+Several licensees will be picking up all the Q2 features for their early
+'98 products, so games should get even better then. (ok, I guess that is
+just my cautious, long-winded way of saying Q2 will rule...)
+
+Some notable companies are going to ship longer after us than they are
+expecting to, or make severe compromises. I wouldn't advise holding your
+breath waiting for the quoted release dates. Relax, and let the developers
+get things out in due time.
+
+Ugh. I haven't coded in three days. Withdrawal.
+
+-------------------
+Jun 25:
+
+We got the new processors running in our big compute server today.  We are
+now running 16 180mhz r10000 processors in an origin2000.  Six months ago,
+that would have been on the list of the top 500 supercomputing systems in
+the world.  I bet they weren't expecting many game companies. :)
+
+Some comparative timings (in seconds):
+
+mips = 180 mhz R10000, 1meg secondary cache
+intel = 200 mhz ppro, 512k secondary cache
+alpha = 433 mhz 21164a, 2meg secondary cache
+
+qvis3 on cashspace:
+
+cpus	mips	intel	alpha
+----	----	----	----
+1	608	905	470
+2	309	459
+3	208	308
+4	158	233
+8	81
+12	57
+16	43
+
+(14 to 1 scalability on 16 cpus, and that's including the IO!)
+
+The timings vary somewhat on other tools -- qrad3 stresses the main memory
+a lot harder, and the intel system doesn't scale as well, but I have found
+these times to be fairly representative.  Alpha is almost twice as fast as
+intel, and mips is in between.
+
+None of these processors are absolutely top of the line -- you can get 195
+mhz r10k with 4meg L2, 300 mhz PII, and 600 mhz 21164a.  Because my codes
+are highly scalable, we were better off buing more processors at a lower
+price, rather than the absolute fastest available.
+
+Some comments on the cost of speed:
+
+A 4 cpu pentium pro with plenty of memory can be had for around $20k from
+bargain integrators.  Most of our Quake licensees have one of these.
+
+For about $60k you can get a 4 cpu, 466 mhz alphaserver 4100.  Ion Storm
+has one of these, and it is twice as fast as a quad intel, and a bit
+faster than six of our mips processors.
+
+That level of performance is where you run into a wall in terms of cost.
+
+To go beyond that with intel processors, you need to go to one of the
+"enterprise" systems from sequent, data general, ncr, tandem, etc.  There
+are several 8 and 16 processor systems available, and the NUMA systems
+from sequent and DG theoretically scale to very large numbers of CPUS
+(32+).  The prices are totally fucked.  Up to $40k PER CPU!  Absolutely
+stupid.
+
+The only larger alpha systems are the 8200/8400 series from dec, which go
+up to 12 processors at around $30k per cpu.  We almost bought an 8400 over
+a year ago when there was talk of being able to run NT on it.
+
+Other options are the high end sun servers (but sparc's aren't much faster
+than intel) and the convex/hp systems (which wasn't shipping when we
+purchased).
+
+We settled on the SGI origin systems because it ran my codes well, is
+scalable to very large numbers of processors (128), and the cost was only
+about $20k per cpu.  We can also add Infinite Reality graphics systems if
+we want to.
+
+Within a couple years, I'm sure that someone will make a plug-in SCI board
+for intel systems, and you will be able to cobble together NUMA systems
+for under $10k a cpu, but right now the SGI is the most suitable thing for
+us.
+
+I have been asked a few times if Quake will ever use multiple processors.
+You can always run a dedicated server on one cpu and connect to it to
+gain some benefit, but that's not very convenient, doesn't help much, and
+is useless for internet play.
+
+It's waaaay down on the priority list, but I have a cool scheme that would
+let me make multiple copies of the software rendering dll and frame
+pipeline the renderers.  Response is cut by half and the frame rate would
+double for two cpus, but pipelining more than a frame would be a bad idea
+(you would get lag on your own system).
+
+I wouldn't count on it, but some day I might take a break from serious
+work and hack it in.
+
+There is no convenient way to use multiple processors with the hardware
+accelerated versions, except to run the server on a seperate cpu.
+
+That will probably be an issue that needs to be addressed in the lifespan
+of the next generation technology.  Eventually people are going to start
+sticking multiple cpus (or multiple thread issue systems sharing
+resources) on a single chip, and it will become a consumer level item.
+I'm looking forward to it.
+
+-------------------
+July 3:
+
+This little note was issued to a lot of magazines by microsoft recently.
+Just for the record, they have NOT contacted us about any meetings.
+
+All the various dramas in this skit haven't quite settled down, but it
+looks like microsoft is going to consciously do The Wrong Thing, because
+of political issues. Sigh.
+
+Our goal was to get the NT OpenGL MCD driver model released for win-95, so
+IHVs could easily make robust, high performance, fully compliant OpenGL
+implementations. Microsoft has squashed that. Flushed their own (good)
+work down the toilet.
+
+The two remaining options are to have vendors create full ICD opengl
+implementations, or game specific mini-drivers.
+
+Full ICD drivers are provided by intergraph, 3dlabs, real3d, and others,
+and can run on both NT and 95 (with code changes). Microsoft still
+supports this, and any vendor can create one, but it is a lot of work to
+get the provided ICD code up to par, and bug prone. On the plus side,
+non-game tools like level editors can take full advantage of them.
+
+Minidrivers certainly work fine -- we have functional ones for 3dfx and
+powerVR, and they have the possibility of providing slightly better
+performance than fully compliant drivers, but partial implementations are
+going to cause problems in the future.
+
+We will see some of both types of drivers over the next year, and Quake 2
+should work fine with either. We also intend to have Quake 2 show up on
+several unix systems that supports OpenGL, and I still hope that rhapsody
+will include OpenGL support (we'll probably port a mini-drivers if we
+can't get real support).
+
+Once again, we won't be idiotic and crusade off a cliff, but we don't have
+to blindly follow microsoft every time they make a bad call.
+
+Subject : Microsoft D3D vs. OpenGL
+Author : Julie Whitehead <JulieW@utah.mkinc.com> at Internet
+Date : 6/23/97 10:01 AM
+
+Dear Editor,
+You may be aware of a press release that was issued On June 12, by Chris
+Hecker, former MS employee and developer of D3D [sic]. The statement asks
+Microsoft to develop a stonger link between D3D and OGL.The press release,
+was signed by several game developers representing the top tier 3-D game
+developers. Microsoft is dedicated to maintaining an active relationship
+with its DirectX developers. In response to this request Microsoft will
+host the developers included in the statement at a developers roundtable
+in July. The purpose of the roundtable is to openly consolidate input and
+feedback from developers. Tentative date for the roundtable is immediately
+following Meltdown, July 18.
+
+Direct3D is Microsoft's recommended API for game developers with more than
+100 developers using Direct3D as the defacto consumer API. OGL is widely
+regarded as a professional API designed for high precision applications
+such as CAD, CAM, etc. Our hope is that this round table will provide
+Microsoft with the feedback required to evolve our 3D APIs in a way that
+delivers the best platform for our developers.
+
+If you have any questions or wish to speak with a Microsoft spokesperson,
+please let me know.
+
+Julie Whitehead
+
+-------------------
+July 7
+
+The quality of Quake's software has been a topic of some discussion
+lately.  I avoid IRC like the plague, but I usually hear about the big
+issues.
+
+Quake has bugs.  I freely acknowledge it, and I regret them.  However,
+Quake 1 is no longer being actively developed, and any remaining bugs are
+unlikely to be fixed.  We would still like to be aware of all the
+problems, so we can try to avoid them in Quake 2.
+
+At last year's #quakecon, there was talk about setting up a bug list
+maintained by a member of the user community.  That would have been great.
+Maybe it will happen for Quake 2.
+
+The idea of some cover up or active deception regarding software quality
+is insulting.
+
+To state my life .plan in a single sentence:  "I want to write the best
+software I can".  There isn't even a close second place.  My judgement and
+my work are up for open criticism (I welcome insightful commentary), but I
+do get offended when ulterior motives are implied.
+
+Some cynical people think that every activity must revolve around the
+mighty dollar, and anyone saying otherwise is just attempting to delude
+the public. I will probably never be able to convince them that isn't
+always the case, but I do have the satisfaction of knowing that I live in
+a less dingy world than they do.
+
+I want bug free software.  I also want software that runs at infinite
+speed, takes no bandwidth, is flexible enough to do anything, and was
+finished yesterday.
+
+Every day I make decisions to let something stand and move on, rather than
+continuing until it is "perfect".  Often, I really WANT to keep working on
+it, but other things have risen to the top of the priority que, and demand
+my attention.
+
+"Good software" is a complex metric of many, many dimensions.  There are
+sweet spots of functionality, quality, efficiency and timeliness that I
+aim for, but fundamentally YOU CAN'T HAVE EVERYTHING.
+
+A common thought is that if we just hired more programmers, we could make
+the product "better".
+
+It's possible we aren't at our exactly optimal team size, but I'm pretty
+confidant we are close.
+
+For any given project, there is some team size beyond which adding more
+people will actually cause things to take LONGER.  This is due to loss of
+efficiency from chopping up problems, communication overhead, and just
+plain entropy.  It's even easier to reduce quality by adding people.
+
+I contend that the max programming team size for Id is very small.
+
+For instance, sometimes I need to make a change in the editor, the
+utilities, and the game all at once to get a new feature in.  If we had
+the task split up among three seperate programmers, it would take FAR
+longer to go through a few new revs to debug a feature.  As it is, I just
+go do it all myself.  I originated all the code in every aspect of the
+project, so I have a global scope of knowledge that just wouldn't be
+possible with an army of programmers dicing up the problems.  One global
+insight is worth a half dozen local ones.
+
+Cash and Brian assist me quite a lot, but there is a definite, very small,
+limit to how many assistants are worthwhile.  I think we are pretty close
+to optimal with the current team.
+
+In the end, things will be done when they are done, and they should be
+pretty good. :)
+
+A related topic from recent experience:
+
+Anatomy of a mis-feature
+------------------------
+As anyone who has ever disected it knows, Quake's triangle model format is
+a mess.  Any time during Quake's development that I had to go back and
+work with it, I always walked over to Michael and said "Ohmygod I hate our
+model format!'.  I didn't have time to change it, though.  After quake's
+release, I WANTED to change it, especially when I was doing glquake, but
+we were then the proud owners of a legacy data situation.
+
+The principle reason for the mess is a feature.
+
+Automatic animation is a feature that I trace all the way back to our
+side-scroller days, when we wanted simple ways to get tile graphics to
+automatically cycle through animations without having to programatically
+each object through its frames.
+
+I thought, "Hmm.  That should be a great feature for Quake, because it
+will allow more motion without any network bandwidth."
+
+So, we added groups of frames and groups of skins, and a couple ways to
+control the timing and syncronization.  It all works as designed, but
+parsing the file format and determining the current frames was gross.
+
+In the end, we only used auto-frame-animation for torches, and we didn't
+use auto-skin-animation at all (Rogue did in mission pak 2, though).
+
+Ah well, someone might use the feature for something, and its already
+finished, so no harm done, right?
+
+Wrong.  There are a half dozen or so good features that are appropriate to
+add to the triangle models in a quake technology framework, but the couple
+times that I started doing the research for some of them, I always balked
+at having to work with the existing model format.
+
+The addition of a feature early on caused other (more important) features
+to not be developed.
+
+Well, me have a new model format for Quake 2 now.  Its a ton simpler,
+manages more bits of precision, includes the gl data, and is easy to
+extend for a couple new features I am considering.  It doesn't have
+auto-animation.
+
+This seems like an easy case -- almost anyone would ditch auto-animation
+for, say, mesh level of detail, or multi-part models.  The important point
+is that the cost of adding a feature isn't just the time it takes to code
+it.  The cost also includes the addition of an obstacle to future
+expansion.
+
+Sure, any given feature list can be implemented, given enough coding time.
+But in addition to coming out late, you will usually wind up with a
+codebase that is so fragile that new ideas that should be dead-simple wind
+up taking longer and longer to work into the tangled existing web.
+
+The trick is to pick the features that don't fight each other.  The
+problem is that the feature that you pass on will always be SOMEONE's pet
+feature, and they will think you are cruel and uncaring, and say nasty
+things about you.
+
+Sigh.
+
+Sometimes the decisions are REALLY hard, like making head to head modem
+play suffer to enable persistant internet servers.
+
+-------------------
+July 11
+
+Zoid commented that my last .plan update sounded like Fred Brooks "The
+Mythical Man-Month". He is certainly correct.
+
+When I read TMMM two years ago, I was stunned by how true and relevant it
+was. I have something of a prejudice against older computer books -- I
+think "If it's more than a five years old, it can't be very relevant"
+(sure, that's not too rational, but what prejudice is?).
+
+Then I go and read this book that is TWENTY YEARS old, that talks about
+experience gained IN THE SIXTIES, and I find it mirroring (and often
+crystalizing) my thoughts on development as my experiences have taught me.
+
+It even got me fired up about documenting my work. For about a day :)
+
+I had to fly out to CA for biz on Thursday, so I decided to grab and
+re-read TMMM on the plane.
+
+It was just as good the second time through, and two more years of
+development under my belt hasn't changed any of my opinions about the
+contents.
+
+If you program (or even work around software development), you should read
+this book.
+
+-------------------
+July 25
+
+Id Software went to the drag strip today.  The 100 degree heat was pretty
+oppressive, and my NOS regulator wasn't working, but a good time was had
+by all.
+
+I made six runs in the 126 to 133 mph range and didn't even burn a spark
+plug, which is a nice change from a couple road track events I have been
+to.
+
+Best times for everyone:
+
+Bob Norwood's PCA race car:     10.9 / 133 mph (slicks)
+My turbo testarossa                     12.1 / 132
+Adrian's viper                          13.5 / 105
+Todd's 'vette                           13.9 / 101
+Tim's porsche                           14.3 / 96
+Bear's supra:                           14.4 / 96
+Cash's M3                                       15.2 / 94
+
+My TR is never going to be a good drag car (>4000 lbs!), but when we go
+back on a cool day this fall and I get my NOS running, it should be good
+for over 140 in the quarter.  50 mph to 200 mph is it's real sweet spot.
+
+I think Bear is heading for the chip dealer so he can get ahead of Tim :)
+
+-------------------
+July 30
+
+quake2 +set maxclients 200
+
+:)
+
+The stage is set for ultra-large servers. Imagine everyone at QuakeCon in
+one gigantic level! A single T1 could run 80 internet players if it wasn't
+doing anything else, a switched ethernet should be able to run as many as
+we are ever likely to have together in one place.
+
+There will be a number of issues that will need to be resolved when this
+becomes a reality, but the fundamentals are there.
+
+There will probably be issues with UDP packet dropping at the ethernet
+card level that will need to be worked around with a seperate qued thread.
+
+Quake 2 isn't as cpu intensive as QuakeWorld, but I'm not sure even a
+Pentium-II 300 could run 200 users. An alpha 21264 could certainly deal
+with it, though.
+
+The new .bsp format has greatly increased size limits, but you could still
+make a map that hits them. The first one to be hit will probably be 64k
+brush sides. Ten thousand brushes can make a really big level if you don't
+make it incredibly detailed. Loading a monster map like that will probably
+take over a minute, and require 32+ megs of ram.
+
+I should probably make an option for death messages to only be multicast
+to people that are in the potentially hearable set, otherwise death
+messages would dominate the bandwidth.
+
+Everyone should start thinking about interesting rules for huge games.  A
+QuakeArmies dll has immense potential. Enemy lines, conquering teritory,
+multiple clan bases, etc.
+
+Cooperating servers will be possible with modified dlls, but I probably
+won't include any specific code for it in the default game.dll.
+
+-------------------
+Aug 10
+
+I went to siggraph last monday to give a talk about realtime graphics for
+entertainment.
+
+The only real reason I agreed to the talk (I have turned down all other
+offers in the past) was because Shigeru Miyamoto was supposed to be on the
+panel representing console software. Id software was really conceived when
+me, Tom, and Romero made a Super Mario 3 clone after I figured out how to
+do smooth scrolling EGA games. We actually sent it to nintendo to see if
+they wanted to publish a PC game, but the interest wasn't there. We wound
+up doing the Commander Keen games for Apogee instead, and the rest is
+history.
+
+I was looking forward to meeting Mr. Miyamoto, but he wound up canceling
+at the last minute. :(
+
+Oh well. I hope everyone that went enjoyed my talk. All the other speakers
+had powerpoint presentations and detailed discussion plans, but I just
+rambled for an hour...
+
+I noticed that there was a report about my discussion of model level of
+detail that was in error. I have an experimental harness, an algorithm,
+and a data structure for doing progressive mesh style LOD rendering in
+the quake engine, but I suspect it won't make it into the production Quake
+2. Other things are higher priority for us. I may assist some of the quake
+licensees if they want to pursue it later.
+
+---
+
+A couple data / feature changes going into the latest (and I hope final)
+revision of the Quake bsp file format:
+
+Back in my update a month ago where I discussed losing automatic frame
+animation in models to clean up the format and logic, I mentioned that I
+still supported automatic texture animation.
+
+Not anymore. There were several obnoxious internal details to dealing with
+it, especially now with textures outside the bsp file, so I changed the
+approach.
+
+When a texture is grabbed, you can now specify another texture name as the
+next animation in a chain. Much better than the implicit-by-name
+specification from Quake1.
+
+No animation is automatic now. A bmodel's frame number determines how far
+along the animation chain to go to find the frame. Textures without
+animation chains just stay in the original frame.
+
+There is a slight cost in network traffic required to update frame numbers
+on otherwise unmoving objects, but due to the QuakeWorld style delta
+compression it is still less than a Quake 1 scene with no motion at all.
+
+The benefit, aside from internal code cleanliness, is that a game can
+precisely control any sequence of animation on a surface. You could have
+cycles that go forward and backwards through a sequence, you could make
+slide projectors that only change on specific inputs, etc.
+
+You could not independantly animate two sides of a bmodel that were not
+syncronized with the same number of frames, but you could always split it
+into multiple models if you really needed to.
+
+Everything is simple when its done, but I actually agonized over animation
+specification for HOURS yesterday...
+
+The last significant thing that I am working on in the map format is leaf
+clustering for vis operations. You can specify some map brushes as
+"detail" brushes, and others as "structural" brushes. The BSP and portal
+list is built for just the structural brushes, then the detail brushes are
+filtered in later.
+
+This saves a bit of space, but is primarily for allowing complex levels to
+vis in a reasonable amount of time. The vis operation is very sensitive to
+complexity in open areas, and usually has an exponentially bad falloff
+time. Most of the complexity is in the form of small brushes that never
+really occlude anything. A box room with ten torch holders on the walls
+would consist of several dozen mostly open leafs. If the torch holders
+were made detail brushes, the room would just be a single leaf.
+
+A detail / structural seperation is also, I believe, key to making a
+portal renderer workable. I had a version of Quake that used portals at
+the convex volume level, and the performance characteristics had
+considerably worse-than-linear falloff with complexity. By reducing the
+leaf count considerably, it probably becomes very workable. I will
+certainly be reevaluating it for Trinity.
+
+-------------------
+Aug 18
+
+I get asked about the DOOM source code every once in a while, so here is
+a full status update:
+
+The Wolfenstein code wasn't much of a service to release -- it was 16 bit
+dos code, and there wasn't much you could do with it. Hell, I don't think
+it even compiled as released.
+
+The DOOM code should be a lot more interesting. It is better written, 32
+bit, and portable. There are several interesting projects that
+immediately present themselves for working with the code. GLDOOM and a
+packet server based internet DOOM spring to mind. Even a client/server
+based DOOM server wouldn't be too hard to do.
+
+I originally intended to just dump the code on the net quite some time
+ago, but Bernd Kreimeier offered to write a book to explain the way the
+game works. There have been a ton of issues holding it up, but that is
+still the plan. If things aren't worked out by the end of the year, I
+will just release things in a raw form, though.
+
+My best case situation would be to release code that cleanly builds for
+win32 and linux. Bernd is doing some cleanup on the code, and some of the
+Ritual guys may lend a hand.
+
+One of the big issues is that we used someone else's sound code in dos
+DOOM (ohmygod was that a big mistake!), so we can't just release the full
+code directory. We will probably build something off of the quake sound
+code for the release.
+
+I think I am going to be able to get away with just making all the code
+public domain. No license, no copyleft, nothing. If you appreciate it,
+try to get a pirate or two to buy some of our stuff legit...
+
+-----------
+Aug 25
+
+I want to apologize for some of the posturing that has taken place in
+.plan files.
+
+I have asked that attacks on our competition no longer appear in .plan
+files here.  I don't think it is proper or dignified.
+
+If everyone clearly understood that an individual's opinion is only that
+-- the opinion of a single individual, I wouldn't have bothered.
+Unfortunately, opinions tend to be spread over the entire group, and I am
+not comfortable with how this makes me perceived.
+
+Building up animosity between developers is not a very worthwhile thing.
+
+A little chest-beating doesn't really hurt anything, but putting down
+other developers has negative consequences.
+
+I think that we have a track record that we can be proud of here at id,
+but we are far from perfect, and I would prefer to cast no stones.
+
+The user community often exerts a lot of pressure towards confrontation,
+though.  People like to pick a "side", and there are plenty of people
+interested in fighting over it.  There are a lot of people that dislike id
+software for no reason other than they have chosen another "side".  I
+don't want to encourage that.
+
+Magazine articles are usually the trigger for someone getting upset here.
+It's annoying to have something you are directly involved in
+misrepresented in some way for all the world to see.  However, I have been
+misquoted enough by the press to make me assume that many inflamatory
+comments are taken out of context or otherwise massaged.  It makes a good
+story, after all.
+
+Sure, there ARE developers that really do think they are going to wipe us
+off the face of the earth with their next product, and don't mind telling
+everyone all about it.  It's always possible.  They can give it their best
+shot, and we'll give it ours.  If they do anything better, we'll learn
+from it.
+

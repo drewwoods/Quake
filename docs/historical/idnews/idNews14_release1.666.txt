@@ -1,0 +1,30 @@
+From: ddt@idcube.idsoftware.com (David Taylor)
+Newsgroups: alt.games.doom,alt.games.doom.announce,comp.sys.ibm.pc.games.action
+Subject: DOOM v1.666 Released
+Date: 6 Sep 1994 15:32:50 +0100
+Organization: UTexas Mail-to-News Gateway
+
+[Followup-To: set to alt.games.doom - moderator]
+
+DOOM v1.666 has been uploaded to ftp.uwp.edu.  Though it is currently
+in /pub/incoming/id, it should shortly be in /pub/msdos/games/id.
+It is also at Software Creations BBS and is on its way to CompuServe
+soon.
+
+The files: DM1666SP.ZIP - shareware wad patch
+           DM1666SW.ZIP - executable
+           DM1666RP.ZIP - registered wad patch
+
+Most of you will want the first two files.  Our kind, wonderful,
+gracious customers will want the third file.
+
+In the long-standing tradition of the DOOM sound code, it is still
+not stable.  There's something majorly wrong with the PAS sound
+code right now.  If you own a PAS of any sort and want to do us a
+favor, please check it out and drop a note to pjr@hnv.com (the
+sound library guy) with whatever results you get.  Thanks!
+
+Enjoy.
+
+	=-ddt->
+

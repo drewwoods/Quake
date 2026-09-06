@@ -1,0 +1,48 @@
+From: ddt@idcube (David Taylor)
+Newsgroups: comp.sys.ibm.pc.games.action,alt.games.doom
+Subject: idNews: still here and reading
+Organization: id Software
+Date: Thu, 6 Jan 1994 05:45:26 GMT
+
+Net-presence:
+
+  We still read the posts and think the alt.games.doom thing is
+  a trip.  :)  If I or someone is silent for a while, it's prolly
+  because (I'll assume it's me but this probably applies to anyone
+  anywhere):
+
+    a. I'm sick with the flu and don't have the strength to type
+       (bald-faced lie based on the truth last week),
+    b. I'm busy doing the Jag port (truth),
+    c. (anyone else) He's busy doing the commercial version (truth),
+    d. I have a neat porting project at home which is more fun
+       than posting, eating, sleeping, or breathing (not far off),
+    e. Every time I post, I become an e-mail magnet for
+       the next two days, which kinda slows me down (politely
+       understated).
+
+  A personal request: Please send help requests to help@idsoftware.com,
+  not me.  help@idsoftware.com has plenty of experience working w/
+  the bugs now and would rather have your business.  If they can't
+  solve it, it'll get to one of the coders, not to worry.
+
+v1.2:
+
+  Not out yet as we're having trouble with the serial code.
+  Something really nasty is happening.  May take a little while,
+  but it's on the way.  Everything else is pretty-much ready to
+  go.  Just got the PAS-16 stereo support, a fix for IRQ 2 probs
+  w/ SB's, and lots of other general fixes including a great big
+  fat sound memory leak (up to 500k) which is quite plugged, now.
+  Also reprogrammed and tested is the IPX network code so that it
+  doesn't use broadcast packets.
+
+  We're still disturbed about this much "slower" v1.1 thing.  If
+  you have this problem, please try "doom -nosound" and see if it's
+  still slower.  If so, then it was the memory leak which is now
+  plugged.  If this does not help, then !%*&!@%.  We'd REALLY
+  like to know what's doing it, and it's not slower on any of our
+  machines making it hard to catch.  Clues and cases very welcome.
+
+	=-ddt->
+

@@ -1,0 +1,693 @@
+[idsoftware.com]
+Welcome to id Software's Finger Service V1.4!
+
+Name: John Carmack
+Email: johnc@idsoftware.com
+Description: Programmer
+Project: Quake 2
+Last Updated: 01/04/1998 21:53:18 (Central Standard Time)
+-------------------------------------------------------------------------------
+------------------------------
+Jan 10:
+
+I AM GOING OUT OF TOWN NEXT WEEK, DON'T SEND ME ANY MAIL!
+
+Odds are that I will get back and just flush the 500
+messages in my mailbox.
+
+No, I'm not taking a vacation.  Quite the opposite, in fact.
+
+I'm getting a hotel room in a state where I don't know anyone,
+so I can do a bunch of research with no distractions.
+
+I bought a new computer specifically for this purpose -- A
+Dolch portable pentium-II system.  The significant thing is
+that it has full length PCI slots, so I was able to put an
+Evans & Sutherland OpenGL accelerator in it (not enough room
+for an intergraph Realizm, though), and still drive
+the internal LCD screen.  It works out pretty well, but I'm
+sure there will be conventional laptops with good 3D
+acceleration available later this year.
+
+This will be an interesting experiment for me.  I have always
+wondered how much of my time that isn't at peak productivity
+is a necessary rest break, and how much of it is just wasted.
+
+-------
+
+The client's IP address is now added to the userinfo before
+calling ClinetConnect(), so any IP filtering / banning rules
+can now be implemented in the game dll.  This will also give
+some of you crazy types the ability to sync up with multiple
+programs on the client computers outside of Q2 itself.
+
+A new API entry point has been added to the game dll that
+gets called whenever an "sv" command is issued on the
+server console.  This is to allow you to create commands
+for the server operator to type, as opposed to commands
+that a client would type (which are defined in g_cmds.c).
+
+-------
+
+We did a bunch of profiling today, and finaly got the
+information I wanted.  We weren't doing anything brain dead
+stupid in the server, and all of the time was pretty much
+where I expected it to be.
+
+I did found two things we can pursue for optimization.
+
+A moderately expensive catagorization function is called at
+both the beginning and end of client movement simulation.
+With some care, we should be able to avoid the first one
+most of the time.  That alone should be good for a >10%
+server speedup.
+
+The other major thing is that the client movement
+simulation accounted for 60% of the total execution time,
+and because it was already compartmentalized for client
+side prediction, it would not be much work to make it
+thread safe.  Unfortunately, it would require MAJOR rework
+of the server code (and some of the game dll) to allow
+multiple client commands to run in parallel.
+
+The potential is there to double the peak load that a
+server can carry if you have multiple processors.  Note
+that you will definately get more players / system by
+just running multiple independent servers, rather than
+trying to get them all into a single large server.
+
+We are not going to pursue either of these optimizations
+right now, but they will both be looked at again later.
+
+All this optimizing of the single server is pushing the
+tail end of a paradigm.  I expect trinity to be able to
+seamlessly hand off between clustered servers without the
+client even knowing it happened.
+
+------------------------------
+Jan 9: 10:30
+
+We got 70 people on a base100 server, and it died after it
+wedged at 100% utilization for a while.  Tomorrow we will
+find exactly what overflowed, and do some profiling.
+
+Base100 is really only good for 50 or so players without
+overcrowding, but we have another map being built that
+should hold 100 people reasonably well.
+
+I will look into which will be the easier path to more
+server performance: scalar optimization of whatever is
+critical now, or splitting it off into some more threads
+to run on multiple processors.  Neither one is trivial.
+
+My goal is to be able to host stable 100 player games in
+a single map.
+
+I just added a "players" command that will dump the total
+number of players in the game, and as many frags/names as
+it can fit in a packet (around 50, I think).
+
+------------------------------
+Jan 9:
+
+Coop play works now, including coop savegames.  I also
+fixed the savegame problems when under doors or on lifts.
+
+We still have some game issues we need to hack around to
+allow coop to be played all the way through the game
+(like needing to pick up multiple power cubes, but still
+leave them for other coop players to grab), and the monster
+ai needs a bit of work for multiple players, but it will
+all be there for the next release.
+
+------------------------------
+Jan 4:
+
+Version 3.10 patch is now out.
+
+<a href="ftp://ftp.idsoftware.com/idstuff/quake2/q2-310.exe">ftp://ftp.idsoftware.com/idstuff/quake2/q2-310.exe</a>
+
+A few more minor fixes since yesterday:
+
+* qhost support
+* made qport more random
+* fixed map reconnecting
+* removed s_sounddir
+* print out primary / secondary sound buffer status on init
+* abort game after a single net error if not dedicated
+* fixed sound loss when changing sound compatability
+* removed redundant reliable overflow print on servers
+* gl_lockpvs for map development checking
+* made s_primary 0 the default
+
+Christian will be updating the bug page tomorrow.  So hold
+of on all reporting for 24 hours, then check the page to
+make sure the bug is not already known.
+<a href="http://www.idsoftware.com/cgi-win/bugs.exe">http://www.idsoftware.com/cgi-win/bugs.exe</a>
+
+All bug reports should go to Christian:  <a href="mailto:xian@idsoftware.com">xian@idsoftware.com</a>.
+
+
+I have had several cases of people with lockup problems
+and decompression overreads having their problems fixed
+after they mentioned that they were overclocking either
+their CPU, their system bus (to 75mhz), or their 3DFX.
+
+It doesn't matter if "it works for everything else", it
+still may be the source of the problem.
+
+I know that some people are still having problems with
+vanilla systems, though.  I have tried everything I can
+think of remotely, but if someone from the Dallas area wants
+to bring a system by our office, I can try some more serious
+investigations.
+
+Something that has shown to help with some 3dfx problems is
+to set "cl_maxfps 31", which will keep the console between
+level changes from rendering too fast, which has caused some
+cards to hang the system.
+
+------------------------------
+Jan 3: 8:30:
+
+New stuff fixed:
+
+* timeout based non-active packet streams
+* FS_Read with CD off checks
+* dedicated server not allocate client ports
+* qport proxy checking stuff
+* fixed mouse wheel control
+* forced newlines on several Cbuf_AddText ()
+* if no nextmap on a level, just stay on same one
+* chat maximums to prevent user forced overflows
+* limit stringcmds per frame to prevent malicious use
+* helped jumping down slopes
+* checksum client move messages to prevent proxy bots
+* challenge / response connection process
+* fixed rcon
+* made muzzle flash lights single frame, rather than 0.1 sec
+
+I still don't have an answer to the WAADRNOTAVAILABLE problem.
+I have made the packet stream as friendly as possible, but some
+computers are still choking.
+
+I managed to get fixes for address translating routers done
+without costing any bandwidth from the server, just a couple
+bytes from the client, which isn't usually a critical path.
+
+I have spent a fair amount of time trying to protect against
+"bad" users in this release.  I'm sure there will be more things
+that come up, but I know I got a few of the ones that are
+currently being exploited.
+
+We will address any attack that can make a server crash.  Other
+attacks will have to have the damage and prevelence weighed
+against the cost of defending against it.
+
+Client message overflows.  The maximum number of commands that
+can be issued in a user packet has been limited.  This prevents
+a client from doing enough "says" or "kills" to overflow the
+message buffers of other clients.
+
+Challenge on connection.  A connection request to a server is
+now a two stage process of requesting a challenge, then using
+it to connect.  This prevents denial of service attacks where
+connection packets with forged IPs are flooded at a server,
+preventing any other users from connecting until they timeout.
+
+Client packet checksumming.  The packets are encoded in a way
+that will prevent proxies that muck with the packet contents,
+like the stoogebot, from working.
+
+
+------------------------------
+Jan 3:
+
+Are there any quake fans working with the tera MTA prototype
+at UCSD?  I am real curious to see how some of my threaded codes
+(qvis3, qrad3) would run on the MTA.
+
+------------------------------
+Jan 2:
+
+Wired magazine does something that almost no other print magazine
+we have dealt with does.
+
+They check the statements they are going to print.
+
+I just got a "fact check" questionair email from wired about
+an upcoming article, and I recall that they did this last
+time the did an article about us.
+
+Most of the time when we talk with the press, we try to get
+them to send us a proof of the article for fact checking.  They
+usually roll their eyes, and grudgingly agree, then don't send
+us anything, or send it to us after it has gone to press.
+
+Wired had a few errors in their statements, but it won't get
+printed that way because they checked with us.
+
+How refreshing.
+
+----
+
+A small public announcement:
+
+The Linux Expo is looking for:
+
+1. People that develop games or game servers in *nix, and
+2. People interested in learning how to develop games in *nix.
+
+Either one should give a write to ddt@crack.com.
+
+
+------------------------------
+Jan 1:
+
+Some of the things I have changed recently:
+
+* fixed the cinematics
+* don't clear config after dedicated server
+* don't reallocate sockets unless needed
+* don't process channel packets while connecting
+* rate variable for modem bandwidth choking
+* delta compress client usercmds
+* fixed sound quality changing after intermissions
+* fixed PVS problem when head was directly under solid in GL
+* added r_drawflat and cl_testlights to cheats
+
+There are a few problems that I am still trying to track down:
+
+WSAEADDRNOTAVAIL errors
+Map versions differ error
+Sometimes connecting and seeing messages but not getting in
+Decompression read overrun.
+
+Of course, we don't actually get any of those errors on any
+of our systems here, so I am having to work remotely with
+other users to try and fix them, which is a bit tougher.
+
+My new years resolution is to improve my coding style by
+bracing all single line statements and consistantly using
+following caps on multi word varaible names.
+
+Actually, I am currently trying on the full sun coding style,
+but I'm not so sure about some of the commant conventions:  don't
+use multiple lines of // comments, and don't use rows of
+seperating characters in comments.  I'm not convinced those
+are good guidelines.
+
+------------------------------
+Dec 31: 4:40 AM:
+
+A user just reported having their net quake problems go
+away when they killed ICQ.  I suppose it has never been stated
+directly, so here goes:
+
+Quake needs all the bandwidth that a modem connection provides
+to play well.  Any other program accessing the internet is
+going to cause a degredation in gameplay, sometimes severe.
+
+So quit IRC, ICQ, email, and web browsers before setting out
+for serious net play unless you have ISDN or better.
+
+------------------------------
+Dec 31: 12:41 PM CST:
+
+I just spent a few hours working with a quake player that
+still couldn't net quake with 3.09.
+
+It took a while, but I finally understand what is going on.
+
+He could play net games on his local lan, but when he tried to
+connect to remote servers, it would always fail and timeout
+midway through the connection process, or at most a few seconds
+into the game.
+
+The situation was that there was a small network of computers
+connected to an ISDN router that did address translation.
+
+Address translation allows multiple computers to use the internet
+through a single TCP/IP address.  This is accomplished by having
+the router perform some "invisible" port and ip renaming on
+everything that goes out.
+
+I think that is a rather evil thing for a router to do, but I
+suppose I can see the incentive from an address pressure viewpoint.
+
+Routers know when TCP streams begin and end, so they make sure the
+port mappings stay constant through the entire thing, but quake
+uses UDP packets (anyone who suggests using TCP for a realtime
+game does not understand how the error recovery works), and the
+router apears to be making the incorrect assumption that UDP is
+only used for simple request / response protocols.
+
+The router changes the UDP port while you are playing.
+
+Grrrr.
+
+Now, a smarter router would only change the port numbers when it
+was actually forced to by a collision, which would only be when
+a connection was first opened, and everything would work out ok.
+
+After I understood what was happening, I could devise a fix for
+it.  My simple fix was to make the server simply ignore the port
+number for client comparisons, and assume that if a packet came
+from the same IP address, then it is the same player even if the
+port number changed.  That worked, and he was able to connect in
+to my modified server.
+
+That has the distinct drawback of making translating routers or
+proxies that do the port mapping correctly unusable by more than
+one player at a time.
+
+I could fix it completely by including a sort of port number in
+each message, and having the servers match and update UDP ports
+based on that.  That would work fine, but at the cost of adding
+a byte or two to everyone's packets to help out people with bad
+routers.  You wouldn't be able to tell a difference, but its the
+principle of it...
+
+I could make a server side cvar to force port fixing on, but that
+would still not work for one class of users or the other.
+
+I could make it client settable and have the client tell the server
+on connect that it needs port fixing.  That would work with no
+bandwidth cost to anyone, but it would require users to know that
+if they can't connect to servers, then they should try to use the
+fix translation option.  Unfortunately, I bet that there are some
+routers that exhibit this problem much less often.  A drop every
+ten minutes would be hard to attribute.
+
+I could make port fixing on by default, but if anyone is on a
+translated lan and another person tries to start a net quake game
+to the same server then they will both collide and crash and burn.
+
+I am probably going to add the extra bytes to every packet.  Being
+automatically robust on more people's systems is probably worth a
+microscopic loss of bandwidth.  Two bytes is under one millisecond
+of ping on a modem.
+
+If there is some magic range of port values that I can use to make
+these routers act better, let me know.
+
+These changes will break the connection protocol again, so I am
+going to hold off on the patch for a while.
+
+------------------------------
+Dec 30: 2:30 PM CST:
+
+Until we release the new gamex86 source code, if you want to
+make mods work with 3.09, change GAME_API_VERSION to:
+
+#define	GAME_API_VERSION	2
+
+and recompile the mod.
+
+This will let it run with the 3.09 servers.  The API didn't
+actually change, I just had to bump that version number so that
+we could detect the old q2test dlls still hanging around.
+
+------------------------------
+Dec 29: 11:30 PM CST:
+
+We have rebuilt the 3.09 patch with a new version of the install
+program.  Some people were not able to run the installer because
+a temp directory wasn't setup correctly.  There are NO OTHER CHANGES
+in this, so if you were able to install the last 3.09, don't bother
+getting this one.
+
+<a href="ftp://ftp.idsoftware.com/idstuff/quake2/q2-309-2.exe">ftp://ftp.idsoftware.com/idstuff/quake2/q2-309-2.exe</a>
+
+------------------------------
+Dec 29: 8:00 PM CST:
+
+Please cool it a bit with the email to me unless it is really
+important.  I'll never get trinity done with the email pouring
+in the way it is right now...
+
+------------------------------
+Dec 29: 2:30 PM CST:
+
+The only widely reported problem with 3.09 is that the
+video playback is choppy.  The fix for the modem connections
+reduced video playback to 10 fps.  Its a one line fix, but
+I'll hold off on another version until a few more things
+accumulate.
+
+I am curious what the breakdown of opinion is on the rapid
+patch releases.  If one of the polling websites would pose
+the question, I would apreciate it.
+
+A more liesurely patch release would allow us more testing time, and
+some problems (like this cinematic bug) would certainly be killed
+before the public saw it, but I definately found a couple things from
+the public that no amount of testing on our machines would have found.
+Some things only showed up with 48 people playing on our servers for
+several hours.
+
+Once again, we really didn't have a choice this time because of the
+server crashers, but we are planning another release in two to three
+weeks.
+
+I am happy to produce new versions fairly rapidly, rather than at monthly
+intervals, but I know that many people are getting a little irate at
+having to download new patches.  There is a simple solution -- if you
+don't want to be on the bleeding edge, wait a week after a patch is
+announced and see how it is working for other people.
+
+What finally helped me get to the bottom of some things was
+just getting people with problems we couldn't reproduce to call
+me and let me send them executables by email until I figured out
+what was going on.  From now on, if you send a detailed problem to me,
+include a phone number and times when you can be reached.  I'm not tech
+support, so you certainly can't count on a response, but if you have
+a nice repeatable case of a problem that is high priority for us that
+we can't reproduce otherwise, your personal help may be usefull.
+
+BTW, does anyone know why Quake 2 became a hacker target?  I can keep
+fighting attacks, but spending my time there doesn't help anyones game,
+and there are a bunch of things that fundamentally can't be stopped if
+people really set their mind to messing up the servers.
+
+------------------------------
+Dec 29, 2:25 AM CST:
+
+new version:
+
+<a href="ftp://ftp.idsoftware.com/idstuff/quake2/q2-309.exe">ftp://ftp.idsoftware.com/idstuff/quake2/q2-309.exe</a>
+
+This one has an install that makes sure things get where they
+need to...
+
+
+------------------------------
+Dec 28, 9:30 PM CST:
+
+If Quake2 is crashing on you after upgrading, it is probably
+because you still have the gamex86.dll from q2test in your
+quake2 directory.  The latest quake2.exe just started looking
+in the exe directory as well as the game directory to make
+debugging easier, and it brought out this problem.  You should
+only have gamex86.dll in baseq2 unless you are doing specific
+development.
+
+I had a version check in there, but I never bumped the game
+api version, so it was ineffective.
+
+We are going to release yet another new version tonight.
+
+The big news is that the modem connection and level changing
+problems are fixed.  They should have been fixed in 3.07, but
+a timing error kept it from functioning.
+
+I also found the "no such frame" warnings that scrolled by
+under some circumstances.  BFG gibbing crouching people would
+cause it.
+
+There are several other fixes in the menu and renderers as well,
+so everyone should upgrade.
+
+We are testing with 3.09 on our servers now, but I want to
+make an incompatable change before releasing:
+
+Right now, any client can send a "connect" message to the
+server and grab a client slot.  If they are the wrong version,
+they will tie that slot up until they time out ot abort the
+connection process.
+
+I am going to force clients to send their version number
+with the connection request, so that bad clients will never
+take up slots.
+
+That will require everyone to upgrade to 3.09 to play.
+
+I apologize for the flurry of versions, but this was a forced
+set of releases due to the server attacks, and lots of people
+are on vacation here.  It certainly could have been tested
+better, but I thought it better to try and get something out
+ASAP.
+
+
+Check back in the morning for a new version...
+
+
+BTW, we will release the new gamex86 source code after we are
+convinced that we aren't going to be making another patch
+for a couple weeks.
+
+------------------------------
+Dec 28, 5:00 PM CST:
+
+No crashes on any of the servers!
+
+A few comments on some reported problems:
+
+You have to press the "attack" button to respawn in deathmatch
+now.  This allows you to chat and go into the menu.  I have
+got several mails from people that are typing "kill" or
+reconnecting to servers after they die...
+
+Old savegames will NOT work with the patch.  Just cheat yourself
+to aproximately the same place you were before.  The game included
+config files for starting off at each unit.  You can exec one of
+those to get you close, then do "give" commands if you want to be
+more precise.  (bigguun.cfg, boss.cfg city.cfg, command.cfg,
+factory.cfg, hangar.cfg, jail.cfg, mine.cfg, power.cfg, space.cfg,
+warehouse.cfg).
+
+I think several people are failing to get the gamex86.dll into the
+baseq2 directory.  if "fov 120" doesn't change your field of view,
+the server doesn't have the right gamex86.dll.
+
+------------------------------
+Dec 28, 5:00 AM CST:
+
+Ok, two hours without a crash on four servers.
+
+Here is a new patch:
+
+<a href="ftp://ftp.idsoftware.com/idstuff/quake2/patch_08.zip">ftp://ftp.idsoftware.com/idstuff/quake2/patch_08.zip</a>
+
+3.07 and 3.08 can interoperate fine.  All servers should upgrade
+to 3.08, but if you gravved the 3.07 earlier today and only play
+as a client and don't need timedemo, you don't nned to upgrade.
+
+------------------------------
+Dec 28, 2:55 AM CST:
+
+There were a few problems with the 1.07 patch:
+
+Bodies stuck under doors caused a repeated explosion effect.
+Timedemo was broken.
+The servers crash about once an hour under full load.
+
+I have the first two fixed, and I hope the third.  The four
+servers at Id are running a new executable.
+
+If the servers don't crash in the next hour or two,
+I'll put another release out.
+
+------------------------------
+
+Dec 27:
+
+The 1.07 patch is out:
+
+<a href="ftp://ftp.idsoftware.com/idstuff/quake2/patch_07.zip">ftp://ftp.idsoftware.com/idstuff/quake2/patch_07.zip</a>
+
+Please mirror and distribute this.
+
+When submitting bugs, make sure you say that you already have the
+3.07 patch.
+
+Christian will go through and update the bug page when he gets back
+from vacation next week.
+
+This release does not fix all known problems.  We intend to have
+another release in a few weeks.
+
+------------------------------
+
+Dec 25:
+
+We are going to release a new quake 2 executable that fixes the
+malicious server crashing problems Real Soon Now.  It also fixes a
+ton of other problems that have been reported, so we are going to
+have to give it some good testing before releasing it.
+
+John Cash has two kids that would lynch him if he came in and worked
+on christmas, so we certainly won't be able to get a release candidate
+together before the weekend.  I am fairly confidant we will have it
+released to the public on sunday.
+
+I have been spending most of my time on trinity research but I have
+still made quite a few fixes to Q2.  John Cash has made many more (he
+is just finishing up the IPX coding, among other things).
+
+I have been doing a lot of testing over a proxy that gives me a very
+bad ping (400 - 800), so I was able to find and fix two significant
+errors with the prediction code.
+
+The reason why you get a jerk when running forward and firing rockets,
+blasters, or grenades is that the client side prediction code was
+blocking you on your own missiles.
+
+The jerky behavior on plats was due to a subtle error in the prediction
+error interpolation.  A prediction error was causing oscillations as long
+as your latency, instead of smoothing out over just 100 ms.  The plats
+are now smooth as long as you aren't dropping packets, and other
+mispredictions are also handled much better.
+
+There are still a lot of other things that will be fixed in an upcoming
+release, but this will definately be an executable worth grabbing.
+
+My fixes:
+
+* zombies aren't being removed properly
+* joystick not in menu
+* classname for rockets and bolts
+* no screaming when invulnerable and in lava
+* lowered water blend values
+* clear powerups when dead (no more breather sounds)
+* only play "computer updated" three times max
+* mapname serverinfo now updated properly
+* changed "rejected a connection" to "Server is full"
+* made console "rejected a connection" a developer only message
+* made WSAWOULDBLOCK warning silent
+* max 10 packets/second during connection process
+* set cl_maxfps to 90
+* increased loading plaque timeout value to 120 seconds
+* paused not default to 1
+* no savegame in deathmatch
+* fixed ; binding from menu
+* no crouch when airborne
+* removed half-baked $ macro expansion
+* pause on landing before re-jump (fixes no fall damage bug)
+* public server framework
+* no ; comment in config files
+* teleporter events
+* lower hyperblaster damage
+* don't use PORT_ANY for clients!
+* fix the entity number thing here
+* don't re-check CD after the first time
+* auto cddir from cd scan
+* dissallow kill from intermissions
+* faster rockets
+* less bfg effect damage
+* remove packet command from client
+* strip trailing spaces on cmd_args
+* added protocol to serverinfo
+* used CMD_BACKUP instead of UPDATE_BACKUP for phone jack
+* don't predict clip into your own missiles
+* good netgraph
+* validate userinfo for semicolons and quotes
+* don't copy savegames on dedicated servers
+* also check current directory for game dll loading
+* changed connect packet on client to differ from server
+* bump protocol version
+* fixed error interpolation on plats
+* only respawn with attack or jump
+* fov as a userinfo
+* show weapon icon if fov > 90
+

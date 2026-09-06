@@ -1,0 +1,34 @@
+From: ddt@idcube.idsoftware.com (David Taylor)
+Newsgroups: alt.games.doom,alt.games.doom.announce,comp.sys.ibm.pc.games.action
+Subject: idNews: v1.6 released, -mips1 version of sgixdoom up
+Date: 4 Aug 1994 09:48:43 +0100
+Organization: UTexas Mail-to-News Gateway
+
+DOOM v1.6 (beta)..
+
+  DOOM v1.6 is at ftp.uwp.edu:/pub/msdos/games/id/doom16bt.zip.
+  By the way, we're calling these latest versions "bt" or "beta"
+  because the sound code has been unstable and also because it's
+  basically a public beta test for DOOM 2 code (you just don't know
+  it).  We have our fingers crossed that v1.6 is more stable
+  sound-wise now, especially for PAS 16's and GUS's.  Please give
+  it a whirl and drop us a note to help@idsoftware.com if anything's
+  screwy.  Thanks for your help!
+
+SGI xdoom w/ -mips1:
+
+  SGI xdoom is at ftp.uwp.edu:/pub/msdos/games/id/sgixdoom.tar.Z.
+  If you were having trouble running sgixdoom on an R3000-based
+  SGI, it's because I had it compiled with the -mips2 flag.  It's
+  now compiled with the -mips1 flag.  Also, our tech support guys
+  have been getting calls and e-mail about SGI xdoom despite the
+  disclaimer in the README.sgi file, so to quote the README:
+
+  "I did this for fun.  It doesn't generate revenue.  Please don't
+   call or write us with bug reports.  They cost us money.  Thanks.
+   Besides, the Indy has to go back, so the bugs can't be fixed."
+
+  Thanks for your consideration!
+
+	=-ddt->
+

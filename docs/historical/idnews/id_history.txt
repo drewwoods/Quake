@@ -1,0 +1,144 @@
+From: johnr@idece2.idsoftware.com (Mr. John Romero)
+Newsgroups: rec.games.computer.doom.misc
+Subject: Re: Many id related questions...
+Date: 17 May 1995 07:31:08 GMT
+Organization: id Software Inc.
+
+In article <3oq652$57i@individual.puug.pt> lllopes@individual.puug.pt
+(Luis Miguel Lourenco Lopes) writes:
+> I was wondering if somebody knows what members of id, made Catacomb Abyss 3d.
+> In the opening credits screen, there is something like id software did the
+> 3d effects, and there is also the name of Adrian Carmack.
+> Did John Carmack made that engine, was it a experience for the Wolf engine?
+>
+> Other thing...,  what was the first 3d ever to appear?
+> Catacomb Abyss 3d, Wolf3d or Ultima underworld I?
+>
+> Anybody knows more details off who did what in DOOM...
+> For instance... who did the level design, I heard that John Romero did all
+> the Shareware levels, I also heard that some levels off Doom were made by
+> Tom Hall...
+> In the graphics, somebody knows if for instance, Adrian did all the
+> monsters and Kevin did the textures?
+> In the programing the only thing I heard is that John Carmack, did the engine
+> and John Romero the level editor.
+>
+> LLL
+
+
+The original id members (myself, John Carmack, Adrian Carmack and Tom
+Hall) created the first Catacombs 3-D game for Softdisk.  Softdisk then
+proceeded to make a shit-sequel which is what you see in Catacombs:The
+Abyss.
+
+John Carmack creates ALL of id's engines.  The Catacombs 3-D engine was
+pre-Wolfenstein 3-D and post-Hovertank (another game we did for Softdick).
+
+Ultima Underworld was released 2 days before Wolfenstein 3-D.
+
+DOOM level design: i did the first episode, except for level 8 (Sandy did
+it).  And level 4 was a Tom Hall makeover.  In the last 2 episodes, Sandy
+Peterson did mostly new levels, with many of them makeovers of Tom Hall's
+earlier efforts and one level of Shawn Green's.
+
+DOOM graphics: Adrian and Kevin BOTH did the textures and creatures, etc.
+
+DOOM programming: Carmack did the game superstructure and engine and some
+utilities.  I did DoomEd, the map editor, as well as the menu system, all
+the special effects in the game (hurting slime, flashing lights, building
+stairs, etc, etc, etc.)  I also did the external utilities (DM.EXE,
+SETUP.EXE, etc.)  Dave Taylor did the automap, status bar, and the layer
+between the low-level sound driver and the game.
+
+--
++-------------------------------------------------------------------+
+| John Romero (romero@idsoftware.com) id Software                   |
+| Send questions about id software to help@idsoftware.com           |
+| ftp.idsoftware.com                Official id anonymous FTP site  |
+| www.idsoftware.com                Official id Web site            |
++-------------------------------------------------------------------+
+
+
+From: ghelton@airmail.net (Greg Helton )
+Newsgroups: rec.games.computer.quake.misc,alt.games.quake,alt.games.apogee
+Subject: Re: iD is in Fear of Duke Nukem 3D
+Date: Tue, 13 Feb 1996 05:29:00 GMT
+Organization: customer of Internet America
+
+>Does anyone have a 'gameography' of Id's work? I wonder, 'cause I think there's
+>something else out there that I missed. It's kinda fun to play in developmental
+>order...(Cat3D, Wolf3D, Doom...Quake!)
+
+Here's a listing of many of their games.  The Keen games are excluded,
+as they are widely known:
+
+* Hovertank 3D
+* Rescue Rover
+* Rescue Rover 2: The Return of the Robots
+* Dangerous Dave in the Haunted Mansion
+* The Catacomb
+* Slordax
+* Shadow Knights
+* Tiles of the Dragon
+
+The only Doom-style game in the bunch is Hovertank, I believe.  It was
+the foundation on which all of the 3D games were built.  The rest are
+of many different types (mainly side-scrollers) and the last is a Mah
+Jongg program (!!!).
+
+You may be interested in downloading the original Commander Keen
+("Invasion of the Vorticons").  In the preview section, there is an
+extremely early mention of Quake.  Actually, I believe this
+information is reprinted in Quake Talk.  It sounds like Quake was to
+be a side-scroller with RPG overtones in the early days.
+
+
+From: johnr@idsoftware.com (John Romero)
+Newsgroups: rec.games.computer.quake.misc,alt.games.quake,alt.games.apogee
+Subject: id Anthology
+Date: 16 Feb 1996 06:11:09 GMT
+Organization: id Software, inc.
+
+In article <4fmkeh$go4@catapult.gatech.edu>, gt7015c@acmey.gatech.edu® says...
+>
+>Actually, let's see. There was Catacombs3D, a predecessor to Wolf3D. It never
+>caught on, probably because it wasn't as fast, the graphics were really blocky,
+>and the engine had a few things that Wolfie definately improved on (like that
+>damn wall-sticking...) However, I happened to think it was intensely fun, and
+>wish I had a copy around somewhere.
+>
+>I found it after much playing of Wolfie, too, and spent lots of time playing
+>it (after finding editing Wolfie levels a somewhat daunting task. Ugh.)
+>
+>Besides, Cat3D had 'Skull'N'Bones'. :)
+>
+>Does anyone have a 'gameography' of Id's work? I wonder, 'cause I think there's
+>something else out there that I missed. It's kinda fun to play in developmental
+>order...(Cat3D, Wolf3D, Doom...Quake!)
+>
+>--
+> /\_______ ____ ________/\ ____ "Home. Home was BAMA, the Sprawl, the
+>(_  ______)  . \|  __   ___)  /  Boston-Atlanta Metropolitan Axis."
+> /   ____)|  |\    \ |  \ |__/ [<Rogue> case@cc.gatech.edu ]
+> \___________/ \___/ |__/ (__) [<entropy> shro0m peloazul rogue peerless ]
+
+
+Actually, we will be releasing a product called the "id Anthology" that has ALL
+our old games in it, including all the ones we created for Softdisk: Slordax,
+Shadow Knights, Rescue Rover 1 & 2, Dangerous Dave in the Haunted Mansion, Keen
+Dreams, Hovertank and Catacombs 3D.  All those games were created in one year,
+which includes the 2nd Commander Keen trilogy we did for Apogee. That makes 11
+games in one year. The year was 1991.  Of course, Wolf3d and Spear of Destiny
+and other stuff will be in the Anthology...
+
+Currently, there is no date for the release of the Anthology. It is only in the
+preproduction stage right now.
+
+--
++-------------------------------+
+| John Romero                   |
+| johnr@idsoftware.com          |
+| id Software, inc.             |
+| Release date: When it's done. |
++-------------------------------+
+

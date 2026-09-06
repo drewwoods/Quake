@@ -1,0 +1,19 @@
+From: ddt@idcube.idsoftware.com (Dave Taylor)
+Newsgroups: rec.games.computer.doom.announce,rec.games.computer.doom.misc
+Subject: id ftp/fsp site now operational
+Date: 25 Jan 1995 10:20:16 -0000
+Organization: UTexas Mail-to-News Gateway
+
+id Software has created an ftp site at: ftp.idsoftware.com.
+The corresponding fsp site is fsp.idsoftware.com, port 21.
+
+This will be the first site to see any new products published by
+id, such as Strife and Quake.  It has a very recent snapshot of
+the ftp.cdrom.com site and encourages public uploads.  The connection
+sports a dedicated T1 and a current limit of 50 simultaneous ftp
+users, and buttloads of fsp users.  There is currently 300+Mb of
+Doom and Heretic material on there with about 150Mb free.  We will
+be adding a few more Gb of free space next month.
+
+	=-ddt->
+

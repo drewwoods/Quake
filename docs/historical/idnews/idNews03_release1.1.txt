@@ -1,0 +1,39 @@
+From: ddt@daisy.cc.utexas.edu (David Taylor)
+Newsgroups: comp.sys.ibm.pc.games.action
+Subject: idNews: release 1.1
+Date: 15 Dec 1993 19:34:57 -0600
+Organization: id Software
+
+Will be releasing the new version (actually, we're calling it 1.1 now
+because the original uploads were called DOOM1_0) this evening.  We are
+going to use the 1.95 4GWPRO dos extender for the new version and
+patch, but if you have difficulty with it, we will provide other
+executables that you can try with the 1.8 DOS4GW extender and 1.94
+4GWPRO extender.
+
+Yes, we think this business with flakey extender versions is a pain,
+too.  The price we pay for wanting to make this game on a platform
+with a market.  PC's.  DOS.  Sigh.
+
+Can't believe y'all found the cheat codes so fast.  I sorta munged 'em
+up, too!  Sheesh.  By the way, I think y'all missed a cheat code.
+"iddt" in the automap.  Try it a couple of times.  A short background
+thing: "dqd" stands for Delta-Q-Delta, an informal fraternity that two
+other hackers and I made up.  The requirements were getting a "Q" in
+your class (stands for "Quit"- like failing but it doesn't go on your
+GPA.  we impressed our friends with programming feats but weren't
+exactly scholastic role models- so far only one of us has graduated
+:).  The "spispopd" is complements of the Usenet.  See Seth Cohn's
+post.  "Choppers" is a State Programming Contest game that a friend of
+mine named Guy Maor helped write (-GM).  He's a little defensive of it
+'cause it wasn't *quite* finished on the release day.  Was a cool
+two-player Rescue Raiders rip-off.  He was drunk and talk'd me one
+night, and I thought I'd put it in.  I believe that you'll get a
+chainsaw from it and be invulnerable (just checked the code- yeah,
+should make you invulnerable but i never tested it).
+
+Please don't bang too hard on the ftp sites tonight.  We caused a lot
+of ftp sites to crash on the release day.  Thanks..
+
+        =-ddt->
+

@@ -1,0 +1,53 @@
+From: ddt@daisy.cc.utexas.edu (David Taylor)
+Newsgroups: comp.sys.ibm.pc.games.action,alt.games.doom
+Subject: idNews: from Jay
+Date: 16 Mar 1994 11:29:15 -0600
+Organization: id Software
+
+This is from Jay on the editor issue:
+
+	=-ddt->
+
+If you are interested in developing and releasing a DOOM editor, some
+sort of DOOM data manipulator or any utility that uses the DOOM name
+and/or other id Software trademarked/copywrited properties you will
+be required to enter a simple agreement with id Software.  This
+agreement is designed to define the relationship between third
+parties and id as well as protect id Software's trademarked and
+copywrited properties.
+
+Document highlights:
+
+-id Software requires no fees or royalties
+-You may require user payment for your work
+-Your utility MUST not work with the shareware version of DOOM
+-You MUST represent that your utility is not an id Software product
+and id Software cannot and will not provide support for your product,
+nor for DOOM after the data has been changed by your product.
+-You may be required to include some LEGAL text in your utility to
+make our lawyers happy.
+-There may be more or some of the above may not be in the final
+document.  It depends on my frame of mind at the time. :)
+
+The document is in the construction phase and I expect to have it
+ready to mail by the end of March, '94.  If you would like a copy
+please send your REGULAR POSTAL MAIL ADDRESS to
+
+e-mail: jayw@idsoftware.com
+Post:   id Software
+        18601 LBJ Frwy, #615
+        Mesquite, TX  75150
+
+Be sure to mark your letter "ATTN. THIRD PARTY EDITOR LICENSE
+REQUEST"   I am sorry to have to resort to the POST but I need to get
+signatures and there is no other way to keep this process under
+control.
+
+VERY IMPORTANT: DO NOT CALL OUR ORDER, TECHNICAL SUPPORT or OFFICE
+PHONE NUMBERS REQUESTING INFORMATION.  License requests will only be
+honored when sent via the methods described above.
+
+Thanks,
+
+Jay
+

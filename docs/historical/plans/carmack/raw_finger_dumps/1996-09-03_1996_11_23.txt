@@ -1,0 +1,406 @@
+[idsoftware.com]
+Login name: johnc     			In real life: John Carmack
+Directory: /raid/nardo/johnc        	Shell: /bin/bash
+On since Sep 22 17:27:43		3 days 23 hours Idle Time
+   on ttyp2 from idnewt
+Plan:
+===============================================
+
+Sept 3:
+
+I have been cleaning up the utilities for another release (soon) where
+everything is in Visual C++ project format.  All of the common code is now
+included from the same place, so adding support for pcx or 3d studio files
+will only require changes in one file now for all utilities.
+
+I made a few simple changes to qcc, and it now compiles FOUR TIMES FASTER!
+A recompile on my pp200 only takes 5 seconds now.  I knew the linear
+search for defs was hurting, but if I had realized it was that dominant
+(and easy to fix) I would have fixed it a long time ago.  All I had to do
+was move defs to the head of the search list each time they were looked
+for, so they would be found fast the next time.  A big hash table might be
+somewhat faster still, but this was trivial to add.
+
+Qbsp now uses floats instead of doubles by default, which makes it a good
+deal less of a memory pig, but it seems to give numerical accuracy
+problems in some cases.
+
+I am splitting qbsp up into three seperate programs, which will make the
+memory requirements much smaller than they are now, and will help me be
+more numerically rigorous.  This is going to take some time, so it won't
+be in the next code release.
+
+===============================================
+
+Sept 9:
+
+Ok, I'm back on QuakeWorld.
+
+While working on the new chat console, I fixed up a few little things with
+the regular console:
+The pgup/pgdn keys now autorepeat.
+The display does not pop down to the bottom when a new line is printed.
+If you aren't at the bottom, a few ^ ^ ^ are printed on the last line.
+
+There is now a message level you can set to cut down on the number of
+messages you get from the server (it saves a bit of bandwidth, too).
+Level 0 gives everything.
+Level 1 does not print item pickup messages.
+Level 2 does not print player obituaries.
+Level 3 does not print any messages from the server.
+Level 4 does not print chat messages.
+
+Player skin support is much nicer in QuakeWorld.  There is a qw\skins
+directory, where you can just put a .pcx files for each skin.  This will
+scale properly to hundreds of skins if you want to download them all.
+
+I am still unsure of how much freedom I want to give with the skins.
+
+One school of thought is that you just set the "skin" value to any name
+you want.  If the other players don't have it, they fall back to the
+default.
+
+The other school of thought is that skins are the restricted property of a
+specific clan, and only clan members get custom skins.
+
+We have the ability to delegate specific information setting abilities to
+clan leaders.  To join a clan, you have to get the leader to add the clan
+field to your user account.  It is in the protected masterdata, so you
+can't edit it yourself.
+
+===============================================
+
+Sept 13:
+
+There is new source code available.  ftp.idsoftware.com :
+/idstuff/source/qutils.zip has win-32 compiled versions and VC++ projects
+for all of the quake command line utilities.
+
+The qbsp/light/vis programs have not been tested all that well here,
+because we still use a dec alpha running unix for most of our work, but it
+has been converted from doubles to floats, which should reduce the memory
+requirements quite a bit (and possibly cause more numeric
+instabilities...).
+
+I also uploaded the DOOM ipxsetup / sersetup source code, which we haven't
+had on our ftp site before.
+
+We are going to begin internal testing of a 1.05 Quake release tomorrow.
+When we upload for general release, we will also upload the current .qc
+source.  The old qcc.tar.gz file is still present on the ftp site for the
+original .qc files for now.
+
+
+Here is the list of fixes for 1.05:
+
+Increased the number of edges, so walls don't vanish in e1m8 at high-res
+at certain viewing angles.
+
+Fixed problem with trying to lock the NULL pointer protection page, so
+Quake should now run under CWSDPMI r3 and 386MAX.
+
+Fixed problem where video mode corruption was reported and Quake was
+exited if _vid_default_mode in config.cfg was not a valid mode (often
+resulted from switching from UniVBE 5.2 to UniVBE 5.3, which supports
+fewer modes than 5.2).  Now just defaults to 320x200 if this happens.
+
+Fixed problem with working_size not being preadjusted up by 64K in memory
+allocation loop.  This may provide 64K more memory on some systems.
+
+Fixed names with spaces showing up as "unconnected".
+
+Fixed the "Mod_NumForName: <something> not found" bug.
+
+Fixed getting stuck on start map with noexit on.  There must be a time or
+frag limit or there is no way to exit.  It will run through the four
+episodes; shareware will only do episode 1.  The end level is skipped
+since it's rotten for deathmatch.
+
+Fixed getting stuck on end map in deathmatch (since there is not exit).
+You must have a frag or time limit.  It will takes you to the start map.
+
+Fixed it so dead players don't keep their stuff if the level changes while
+they are dead.
+
+Setting of the crosshair variable is now saved in config.cfg.
+
+Fixed the problem that using percent signs in a chat message would page
+fault the server.
+
+Fixed it so cell ammo is no longer carried over to the start level.
+
+Fixed a problem where you could kill shub the wrong way.
+
+Fixed a problem where you could "kill" a secret door and crash the server
+with a host_error.
+
+Fixed it so cell ammo is no longer picked up when you already have 100.
+
+Fixed a problem where if you discharged the thunderbolt in the water your
+cells were dropped with your backpack.
+
+Added IPX support to the winded server.
+
+Fixed it so the ranking screen is centered in high resolution modes.
+
+Added support for external controllers (spaceball, assassin).
+
+Fixed a problem where the crosshair was drawn at the wrong location if you
+were underwater in a high resolution video mode.
+
+Fixed it so doing restart or edict when a server isn't running does no
+crash.
+
+Fixed it so you exit to the quake console instead of crashing when a net
+game fails to load.  These failures are mostly due to trying to connect to
+a server running a level you do not have.
+
+Added teamplay 2.  It differs from teamplay 1 in two ways.  You can hurt
+teamates (and yourself) and you lose 1 frag for killing a teamate.
+
+Fixed a problem where spaces were being added onto key bindings when the
+config.cfg was read.  These were then written out later.  This caused the
+bindings to keep growing until it eventually caused a crash.
+
+Fixed it so a binding to ";" is now written to config.cfg properly.
+
+Fixed it so unbound keys no longer written to config.cfg.
+
+Fixed a hole where a fake client was able to change cvars and execute
+Quake console commands.
+
+Fixed it so showscores works in total full screen (no menu bar at all).
+
+Fixed the axe's aiming.  It wasn't always correct causing false hits and
+misses.
+
+Added cycle weapon backwards (impulse 12).
+
+Fixed it so picking up a weapon in a backpack uses the same rules as
+picking up a weapon any other time.
+
+Fixed a lot of the obituaries.  Many deaths were getting inappropriate
+messages.  There are still a few cases that can occur with projectiles.
+
+Made the size of the zone a command line parameter.  You specify -zone
+followed by a size in KB.  The default is 48.
+
+---------------------------------------
+
+There is a BETA distribution of 1.05 up on our ftp site.
+ftp.idsoftware.com:/idstuff/unsup/q105beta.exe
+It includes quake.exe winded.exe progs.dat, and a zip of the latest .qc
+files.
+Back up your current version before messing with this, in case something
+is broken.
+
+=============================================
+
+Sept 14
+
+There is a "beta5a.exe" self extracting file on the ftp site that has
+a new progs.dat file that fixes the dissapearing weapon bug.
+
+You can all stop emailing me with that bug report :-)
+
+===============================================
+
+Sept 17:
+
+We are now beta testing the first release of QuakeWorld.
+
+It seems to be going well.  The latency reductions are very real, and
+significantly improve control and responsiveness.  There is some loss of
+smoothness in some cases, but you can tune the tradeoff to your liking.
+
+I don't want everyone to think that it will instantly turn their 28.8
+modem into a lan connection, but it should be solidly better than what we
+have in all circumstances.
+
+On an internet connection that provides a stable flow of packets at a
+reasonably predictable rate, the gameplay is very good.  Single packet
+drops are not even noticable, but dropping several packets at once or
+having a large variability in latency can still mess up a game.
+
+The really cool ISPs will run QuakeWorld servers right at their pops,
+which should give 28.8 modem players 200 ms or less pings, providing a
+nearly flawless game.
+
+===============================================
+
+Sept 21:
+
+I had a good time at the New York event -- it was fun to meet a lot of
+the web and clan guys, and there was some good fierce deathmatch action.
+
+The QuakeWorld beta has revved a couple more times.  When things work
+right, its great, but it seems like it only works right on about half the
+windows machines we try it on.
+
+We have at least a week of beating on it before a public release.
+
+===============================================
+
+Oct 5:
+
+Developing for windows is not fun.  We are having a lot of trouble
+getting good solid compatability across all the systems we are testing
+on.
+
+When it works right, it just pops right into full screen mode with sound
+and network just like the dos version, but we are still chasing problems
+on several systems.  Sigh.
+
+===============================================
+
+Oct 14:
+
+I haven't been able to work on QuakeWorld for a week, and am unlikely to
+for a couple more days.
+
+I've been working with the utilities and editor most of the time, but
+there has been a lot of other stuff going on lately that has kept me from
+being very productive.
+
+===============================================
+
+Oct 16:
+
+The latest windows drivers from rendition fix the lousy GUI performance I
+had been complaining about to several people.  While it may not be
+state-of-the-art 2d acceleration, it doesn't get in your way anymore.  I
+do not consider windows performance to be a negative for rendition
+anymore.
+
+===============================================
+
+Oct 26:
+
+I got another QuakeWorld beta out.  I think I have all the network play
+improvements in their final form, I just need to add the dynamic data
+downloading and nail all the bugs.
+
+===============================================
+
+Oct 27:
+
+There seems to be a number of forged emails going around lately.
+
+If you receive an unsolicited email from "John Carmack" it may not
+actually have been from me.
+
+If you run into someone on irc claiming to be me, it absolutely isn't.  I
+don't go on irc.
+
+===============================================
+
+Nov 6:
+
+Over the weekend, I ported Quake to open-gl / win32.  It is a complete
+port with all features supported.  Its not really practical right now on
+most consumer level equipment, but it runs ok on my intergraph glz-13t.
+It will work on the 3dlabs cards with their next driver release, but it
+really isn't very optimized yet, so don't expect anything really fast.
+
+If you have high end hardware (intergraph realizm or dec powerstorm), it
+is pretty cool.
+
+It is interesting to look at quake with hires 24 bit trilinear texture
+mapping.  Sometimes you just don't even notice anything is different, but
+sometimes you can just stare at a scene for quite a while apreciating it.
+
+Throwing bits and pixels at a static design certainly doesn't hurt, but
+it really doesn't bring it to a new level.  I think I know where the next
+level is, but I'm just at the very beginning of the work on the next game
+architecture.
+
+We have three mostly-done things to release: winquake, glquake, and
+quakeworld.  No, I don't know when any of them are actually going to be
+released.  Sorry.
+
+QuakeWorld will actually download a new level for you now if you want to
+wait for it.  Little models and sounds are a lot more practical to
+customize a server with, though.
+
+Today I got cornered by the three level designers and an artist and they
+jumped all over me for working on new research instead of polishing the
+quake 2 tools.  I guess the rest of my week is spoken for...
+
+===============================================
+
+nov 23:
+
+QuakeWorld:  there is one physics problem that is preventing me from
+releasing:  you get stuck sometimes in moving plats.  I am having a hard
+time tracking it down, and I only get to work on it sporadically.  I
+will spend a bit more time this weekend.
+
+I have given the source for the master server to the QSpy guys and
+Disruptor to do with as they will (rankings, queries, etc).  I know I
+won't have the time to support it like it deserves.
+
+WinQuake:  Michael is almost done.... We only have one reported serious
+problem, but there are still a list of little issues.  We are finally
+feeling stable on windows.  Not everyone may be able to get optimal
+settings, but SOMETHING should work almost everywhere.
+
+I have an NT alpha machine on order, so we will be compiling for that as
+well.  We aren't going to be able to spend time writing assembly
+language for it like the intel version has, but it should still run at a
+pretty decent clip.  IBM was talking about getting us a power-PC
+machine, but I haven't heard back from them in a while.  If one shows
+up, we will compile for that as well.
+
+GLQuake:  3DFX is writing a mini-gl driver that will run glquake.  We
+expect very high performance.  3Dlabs is also working with me on
+improving some aspects of their open-GL performance.  DynamicPictures
+sent me an Oxygen board, but glquake did a horrible crash and burn with
+their beta drivers.  They are looking into it.  DEC is sending me a
+powerstorm to work with, which should perform in the same ballpark as
+the intergraph realizm I did the development work on.
+
+I do expect the 3dfx version to outperform the $5k+ professional gl
+cards, due to its higher fill rate and the fact that they can tune
+directly for quake.  There are certainly valid reasons to buy $5k cards
+(24+ bit z buffers, 24 bit color, 1280 res, etc), but don't cry when a
+$300 card eats their lunch :-).
+
+Because of the very fill-rate intensive nature of the way I implemented
+this version of glquake (using a blend pass to do the light maps),
+performance is not likely to be very good on any current generation
+consumer level board except 3dfx.  The next generation of most vendors
+cards should have sufficient fill rate, if claims are to be believed.  I
+may do a surface cached version just for the experience, in any case.
+
+One little public rant:  if you are a 3d chip designer, don't even THINK
+about not supporting true alpha blending.  Screen door transparency is
+not a valid replacement.  (this means YOU, matrox!)
+
+IRIX-GLQuake: In two weeks, Ed Hutchins from SGI is coming down and we
+are going to port glQuake to irix.  This will only run (reasonably) on
+systems with hardware texture mapping: O2, impact, RE2, and IR.  No
+indys, extremes, etc.  You could probably use them as dedicated servers,
+though.
+
+D3DQuake: I started bringing up glquake on direct-3d a couple days ago.
+We are going to have a very nice, apples-to-apples api comparison here.
+It takes four times as much code to do anything in D3D as it does in
+OpenGL, but I will tune both to the best of my abilities and we shall
+see if there is any performance advantage to either API.  We should be
+able to do comparisons on both 3DFX and 3DLabs hardware with both apis.
+
+Quake utilities:  I have split qbsp into two programs: qcsg and qbsp2.
+The processing is more robust, faster, and more memory frugal, but it
+currently generates rather unoptimized maps.  I will be writing a
+seperate map optimizer program soon to get the counts and size back to
+what they should be.  I will probably do a new tool release after we get
+some more testing time on them.  All of the utilities except qbsp now
+automatically use as many processors as you have if you are running on
+NT.
+
+New stuff:  The outline of the next generation game engine is beginning
+to take a bit of shape...  I'm applying the lessons learned from quake
+and I have a long list of new things to try.  I want to polish off all
+the outstanding quake stuff, then just go into hermit mode and work on
+the future while the other guys do Quake 2.
+

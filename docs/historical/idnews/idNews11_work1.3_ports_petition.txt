@@ -1,0 +1,125 @@
+From: ddt@daisy.cc.utexas.edu (David Taylor)
+Newsgroups: alt.games.doom,comp.sys.ibm.pc.games.action
+Subject: idNews: Petition & Whatsup
+Date: 12 Apr 1994 11:31:38 -0500
+Organization: id Software
+
+Hi there, everyone.  Sorry for the long silence.  Things have been
+very ____ around here (I think you know how to fill in the blank
+by now).
+
+Have a couple of updates for you and a VERY important request at
+the end.
+
+On v1.3..
+
+  We're close.  The important parts of the sound code were totally
+  rewritten for stability, especially in net games.  Our results
+  so far have been very promising.  However, the GUS code was
+  totally removed and needs to be rewritten as well.  As soon as
+  we get that finished and Doom tested, we'll send it out.  Best
+  estimate is a couple of weeks.  v1.3 also integrates fixes
+  submitted by y'all to make the serial and net code more compatible
+  and work faster.  There were a couple of savegame bugs fixed and
+  a minor sky texture mapping bug fixed.  It also has a new map
+  reload feature for the map editor types out there so that you
+  can test a level immediately after developing it without restarting.
+
+On ports of Doom..
+
+  We're currently very ____ with the Jaguar ports of Wolf 3D and
+  Doom and haven't had time to round out the Linux/X port and other
+  stuff.  The Linux port should be closely followed by an Irix/X
+  port and later by lots of other ports, but we haven't committed
+  to release dates because we kinda figured a nasty crunch like
+  this would come along.  I'm afraid that we still can't commit
+  for the same reason.
+
+On the Jaguar ports..
+
+  We're doing Doom and Wolfenstein 3D for the Atari Jaguar.  They're
+  both coming right along.  Wolf 3D is sporting several new features,
+  including source artwork at twice the resolution (4x the data),
+  a high, fluid refresh rate, 22 kHz sound effects, and MIDI device
+  emulation.  Doom pushes the hardware a lot harder and already
+  looks trey cool.  The anti-aliasing effects of composite screens
+  coupled with the very hip 16-bit CRY pixel mode makes images look
+  even more realistic than the DOS version.  Both should be done
+  this summer.
+
+On commercial Doom..
+
+  In progress is the development of lotsa new everything for the
+  commercial Doom release.  Will probably be done in September.
+  We've got some hip new stuff for you like awesome new levels
+  based on Earth, and several new bad guys, including possessed
+  humans carrying chain guns, spider daemon offspring, and several
+  new arch-daemons with extremely creative and grim methods of
+  destruction.  We're paying even closer attention to the design
+  of good deathmatch levels.
+
+Our VERY important request..
+
+  We could use your help.  Apparently, there was a game called "GATE
+  OF DOOM" that came out some time ago.  When we applied for a
+  trademark on "DOOM", they wouldn't give it to us because they
+  thought the name "DOOM" was too close to the name "GATE OF DOOM"
+  which has a trademark on it.
+
+  Reasoning doesn't work.  Apparently, you have to do a petition
+  to get people to say, "I associate Blammo's LOG! with this rotting
+  lump of wood my daughter carries on her back everywhere with
+  'LOG! from Blammo' written all over it."  Jay has written up a
+  lusty e-mail letter to ask for your support.  If you've got a
+  minute, it would help us a lot- thanks!
+
+  What follows is from the Mind of Jay..
+
+        =-ddt->
+
+    ------
+
+  We hope that you are enjoying DOOM, the latest creation of Id
+  Software.  Id Software is currently pursuing trademark registration
+  of the mark "DOOM".  We would like to get your assistance in
+  gathering information about DOOM, for delivery to the trademark
+  office.  Please review the following statement and if it is agreeable
+  to you, complete your name, address and telephone number, and deliver
+  it back to Id Software.  We will likely present to the trademark
+  office the information sent back to us.  Id Software appreciates your
+  assistance.
+
+  Please fill the following petition form in and E-MAIL it to
+  petition@idsoftware.com.  The petition@idsoftware.com mailbox will be
+  active until May 1, 1994.  After May 1st the mailbox will be shut
+  down and messages sent to it will bounce.
+
+       -=-= CUT HERE =-=-=-= CUT HERE =-=-=-= CUT HERE =-=
+
+  NAME__________________________________________________
+
+  ADDRESS_______________________________________________
+
+  CITY, ST  ZIP____________________________________________
+
+  TELEPHONE_____________________________________________
+
+  E-MAIL ADDRESS________________________________________
+
+
+  I agree that the following is a true statement.  I consent to the use
+  of this statement for commercial reasons, or otherwise, by Id
+  Software, Inc.  ("ID"), and further consent to possibly being
+  contacted in the future with regard to this statement.
+
+  I have purchased and/or have played the computer software game
+  "DOOM", and I understand DOOM was developed by ID.  ID has a
+  reputation of producing high quality computer software games, using
+  the latest interactive 3-D technology.  Based upon advertisements,
+  trade magazine write-ups and word-of-mouth among my fellow computer
+  software game players, I recognize DOOM as coming from ID and from no
+  other source.  There is no confusion between DOOM and any other
+  computer software game which may contain the word "doom" in its
+  title, including "GATE OF DOOM."  DOOM is recognized as the latest
+  creation from the minds of ID.
+

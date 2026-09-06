@@ -1,0 +1,30 @@
+From: ddt@daisy.cc.utexas.edu (David Taylor)
+Newsgroups: comp.sys.ibm.pc.games.action
+Subject: idNews: New stuff later tonight
+Date: 14 Dec 1993 19:48:29 -0600
+Organization: id Software
+
+Howdy.  We've listen to all your bug reports and stuff and fixed a lot
+of the problems with Doom 0.99.  Tonight, we'll be releasing Doom 1.00
+which will fix a lot of things and should run on many more computers.
+It'll only be available to the Internet at first, prolly other stuff
+soon (tomorrow at the latest).  Will submit it to ftp.uwp.edu tonight.
+
+Three of the major fixes that won't be in this release are the
+communications architecture, the PAS 16 support, and the modem
+support.  We expect the latter two to be finished sometime this week.
+
+Changing over from broadcast packets to connection-oriented packets
+will take a while.  We're not committing to a time yet, but an
+off-the-cuff guess is a couple of weeks.  If Doom's current use of
+broadcast packets has caused it to be banned from your network, please
+be nice and don't play net games with it.  It means that the code is
+flooding a very large network with broadcast packets and/or slowing
+other machines down badly.
+
+What you will find includes most of the stuff mentioned up here plus
+SB 1.0 support, a new more stable dos extender, and zillions of other
+little bug fixes.
+
+	=-ddt->
+

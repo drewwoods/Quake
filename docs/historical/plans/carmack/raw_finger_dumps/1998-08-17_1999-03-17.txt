@@ -1,0 +1,911 @@
+[idsoftware.com]
+Welcome to id Software's Finger Service V1.5!
+
+Name: John Carmack
+Email: johnc@idsoftware.com
+Description: Programmer
+Project: Quake Arena
+Last Updated: 03/17/1999 01:53:50 (Central Standard Time)
+-------------------------------------------------------------------------------
+3/17/99
+-------
+First impressions of the SGI visual workstation 320:
+
+I placed an order for a loaded system ($11k) from their web site two months
+ago.  It still hasn't arrived (bad impression), but SGI did bring a loaner
+system by for us to work with.
+
+The system tower is better than standard pc fare, but I still think Apple's
+new G3 has the best designed computer case.
+
+The wide aspect LCD panel is very nice.  A while ago I had been using a dual
+monitor LCD setup on a previous intergraph, but the analog syncing LCD
+screens had some fringing problems, and the gamma range was fairly different
+from a CRT.  The SGI display is perfectly crisp (digital interface), and
+has great color.  The lighting is a little bit uneven top to bottom on this
+unit -- I am interested to see how the next unit looks for comparison.
+
+Unfortunately, the card that they bundle with the LCD if you buy it
+separately is NOT a good 3D accelerator, so if you care about 3D and want
+this LCD screen, you need to buy an sgi visual workstation.  Several of the
+next generation consumer cards are going to support digital flat panel
+outputs, so hopefully soon you will be able to run a TNT2 or something
+out to one of these.
+
+The super memory system does not appear to have provided ANY benefit to the
+CPU.  My memory benchmarking tests showed it running about the same as a
+standard intel design.
+
+Our first graphics testing looked very grim -- Quake3 didn't draw the world
+at all.  I spent a while trying to coax some output by disabling various
+things, but to no avail.  We reported it to SGI, and they got us a fix the
+next day.  Some bug with depthRange().  Even with the fix, 16 bit rendering
+doesn't seem to work.   I expect they will address this.
+
+Other than that, there haven't been any driver anomolies, and both the game
+and editor run flawlessly.
+
+For single pass, top quality rendering (32 bit framebuffer, 32 bit depth
+buffer, 32 bit trilinear textures, high res screen), the SGI has a higher
+fill rate than any other card we have ever tested on a pc, but not by too
+wide of a margin.
+
+If your application can take advantage of multitexture, a TNT or rage128
+will deliver slightly greater fill performance.  It is likely that the next
+speed bump of both chips will be just plain faster than the SGI on all
+fill modes.
+
+A serious flaw is that the LCD display can't support ANY other resolutions
+except the native 1600*1024.  The game chunks along at ten to fifteen fps
+at that resolution (but it looks cool!).  They desperately need to support
+a pixel doubled 800*512 mode to make any kind of full screen work
+possible.  I expect they will address this.
+
+Vsync disable is implemented wrong.  Disabling sync causes it to continue
+rendering, but the flip still doesn't happen until the next frame.  This
+gives repeatable (and faster) benchmark numbers, but with a flashing
+screen that is unusable.  The right way is to just cause the flip to happen
+on the next scan line, like several consumer cards do, or blit.  It gives
+tearing artifacts, but it is still completely usable, and avoids temporal
+nyquist issues between 30 and 60 hz.  I expect they will address this.
+
+Total throughput for games is only fair, about like an intergraph.  Any
+of the fast consumer cards will run a quake engine game faster than the
+sgi in its current form.  I'm sure some effort will be made to improve
+this, but I doubt it will be a serious focus, unless some SGI engineers
+develop unhealthy quake addictions. :-)
+
+The unified memory system allows nearly a gig of textures, and individual
+textures can by up to 4k by 4k.  AGP texturing provides some of this
+benefit for consumer cards, but not to the same degree or level of
+performance.
+
+The video stream support looks good, but I haven't tried using it yet.
+
+Very high interpolater accuracy.  All the consumer cards start to break
+up a bit with high magnification, weird aspects, or long edges.  The
+professional cards (intergraph, glint, E&S, SGI) still do a better job.
+
+SGI exports quite a few more useful OpenGL extensions than intergraph
+does, but multisample antialiasing (as claimed in their literature)
+doesn't seem to be one of them.
+
+Overall, it looks pretty good, and I am probably going to move over to
+using the SGI workstation full time when my real system arrives.
+
+I was very happy with the previous two generations of intergraph
+workstations, but this last batch (GT1) has been a bunch of lemons, and
+the wildcat graphics has been delayed too long.  The current realizm-II
+systems just don't have enough fill rate for high end development.
+
+For developers that don't have tons of money, the decision right now
+is an absolute no-brainer -- buy a TNT and stick it in a cheap system.
+Its a better "professional" 3D accelerator than you could buy at any
+price not too long ago.
+
+
+3/3/99
+------
+On the issue of railgun firing rates -- we played with it for a while at
+the slower speed, but it has been put back to exactly Q2's rate of fire.
+
+I do agree with Thresh that the way we had it initially (faster than Q2,
+but with the same damage) made it an overpowered weapon in the hands of
+highly skilled players, which is exactly what we should try to avoid.
+
+An ideal game should give scores as close to directly proportional to
+the players reletive skills as possible.  The better player should win
+in almost all cases, but the game will be more entertaining if the
+inferior players are not completely dominated.
+
+Quake 1 had really bad characteristics that way -- Thresh can play
+extremely talented players and often prevent them from scoring a single
+point.  We wouldn't put up with a conventional sport that commonly
+game scores of 20 to 1 in championship matches, and I don't think
+we should encourage it in our games.
+
+Eliminating health items is probably the clearest way to prevent
+blowout games, but that has never been popular.  Still, we should
+try to avoid weapon decisions that allow the hyper-skilled to pull
+even farther away from the rest of the crowd.  They will still win,
+no matter what the weapons are, just not by as wide a margin.
+
+
+1/29/98
+-------
+The issue of the 8192 unit map dimension limit had been nagging at me for
+a long time now.  The reason for the limit is that coordinates are
+communicated over the network in 16 bit shorts divided as a sign bit,
+twelve unit bits, and three fractional bits.  There was also another
+side to the representation problem, but it was rarely visible:  if
+you timescale down, you can actually tell the fractional bit granularity
+in position and velocity.
+
+The rest of the system (rendering and gameplay) has never had any issues
+with larger maps, even in quake 1.  There are some single precision
+floating point issues that begin to creep in if things get really huge,
+but maps should be able to cover many times the current limit without
+any other changes.
+
+A while ago I had changed Q3 so that the number of fractional bits was
+a compile time option, which allowed you to trade off fine grain precision
+for larger size.  I was considering automatically optimizing this for each
+level based on its size, but it still didn't feel like a great solution.
+
+Another aspect of the problem that wasn't visible to the public was that
+the fractional quantization of position could cause the position to
+actually be inside a nearby solid when used for client side prediction.
+The code had to check for this and try to correct the situation by jittering
+the position in each of the possible directions it might have been
+truncated from.  This is a potential issue whenever there is any loss of
+precision whatsoever in the server to client communication.
+
+The obvious solution is to just send the full floating point value for
+positions, but I resisted that because the majority of our network
+traffic is positional updates, and I didn't want to bloat it.  There have
+been other bandwidth savings in Q3, and LANs and LPB connections are also
+relevant, so I was constantly evaluating the tradeoff.
+
+Dealing with four or five players in view isn't a real problem.  The big
+bandwidth issues arrive when multiple players start unloading with rapid
+fire weapons. (as an aside, I tried making 5hz fire weapons for Q3 to save
+bandwidth, but no matter how much damage they did, 5hz fire rates just
+seemed to feel slow and weak...)
+
+I finally moved to a bit-level stream encoding to save some more bandwidth
+and give me some more representational flexibility, and this got me thinking
+about the characteristics of the data that bother us.
+
+In general, the floating point coordinates have significant bits all through
+the mantissa.  Any movement along an angle will more or less randomize the
+low order bits.
+
+My small little insight was that because missiles are evaluated
+parameterically instead of itteretively in Q3, a one-time snapping of the
+coordinates can be performed at their generation time, giving them fixed
+values with less significant bits for their lifetime without any effort
+outside their spawning function.  It also works for doors and plats, which
+are also parametrically represented now.  Most events will also have
+integral coordinates.
+
+The float encoder can check for an integral value in a certain range and
+send that as a smaller number of bits, say 13 or so.  If the value isn't
+integral, it will be transmitted as a full 32 bit float.
+
+The other thing I am investigating is sub-byte delta encoding of floating
+point values.  Even with arbitrary precision movement deltas, the sign and
+exponent bits change with very low frequency except when you are very
+near the origin.  At the minimum, I should be able to cut the standard
+player coordinate delta reps to three bytes from four.
+
+So, the bottom line is that the bandwidth won't move much (it might even
+go down if I cut the integral bits below 15), the maps become unbounded
+in size to the point of single precision roundoff, and the client doesn't
+have to care about position jittering (which was visible in Q3 code that
+will be released).
+
+
+1/10/99
+-------
+
+Ok, many of you have probably heard that I spoke at the macworld
+keynote on tuesday.  Some information is probably going to get
+distorted in the spinning and retelling, so here is an info
+dump straight from me:
+
+Q3test, and later the full commercial Quake3: Arena,  will be simultaniously
+released on windows, mac, and linux platforms.
+
+I think Apple is doing a lot of things right.  A lot of what they are
+doing now is catch-up to wintel, but if they can keep it up for the next
+year, they may start making a really significant impact.
+
+I still can't give the mac an enthusiastic reccomendation for sophisticated
+users right now because of the operating system issues, but they are working
+towards correcting that with MacOS X.
+
+
+The scoop on the new G3 mac hardware:
+
+Basically, its a great system, but Apple has oversold its
+performance reletive to intel systems.  In terms of timedemo scores,
+the new G3 systems should be near the head of the pack, but there
+will be intel systems outperforming them to some degree.  The mac has
+not instantly become a "better" platform for games than wintel, it
+has just made a giant leap from the back of the pack to near the
+front.
+
+I wish Apple would stop quoting "Bytemarks".  I need to actually
+look at the contents of that benchmark and see how it can be so
+misleading.  It is pretty funny listening to mac evangelist types
+try to say that an iMac is faster than a pentium II-400.  Nope.
+Not even close.
+
+From all of my tests and experiments, the new mac systems are
+basically as fast as the latest pentium II systems for general
+cpu and memory performance.  This is plenty good, but it doesn't
+make the intel processors look like slugs.
+
+Sure, an in-cache, single precision, multiply-accumulate loop could
+run twice as fast as a pentium II of the same clock rate, but
+conversly, a double precision add loop would run twice as fast
+on the pentium II.
+
+Spec95 is a set of valid benchmarks in my opinion, and I doubt the
+PPC systems significantly (if at all) outperform the intel systems.
+
+
+The IO system gets mixed marks.  The 66 mhz video slot is a good step
+up from 33 mhz pci in previous products, but that's still half the
+bandwidth of AGP 2X, and it can't texture from main memory.  This
+will have a small effect on 3D gaming, but not enough to push it
+out of its class.
+
+The 64 bit pci slots are a good thing for network and storage cards,
+but the memory controller doesn't come close to getting peak
+utilization out of it.  Better than normal pci, though.
+
+
+The video card is almost exactly what you will be able to get on
+the pc side: a 16 mb rage-128.  Running on a 66mhz pci bus, it's
+theoretical peak performance will be midway between the pci and
+agp models on pc systems for command traffic limited scenes.  Note
+that current games are not actually command traffic limited, so the
+effect will be significantly smaller.  The fill rates will be identical.
+
+The early systems are running the card at 75 mhz, which does put
+it at a slight disadvantage to the TNT, but faster versions are
+expected later.  As far as I can tell, the rage-128 is as perfect
+as the TNT feature-wise.  The 32 mb option is a feature ATI can
+hold over TNT.
+
+
+Firewire is cool.
+
+
+Its a simple thing, but the aspect of the new G3 systems that
+struck me the most was the new case design.  Not the flashy plastic
+exterior, but the functional structure of it.  The side of the
+system just pops open, even with the power on, and lays the
+motherboard and cards down flat while the disks and power supply
+stay in the encloser.  It really is a great design, and the benefits
+were driven home yesterday when I had to scavenge some ram out of old
+wintel systems yesterday -- most case designs suck really bad.
+
+
+---
+
+I could gripe a bit about the story of our (lack of) involvement
+with Apple over the last four years or so, but I'm calling that
+water under the bridge now.
+
+After all the past fiascos, I had been basically planning on ignoring Apple
+until MacOS X (rhapsody) shipped, which would then turn it into a platform
+that I was actually interested in.
+
+Recently, Apple made a strategic corporate decision that games were a
+fundamental part of a consumer oriented product line (duh).  To help that
+out, Apple began an evaluation of what it needed to do to help game
+developers.
+
+My first thought was "throw out MacOS", but they are already in the process
+of doing that, and its just not going to be completed overnight.
+
+Apple has decent APIs for 2D graphics, input, sound, and networking,
+but they didn't have a solid 3D graphics strategy.
+
+Rave was sort of ok. Underspecified and with no growth path, but
+sort of ok.  Pursuing a proprietary api that wasn't competetive with
+other offerings would have been a Very Bad Idea.  They could have tried
+to make it better, or even invent a brand new api, but Apple doesn't have
+much credibility in 3D programming.
+
+For a while, it was looking like Apple might do something stupid,
+like license DirectX from microsoft and be put into a guaranteed
+trailing edge position behind wintel.
+
+OpenGL was an obvious direction, but there were significant issues with
+the licensing and implementation that would need to be resolved.
+
+I spent a day at apple with the various engineering teams and executives,
+laying out all the issues.
+
+The first meeting didn't seem like it went all that well, and there wasn't
+a clear direction visible for the next two months.  Finally, I got the all
+clear signal that OpenGL was a go and that apple would be getting both the
+sgi codebase and the conix codebease and team (the best possible arrangement).
+
+So, I got a mac and started developing on it.  My first weekend of
+effort had QuakeArena limping along while held together with duct
+tape, but weekend number two had it properly playable, and weekend
+number three had it brought up to full feature compatability.  I
+still need to do some platform specific things with odd configurations
+like multi monitor and addon controlers, but basically now its
+just a matter of compiling on the mac to bring it up to date.
+
+This was important to me, because I felt that Quake2 had slipped a bit in
+portability because it had been natively developed on windows.  I like the
+discipline of simultanious portable development.
+
+After 150 hours or so of concentrated mac development, I learned a
+lot about the platform.
+
+CodeWarrior is pretty good.  I was comfortable devloping there
+almost immediately.  I would definately say VC++ 6.0 is a more powerful
+overall tool, but CW has some nice little aspects that I like.  I
+am definately looking forward to CW for linux.  Unix purists may
+be aghast, but I have always liked gui dev environments more than
+a bunch of xterms running vi and gdb.
+
+The hardware (even the previous generation stuff) is pretty good.
+
+The OpenGL performance is pretty good.  There is a lot of work
+underway to bring the OpenGL performance to the head of the pack,
+but the existing stuff works fine for development.
+
+The low level operating systems SUCKS SO BAD it is hard to believe.
+
+The first order problem is lack of memory management / protection.
+
+It took me a while to figure out that the zen of mac development is
+"be at peace while rebooting".  I rebooted my mac system more times
+the first weekend than I have rebooted all the WinNT systems I
+have ever owned.  True, it has gotten better now that I know my
+way around a bit more, and the codebase is fully stable, but there
+is just no excuse for an operating system in this day and age to
+act like it doesn't have access to memory protection.
+
+The first thing that bit me was the static memory allocation for
+the program.  Modern operating systems just figure out how much
+memory you need, but because the mac was originally dsigned for
+systems without memory management, significant things have to be
+laid out ahead of time.
+
+Porting a win32 game to the mac will probably involve more work
+dealing with memory than any other aspect.  Graphics, sound, and
+networking have reasonable analogues, but you just can't rely
+on being able to malloc() whatever you want on the mac.
+
+Sure, game developers can manage their own memory, but an operating
+system that has proper virtual memory will let you develop
+a lot faster.
+
+The lack of memory protection is the worst aspect of mac development.
+You can just merrily write all over other programs, the development
+environment, and the operating system from any application.
+
+I remember that.  From dos 3.3 in 1990.
+
+Guard pages will help catch simple overruns, but it won't do anything
+for all sorts of other problems.
+
+
+The second order problem is lack of preemptive multitasking.
+
+The general responsiveness while working with multiple apps
+is significantly worse than windows, and you often run into
+completely modal dialogs that don't let you do anything else at all.
+
+
+A third order problem is that a lot of the interfaces are fairly
+clunky.
+
+There are still many aspects of the mac that clearly show design
+decisions based on a 128k 68000 based machine.  Wintel has grown
+a lot more than the mac platform did.  It may have been because the
+intel architecture didn't evolve gracefully and that forced the
+software to reevaluate itself more fully, or it may just be that
+microsoft pushed harder.
+
+Carbon sanitizes the worst of the crap, but it doesn't turn it
+into anything particularly good looking.
+
+
+MacOS X nails all these problems, but thats still a ways away.
+
+I did figure one thing out -- I was always a little curious why
+the early BeOS advocates were so enthusiastic.  Coming from a
+NEXTSTEP background, BeOS looked to me like a fairly interesting
+little system, but nothing special.  To a mac developer, it must
+have looked like the promised land...
+
+
+12/30/98
+--------
+I got several vague comments about being able to read "stuff" from shared
+memory, but no concrete examples of security problems.
+
+However, Gregory Maxwell pointed out that it wouldn't work cross platform
+with 64 bit pointer environments like linux alpha.  That is a killer, so
+I will be forced to do everything the hard way.  Its probably for the
+best, from a design standpoint anyway, but it will take a little more effort.
+
+
+12/29/98
+--------
+I am considering taking a shortcut with my virtual machine implementation
+that would make the integration a bit easier, but I'm not sure that it
+doesn't compromise the integrity of the base system.
+
+I am considering allowing the interpreted code to live in the global address
+space, instead of a private 0 based address space of its own.  Store
+instructions from the VM would be confined to the interpreter's address
+space, but loads could access any structures.
+
+On the positive side:
+
+This would allow full speed (well, full interpreted speed) access to variables
+shared between the main code and the interpreted modules.  This allows system
+calls to return pointers, instead of filling in allocated space in the
+interpreter's address space.
+
+For most things, this is just a convenience that will cut some development
+time.  Most of the shared accesses could be recast as "get" system calls,
+and it is certainly arguable that that would be a more robust programming
+style.
+
+The most prevelent change this would prevent is all the cvar_t uses.  Things
+could stay in the same style as Q2, where cvar accesses are free and
+transparantly updated.  If the interpreter lives only in its own address
+space, then cvar access would have to be like Q1, where looking up a
+variable is a potentially time consuming operation, and you wind up adding
+lots of little cvar caches that are updated every from or restart.
+
+On the negative side:
+
+A client game module with a bug could cause a bus error, which would not be
+possible with a pure local address space interpreter.
+
+I can't think of any exploitable security problems that read only access to
+the entire address space opens, but if anyone thinks of something, let me
+know.
+
+
+11/4/98
+-------
+More extensive comments on the interpreted-C decision later, but a quick
+note:  the plan is to still allow binary dll loading so debuggers can be
+used, but it should be interchangable with the interpreted code.  Client
+modules can only be debugged if the server is set to allow cheating, but
+it would be possible to just use the binary interface for server modules
+if you wanted to sacrifice portability.  Most mods will be able to be
+implemented with just the interpreter, but some mods that want to do
+extensive file access or out of band network communications could still
+be implemented just as they are in Q2.  I will not endorse any use of
+binary client modules, though.
+
+
+11/3/98
+-------
+
+This was the most significant thing I talked about at The Frag, so here it
+is for everyone else.
+
+The way the QA game architecture has been developed so far has been as two
+seperate binary dll's:  one for the server side game logic, and one for the
+client side presentation logic.
+
+While it was easiest to begin development like that, there are two crucial
+problems with shipping the game that way:  security and portability.
+
+It's one thing to ask the people who run dedicated servers to make informed
+decisions about the safety of a given mod, but its a completely different
+matter to auto-download a binary image to a first time user connecting to a
+server they found.
+
+The quake 2 server crashing attacks have certainly proven that there are
+hackers that enjoy attacking games, and shipping around binary code would
+be a very tempting opening for them to do some very nasty things.
+
+
+With quake and Quake 2, all game modifications were strictly server side,
+so any port of the game could connect to any server without problems.
+With Quake 2's binary server dll's not all ports could necessarily run a
+server, but they could all play.
+
+With significant chunks of code now running on the client side, if we stuck
+with binary dll's then the less popular systems would find that they could
+not connect to new servers because the mod code hadn't been ported.  I
+considered having things set up in such a way that client game dll's could
+be sort of forwards-compatable, where they could always connect and play,
+but new commands and entity types just might now show up.  We could also
+GPL the game code to force mod authors to release source with the binaries,
+but that would still be inconvenient to deal with all the porting.
+
+Related to both issues is client side cheating.  Certain cheats are easy to do
+if you can hack the code, so the server will need to verify which code the
+client is running.  With multiple ported versions, it wouldn't be possible
+to do any binary verification.
+
+If we were willing to wed ourselves completely to the windows platform, we
+might have pushed ahead with some attempt at binary verification of dlls,
+but I ruled that option out.  I want QuakeArena running on every platform
+that has hardware accelerated OpenGL and an internet connection.
+
+
+The only real solution to these problems is to use an interpreted language
+like Quake 1 did.  I have reached the conclusion that the benefits of a
+standard language outweigh the benefits of a custom language for our
+purposes.  I would not go back and extend QC, because that stretches the
+effort from simply system and interpreter design to include language design,
+and there is already plenty to do.
+
+I had been working under the assumption that Java was the right way to go,
+but recently I reached a better conclusion.
+
+The programming language for QuakeArena mods is interpreted ANSI C. (well,
+I am dropping the double data type, but otherwise it should be pretty
+conformant)
+
+The game will have an interpreter for a virtual RISC-like CPU.  This should
+have a minor speed benefit over a byte-coded, stack based java interpreter.
+Loads and stores are confined to a preset block of memory, and access to all
+external system facilities is done with system traps to the main game code,
+so it is completely secure.
+
+The tools necessary for building mods will all be freely available:  a
+modified version of LCC and a new program called q3asm.  LCC is a wonderful
+project -- a cross platform, cross compiling ANSI C compiler done in under
+20K lines of code.  Anyone interested in compilers should pick up a copy of
+"A retargetable C compiler: design and implementation" by Fraser and Hanson.
+
+You can't link against any libraries, so every function must be resolved.
+Things like strcmp, memcpy, rand, etc. must all be implemented directly.  I
+have code for all the ones I use, but some people may have to modify their
+coding styles or provide implementations for other functions.
+
+It is a fair amount of work to restructure all the interfaces to not share
+pointers between the system and the games, but it is a whole lot easier
+than porting everything to a new language.  The client game code is about
+10k lines, and the server game code is about 20k lines.
+
+The drawback is performance.  It will probably perform somewhat like QC.
+Most of the heavy lifting is still done in the builtin functions for path
+tracing and world sampling, but you could still hurt yourself by looping
+over tons of objects every frame.  Yes, this does mean more load on servers,
+but I am making some improvements in other parts that I hope will balance
+things to about the way Q2 was on previous generation hardware.
+
+There is also the amusing avenue of writing hand tuned virtual assembly
+assembly language for critical functions...
+
+I think this is The Right Thing.
+
+
+10/14/98
+--------
+
+It has been difficult to write .plan updates lately.  Every time I start
+writing something, I realize that I'm not going to be able to cover it
+satisfactorily in the time I can spend on it.  I have found that terse
+little comments either get misinterpreted, or I get deluged by email
+from people wanting me to expand upon it.
+
+I wanted to do a .plan about my evolving thoughts on code quality
+and lessons learned through quake and quake 2, but in the interest
+of actually completing an update, I decided to focus on one change
+that was intended to just clean things up, but had a surprising
+number of positive side effects.
+
+Since DOOM, our games have been defined with portability in mind.
+Porting to a new platform involves having a way to display output,
+and having the platform tell you about the various relevant inputs.
+There are four principle inputs to a game:  keystrokes, mouse moves,
+network packets, and time.  (If you don't consider time an input
+value, think about it until you do -- it is an important concept)
+
+These inputs were taken in separate places, as seemed logical at the
+time.  A function named  Sys_SendKeyEvents() was called once a
+frame that would rummage through whatever it needed to on a
+system level, and call back into game functions like Key_Event( key,
+down ) and IN_MouseMoved( dx, dy ).  The network system
+dropped into system specific code to check for the arrival of packets.
+Calls to Sys_Milliseconds() were littered all over the code for
+various reasons.
+
+I felt that I had slipped a bit on the portability front with Q2 because
+I had been developing natively on windows NT instead of cross
+developing from NEXTSTEP, so I was reevaluating all of the system
+interfaces for Q3.
+
+I settled on combining all forms of input into a single system event
+queue, similar to the windows message queue.  My original intention
+was to just rigorously define where certain functions were called and
+cut down the number of required system entry points, but it turned
+out to have much stronger benefits.
+
+With all events coming through one point (The return values from
+system calls, including the filesystem contents, are "hidden" inputs
+that I make no attempt at capturing, ), it was easy to set up a
+journalling system that recorded everything the game received.  This
+is very different than demo recording, which just simulates a network
+level connection and lets time move at its own rate.  Realtime
+applications have a number of unique development difficulties
+because of the interaction of time with inputs and outputs.
+
+Transient flaw debugging.  If a bug can be reproduced, it can be
+fixed.  The nasty bugs are the ones that only happen every once in a
+while after playing randomly, like occasionally getting stuck on a
+corner. Often when you break in and investigate it, you find that
+something important happened the frame before the event, and you
+have no way of backing up.  Even worse are realtime smoothness
+issues -- was that jerk of his arm a bad animation frame, a network
+interpolation error, or my imagination?
+
+Accurate profiling.  Using an intrusive profiler on Q2 doesn't give
+accurate results because of the realtime nature of the simulation.  If
+the program is running half as fast as normal due to the
+instrumentation, it has to do twice as much server simulation as it
+would if it wasn't instrumented, which also goes slower, which
+compounds the problem.  Aggressive instrumentation can slow it
+down to the point of being completely unplayable.
+
+Realistic bounds checker runs.  Bounds checker is a great tool, but
+you just can't interact with a game built for final checking, its just
+waaaaay too slow.  You can let a demo loop play back overnight, but
+that doesn't exercise any of the server or networking code.
+
+The key point: Journaling of time along with other inputs turns a
+realtime application into a batch process, with all the attendant
+benefits for quality control and debugging.  These problems, and
+many more, just go away.  With a full input trace, you can accurately
+restart the session and play back to any point (conditional
+breakpoint on a frame number), or let a session play back at an
+arbitrarily degraded speed, but cover exactly the same code paths..
+
+I'm sure lots of people realize that immediately, but it only truly sunk
+in for me recently.  In thinking back over the years, I can see myself
+feeling around the problem, implementing partial journaling of
+network packets, and included the "fixedtime" cvar to eliminate most
+timing reproducibility issues, but I never hit on the proper global
+solution.  I had always associated journaling with turning an
+interactive application into a batch application, but I never
+considered the small modification necessary to make it applicable to
+a realtime application.
+
+In fact, I was probably blinded to the obvious because of one of my
+very first successes:  one of  the important technical achievements
+of Commander Keen 1 was that, unlike most games of the day, it
+adapted its play rate based on the frame speed (remember all those
+old games that got unplayable when you got a faster computer?).  I
+had just resigned myself to the non-deterministic timing of frames
+that resulted from adaptive simulation rates, and that probably
+influenced my perspective on it all the way until this project.
+
+Its nice to see a problem clearly in its entirety for the first time, and
+know exactly how to address it.
+
+
+9/10/98
+-------
+
+I recently set out to start implementing the dual-processor acceleration
+for QA, which I have been planning for a while.  The idea is to have one
+processor doing all the game processing, database traversal, and lighting,
+while the other processor does absolutely nothing but issue OpenGL calls.
+
+This effectively treats the second processor as a dedicated geometry
+accelerator for the 3D card.  This can only improve performance if the
+card isn't the bottleneck, but voodoo2 and TNT cards aren't hitting their
+limits at 640*480 on even very fast processors right now.
+
+For single player games where there is a lot of cpu time spent running the
+server, there could conceivably be up to an 80% speed improvement, but for
+network games and timedemos a more realistic goal is a 40% or so speed
+increase.  I will be very satisfied if I can makes a dual pentium-pro 200
+system perform like a pII-300.
+
+I started on the specialized code in the renderer, but it struck me that
+it might be possible to implement SMP acceleration with a generic OpenGL
+driver, which would allow Quake2 / sin / halflife to take advantage of it
+well before QuakeArena ships.
+
+It took a day of hacking to get the basic framework set up:  an smpgl.dll
+that spawns another thread that loads the original oepngl32.dll or
+3dfxgl.dll, and watches a work que for all the functions to call.
+
+I get it basically working, then start doing some timings.  Its 20%
+slower than the single processor version.
+
+I go in and optimize all the queing and working functions, tune the
+communications facilities, check for SMP cache collisions, etc.
+
+After a day of optimizing, I finally squeak out some performance gains on
+my tests, but they aren't very impressive: 3% to 15% on one test scene,
+but still slower on the another one.
+
+This was fairly depressing.  I had always been able to get pretty much
+linear speedups out of the multithreaded utilities I wrote, even up to
+sixteen processors.  The difference is that the utilities just split up
+the work ahead of time, then don't talk to each other until they are done,
+while here the two threads work in a high bandwidth producer / consumer
+relationship.
+
+I finally got around to timing the actual communication overhead, and I was
+appalled: it was taking 12 msec to fill the que, and 17 msec to read it out
+on a single frame, even with nothing else going on.  I'm surprised things
+got faster at all with that much overhead.
+
+The test scene I was using created about 1.5 megs of data to relay all the
+function calls and vertex data for a frame.  That data had to go to main
+memory from one processor, then back out of main memory to the other.
+Admitedly, it is a bitch of a scene, but that is where you want the
+acceleration...
+
+The write times could be made over twice as fast if I could turn on the
+PII's write combining feature on a range of memory, but the reads (which
+were the gating factor) can't really be helped much.
+
+Streaming large amounts of data to and from main memory can be really grim.
+The next write may force a cache writeback to make room for it, then the
+read from memory to fill the cacheline (even if you are going to write over
+the entire thing), then eventually the writeback from the cache to main
+memory where you wanted it in the first place.  You also tend to eat one
+more read when your program wants to use the original data that got evicted
+at the start.
+
+What is really needed for this type of interface is a streaming read cache
+protocol that performs similarly to the write combining:  three dedicated
+cachelines that let you read or write from a range without evicting other
+things from the cache, and automatically prefetching the next cacheline as
+you read.
+
+Intel's write combining modes work great, but they can't be set directly
+from user mode.  All drivers that fill DMA buffers (like OpenGL ICDs...)
+should definately be using them, though.
+
+Prefetch instructions can help with the stalls, but they still don't prevent
+all the wasted cache evictions.
+
+It might be possible to avoid main memory alltogether by arranging things
+so that the sending processor ping-pongs between buffers that fit in L2,
+but I'm not sure if a cache coherent read on PIIs just goes from one L2
+to the other, or if it becomes a forced memory transaction (or worse, two
+memory transactions).  It would also limit the maximum amount of overlap
+in some situations.  You would also get cache invalidation bus traffic.
+
+I could probably trim 30% of my data by going to a byte level encoding of
+all the function calls, instead of the explicit function pointer / parameter
+count / all-parms-are-32-bits that I have now, but half of the data is just
+raw vertex data, which isn't going to shrink unless I did evil things like
+quantize floats to shorts.
+
+Too much effort for what looks like a reletively minor speedup.  I'm giving
+up on this aproach, and going back to explicit threading in the renderer so
+I can make most of the communicated data implicit.
+
+Oh well.  It was amusing work, and I learned a few things along the way.
+
+
+9/7/98
+------
+I just got a production TNT board installed in my Dolch today.
+
+The riva-128 was a troublesome part.  It scored well on benchmarks, but it had
+some pretty broken aspects to it, and I never reccomended it (you are better
+off with an intel I740).
+
+There aren't any troublesome aspects to TNT.  Its just great.  Good work, Nvidia.
+
+In terms of raw speed, a 16 bit color multitexture app (like quake / quake 2)
+should still run a bit faster on a voodoo2, and an SLI voodoo2 should be faster
+for all 16 bit color rendering, but TNT has a lot of other things going for it:
+
+32 bit color and 24 bit z buffers.  They cost speed, but it is usually a better
+quality tradeoff to go one resolution lower but with twice the color depth.
+
+More flexible multitexture combine modes.  Voodoo can use its multitexture for
+diffuse lightmaps, but not for the specular lightmaps we offer in QuakeArena.
+If you want shiny surfaces, voodoo winds up leaving half of its texturing
+power unused (you can still run with diffuse lightmaps for max speed).
+
+Stencil buffers.  There aren't any apps that use it yet, but stencil allows
+you to do a lot of neat tricks.
+
+More texture memory.  Even more than it seems (16 vs 8 or 12), because all of the
+TNT's memory can be used without restrictions.  Texture swapping is the voodoo's
+biggest problem.
+
+3D in desktop applications.  There is enough memory that you don't have to worry
+about window and desktop size limits, even at 1280*1024 true color resolution.
+
+Better OpenGL ICD.  3dfx will probably do something about that, though.
+
+This is the shape of 3D boards to come.  Professional graphics level
+rendering quality with great performance at a consumer price.
+
+We will be releasing preliminary QuakeArena benchmarks on all the new boards
+in a few weeks.  Quake 2 is still a very good benchmark for moderate polygon
+counts, so our test scenes for QA involve very high polygon counts, which
+stresses driver quality a lot more.  There are a few surprises in the current
+timings...
+
+---
+
+A few of us took a couple days off in vegas this weekend.  After about
+ten hours at the tables over friday and saturday, I got a tap on the shoulder...
+
+Three men in dark suits introduced themselves and explained that I was welcome
+to play any other game in the casino, but I am not allowed to play
+blackjack anymore.
+
+Ah well, I guess my blackjack days are over.  I was actually down a bit for
+the day when they booted me, but I made +$32k over five trips to vegas in the
+past two years or so.
+
+I knew I would get kicked out sooner or later, because I don't play "safely".
+I sit at the same table for several hours, and I range my bets around 10 to 1.
+
+
+
+8/17/98
+-------
+I added support for HDTV style wide screen displays in QuakeArena, so
+24" and 28" monitors can now cover the entire screen with game graphics.
+
+On a normal 4:3 aspect ratio screen, a 90 degree horizontal field of view
+gives a 75 degree vertical field of view.  If you keep the vertical fov
+constant and run on a wide screen, you get a 106 degree horizontal fov.
+
+Because we specify fov with the horizontal measurement, you need to change
+fov when going into or out of a wide screen mode.  I am considering changing
+fov to be the vertical measurement, but it would probably cause a lot of
+confusion if "fov 90" becomes a big fisheye.
+
+Many video card drivers are supporting the ultra high res settings
+like 1920 * 1080, but hopefully they will also add support for lower
+settings that can be good for games, like 856 * 480.
+
+---
+
+I spent a day out at apple last week going over technical issues.
+
+I'm feeling a lot better about MacOS X.  Almost everything I like about
+rhapsody will be there, plus some solid additions.
+
+I presented the OpenGL case directly to Steve Jobs as strongly as possible.
+
+If Apple embraces OpenGL, I will be strongly behind them.  I like OpenGL more
+than I dislike MacOS. :)
+
+---
+
+Last friday I got a phone call: "want to make some exhibition runs at the
+import / domestic drag wars this sunday?".  It wasn't particularly good
+timing, because the TR had a slipping clutch and the F50 still hasn't gotten
+its computer mapping sorted out, but we got everything functional in time.
+
+The tech inspector said that my cars weren't allowed to run in the 11s
+at the event because they didn't have roll cages, so I was supposed to go
+easy.
+
+The TR wasn't running its best, only doing low 130 mph runs.  The F50 was
+making its first sorting out passes at the event, but it was doing ok.  My
+last pass was an 11.8(oops) @ 128, but we still have a ways to go to get the
+best times out of it.
+
+I'm getting some racing tires on the F50 before I go back.  It sucked watching
+a tiny honda race car jump ahead of me off the line. :)
+
+I think ESPN took some footage at the event.
+

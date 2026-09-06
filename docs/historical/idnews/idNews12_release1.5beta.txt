@@ -1,0 +1,69 @@
+From: ddt@idcube.idsoftware.com (David Taylor)
+Newsgroups: alt.games.doom,comp.sys.ibm.pc.games.action
+Subject: idNews: DOOM v1.5 beta available.
+Date: 8 Jul 1994 22:05:13 -0500
+Organization: UTexas Mail-to-News Gateway
+
+Doom v1.5:
+
+	For the adventuresome, DOOM v1.5 BETA at ftp.uwp.edu:
+	/pub/incoming/id/doom15bt.zip.  We'll probably call our
+	released stuff beta until we feel happy about the (lack
+	of) bugs.  I know our version scheme is a little nutty, so
+	here's a translation: if the number is higher, it means we
+	fixed some bugs, maybe added stuff, and hopefully didn't
+	introduce any new ones.  It looks pretty solid to us, and
+	some sound bugs were fixed, but y'all are the best judges.
+
+	Regarding "tinnyness" on the GUS.  It's because the sound
+	code is up-sampling to 22kHz so that it can submit interleaved
+	buffers.  It will probably use seperated channels in the
+	next version so that it can submit at 11kHz and allow the
+	hardware sample averaging.  If this happens, we'll probably
+	have Roland RAP-10 sound support as it also uses seperate
+	buffers.
+
+	Let us know how it works.  Thanks for your help.
+
+Useful finger thingy:
+
+	If you "finger -m help@idsoftware.com", you will get a page
+	or two explaining the current status of things.
+
+DOOM II:
+
+	No big news here.  Level design and artwork continues.
+	Finger help@idsoftware.com for up-to-date information.
+
+Jag stuff:
+
+	JagWolf should be arriving on the store shelves about now.
+
+	JagDOOM is coming along.  It's been through a few non-trivial
+	overhauls.  We still need to re-integrate the sound & music,
+	add modem support, get the funky visible caching working,
+	and add little bits and pieces.  Wouldn't hold your breath for
+	it just now.  We'll announce a finishing date later.
+
+UNIX stuff:
+
+	The SGI port is almost done.  I'll be showing it off with
+	SGI at SIGGRAPH in Florida.  It's not a massively upscaled
+	version of the game, but it's comforting to watch.  :)
+
+	I've recently learned that Hannu plans to add some hip
+	stuff to his sound library for Linux to reduce pops and
+	clicks.  Will wait on the release of Linux DOOM until it's
+	completed and integrated.
+
+Movie stuff:
+
+	Looks like it just might happen.  Apparently, a fair chunk
+	of Hollywood is actually addicted to DOOM.  It's probably
+	helping.  Our agent is working hard on this.  Will let
+	y'all know soon as we have a solid chunk of details about it.
+
+Until next time...
+
+	=-ddt->
+
