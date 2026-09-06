@@ -19,7 +19,11 @@ The macOS software renderer separates simulation from rendering:
 
 The pacing fixes were measured on a 60 Hz panel. Higher-refresh behavior
 below follows from the code; it has not been validated on such a panel.
-There are open correctness issues under **Remaining work**.
+There are open correctness issues under **Remaining work**. The largest is
+that render-side effects consume simulation deltas per render. At 72 Hz
+simulation on a 60 Hz panel, simple linear timers run about 17% slow; at
+144 Hz they run twice as fast. Integer rounding, conditional updates and
+particle dynamics make other effects differ from this ratio. See **Phase 6**.
 
 ## Original problem and evidence
 
@@ -278,14 +282,14 @@ presentation backend would be separate work.
 ### Correctness found during review
 
 1. **Render-side time integration still assumes one render per step.**
-   `R_DrawParticles` advances particles using `cl.time - cl.oldtime` on every
-   render. Two renders without a simulation update consume the same delta
-   twice. At steady 144/72 Hz, particle integration runs at twice its intended
-   rate; at 60/72 it under-integrates. Console motion, center-message expiry
-   and several view effects similarly consume `host_frametime` per render.
-   Move simulation-owned mutations to the simulation path, and give visual
-   timers an appropriate elapsed-time clock. Keeping `cl.time` unchanged did
-   not by itself preserve these behaviors.
+   `SCR_UpdateScreen` runs once per render, and its call tree consumes
+   simulation-owned deltas: `host_frametime` in the console, view and sound
+   timers, `cl.time - cl.oldtime` in particles and stair smoothing. Before
+   Phase 2 a render coincided with a step and these were the same quantity.
+   They are not now. Simple linear timers under-integrate by 1/6 at 60/72
+   and run twice as fast at 144/72. Other effects also depend on rounding,
+   snapshot timing and integration. This affects the default configuration,
+   not only high refresh. Design in **Phase 6** below.
 2. **A zero refresh-rate query bypasses a working display link.**
    `Host_FilterRender` returns `stepped` before reading the counter when
    `VID_RefreshInterval` is zero; `_Host_Frame` also disables interpolation.
@@ -301,6 +305,264 @@ not window moves or later mode changes. Higher-refresh mouse look would
 require separating input sampling from simulation. These limits should be
 resolved or explicitly accepted before declaring high-refresh support complete.
 
+### Phase 6 — separate render-elapsed time from simulation time — **PLANNED**
+
+Scope `host_frametime` for render-side timers, preserve fractional timer
+progress, and move particle updates to simulation steps. The consumers need
+different clocks; changing the global alone is insufficient.
+
+#### What happens without it
+
+The rate mismatch affects the macOS decoupled render path. Headless,
+non-Apple backends and timedemo still render per simulation step. The
+watchdog fallback remains display-interval paced and needs the same fix as
+the display-link path.
+
+For a linear timer consuming one fixed step per rendered frame, with no
+rounding, pauses or stalls:
+
+```text
+rate multiplier = rendered frames per second / host_maxfps
+```
+
+| Display / `host_maxfps` | Linear timer rate | Duration multiplier |
+|---|---|---|
+| 60 / 72 — default | 0.833× | 1.20× |
+| 60 / 36 | 1.667× | 0.60× |
+| 120 / 72 | 1.667× | 0.60× |
+| 144 / 72 | 2.0× | 0.50× |
+
+At 800×600, these give approximate durations, rounded to render frames:
+
+| Effect | Nominal | At 60/72 | At 144/72 |
+|---|---|---|---|
+| Console half-screen slide (`scr_conspeed 300`) | 1.00 s | 1.20 s | 0.50 s |
+| Centerprint (`scr_centertime 2`) | 2.00 s | 2.40 s | 1.00 s |
+| Damage view kick (`v_kicktime 0.5`), unpaused | 0.50 s | 0.60 s | 0.25 s |
+
+Do not apply this table universally. Palette percentages and ambient volume
+are integers, so fractional updates are discarded each render. Pitch drift
+integrates velocity as well as angle. Stair smoothing depends on the moving,
+interpolated target and clamps its lag to 12 units. These effects require
+measurements, not exact duration predictions from the rate ratio.
+
+Particle integration consumes the client delta per render. Timestamp expiry
+checks `p->die < cl.time`, but fire and explosion ramps can also set
+`p->die = -1`. Refresh therefore affects motion, colour progression and
+potentially lifetime. Acceleration and damping mean neither travel distance
+nor lifetime follows a universal multiplier.
+
+The consequence is visible at the default 60/72 configuration: effects vary
+with refresh and with `host_maxfps`, even though rendering and simulation
+are intended to be independent. Pitch drift also changes aim state. The
+server physics timestep and the Phase 5 pacing mechanism are separate from
+these render-side defects.
+
+#### Simulation and movement: audited separately
+
+The effects above are render-side. The simulation was checked independently,
+because "the renderer is wrong" does not by itself say the game is right.
+
+Correct as it stands:
+
+- **Fixed timestep.** `oldrealtime += dt` exactly, one step per call, so the
+  simulation clock advances at precisely `1 / host_maxfps` with no drift.
+- **All server physics.** `sv_phys.c` and `sv_user.c` run on the simulation
+  path with `host_frametime = dt`. Air acceleration, friction, gravity and
+  entity movement are untouched by Phases 2, 3 and 5.
+- **Keyboard turning.** `CL_AdjustAngles` (`cl_input.c:238,240`) is reached
+  through `CL_SendCmd`, on the simulation path.
+- **Mouse input.** Deltas accumulate in the event pump and are drained once
+  per simulation step through `CL_SendCmd` → `IN_Move`. Nothing is lost; the
+  sampling rate is 72 Hz, which is a limit, not an error.
+- **Demo playback.** `host_framecount` stays on the simulation step, so
+  `cl_demo.c` still reads at most one message per step.
+- **Beams anchored to the player.** `CL_UpdateTEnts` (`cl_tent.c:346`) reads
+  `cl_entities[cl.viewentity].origin`, but runs immediately after
+  `CL_RelinkEntities` inside `CL_ReadFromServer`, so it sees the snapshot
+  origin rather than an interpolated leftover.
+
+`CL_LerpView` writes shared client state, so the Phase 3 commit's claim that
+it is "deliberately free of side effects" is imprecise. What it writes, and
+who can observe it:
+
+| Written | Restored by | Read on the simulation path? |
+|---|---|---|
+| `cl_entities[].origin`, `.angles` | `CL_RelinkEntities`, every step | No — recomputed before any consumer |
+| `cl.velocity` (`cl_main.c:677`) | `CL_RelinkEntities` (`cl_main.c:461`) | No — only `V_CalcBob` (`view.c:127`) and `V_CalcRoll` (`view.c:812`), both render-side |
+| `cl.viewangles` (demo playback only) | — | Demos issue no meaningful commands |
+
+So interpolation does not leak into the simulation. The writes are confined to
+render-side consumers.
+
+**The exception is `V_DriftPitch`, and it is a movement defect, not a cosmetic
+one.** It runs on the render path and writes `cl.viewangles[PITCH]`, which
+`CL_SendCmd` reads on the next simulation step and transmits. Pitch recentring
+— `lookspring`, `centerview`, releasing `+mlook` — is therefore scaled by the
+same display/simulation ratio as the cosmetic timers: 17% slow at 60/72, twice
+as fast at 144/72, with the wrong angle sent to the server.
+`cl.driftmove += host_frametime` is scaled identically, so drift also *starts*
+at the wrong time.
+
+This is not pre-existing. Before Phase 2 a render accompanied each step, so
+`V_DriftPitch` ran exactly once per step and was correct. Phase 2 introduced
+it, and an earlier draft of this note wrongly filed it as a long-standing
+limitation.
+
+#### Group A — render-elapsed time
+
+Wall-clock UI, view and audio timers. `Host_FilterRender` records whether
+the render was display-paced; `_Host_Frame` replaces `host_frametime` with
+the interval since the previous display-paced render, then restores it:
+
+```text
+CL_LerpView (...)             /* still needs the simulation step */
+save = host_frametime
+host_frametime = render-elapsed
+SCR_UpdateScreen / S_Update / CDAudio_Update
+host_frametime = save
+```
+
+The swap goes *after* `CL_LerpView` because `cl_main.c:668`
+(`t = cl.time - (1 - alpha) * host_frametime`) is the one render-path reader
+that needs the simulation step. Every other render-path reader is inside the
+scoped region. Scoping `host_frametime` around a block is already an idiom
+in this source: `sv_phys.c:1579-1614` does it inside `SV_Trace_Toss`.
+
+| Site | Effect |
+|---|---|
+| `screen.c:468,475` | console slide |
+| `screen.c:178` | centerprint expiry |
+| `screen.c:369` | `SCR_DrawTurtle` threshold (debug cvar, default off) |
+| `view.c:557,562,643,648` | damage and bonus palette decay |
+| `view.c:724` | gun angle slew |
+| `view.c:819` | `v_dmg_time` view kick |
+| `view.c:199,216,217` | `V_DriftPitch` — **affects aim, not appearance** |
+| `view.c:961-979` | stair smoothing |
+| `snd_dma.c:704,710` | ambient volume fade |
+
+Preserve existing pause gates. Explicit `cl.paused` skips `V_CalcRefdef`,
+freezing pitch drift, view kick and stair smoothing; UI and audio have their
+own gates. Single-player console/menu physics suspension is different: it
+can stop the server while view calculation continues.
+
+**Preserve fractional progress on the decoupled path.** Palette `percent`
+and ambient `master_vol` are integers. A smaller timestep alone can round
+ambient increases to zero and distort palette decay. Retain fractional
+remainders in the fade routines, while leaving their integer outputs intact.
+Reset remainders when an effect or channel resets, its target is reached,
+or pacing mode changes; account for externally replaced values and fade
+reversals. Keep legacy arithmetic on coupled paths. This requires changes
+in `view.c` and `snd_dma.c`, beyond the scoped override.
+
+**Stair smoothing belongs here, not on the simulation path.** `oldz`
+(`view.c:871`) chases `cl_entities[cl.viewentity]`, which `CL_LerpView`
+rewrites — it is the *interpolated* origin — and the result is applied as
+`r_refdef.vieworg[2] += oldz - ent->origin[2]`. Advancing `oldz` on the
+simulation path would chase the simulation Z while subtracting the
+interpolated Z; the residual is the interpolation offset itself, which would
+put a term oscillating at the interpolation fraction into eye height. It
+uses `steptime = host_frametime` on the decoupled path, with no timestamp.
+Keep the existing delta on coupled paths. During explicit pause,
+`V_CalcRefdef` is skipped and `oldz` holds. If only server physics stops while
+view calculation continues, `oldz` may converge toward the frozen target;
+this is a deliberate change from consuming a zero client-time delta.
+
+**`V_DriftPitch` is listed deliberately, and it is the one Group A site that
+affects aim rather than appearance.** It mutates `cl.pitchvel` and
+`cl.viewangles`, which `CL_SendCmd` reads on the simulation path and sends to
+the server. Render-elapsed time removes the wrong timestep multiplier, but
+numerical integration still depends on render cadence, so aim state remains
+advanced on the render clock. Phase 2 introduced this; it is not a
+long-standing limitation. Moving `V_DriftPitch` onto the simulation path would
+close it, and is deliberately not part of Phase 6. See the simulation audit
+above.
+
+Render-elapsed interval, defined explicitly:
+
+- initialised at the first display-paced render, so that frame's delta is 0
+  rather than the interval since process start;
+- reset when switching from coupled to display-paced rendering; watchdog
+  fallback and link recovery remain display-paced, so keep the timestamp
+  across those transitions and apply the stall clamp;
+- clamped to `[0, 0.1]`, matching the pre-existing `host_frametime` ceiling.
+  The ceiling **discards** elapsed time: past 100 ms in one frame these
+  timers deliberately fall behind rather than catching up, so "advances by
+  real time" holds only below the clamp;
+- `double`, matching `cl.time` and `cl.oldtime` (`client.h:198,201`).
+  `view.c:965` currently declares `float steptime`.
+
+#### Group B — simulation time
+
+Particles only. Split `R_DrawParticles` into `R_UpdateParticles` (expiry and
+integration) and a draw-only pass, and call the former once per simulation
+step from `Host_SimFrame`, beside `CL_DecayLights` and under the same
+`cls.signon == SIGNONS` guard.
+
+`R_UpdateParticles` computes `cl.time - cl.oldtime` after
+`CL_ReadFromServer`. Integration, timestamp expiry and ramp-driven death
+therefore follow client time, including local pause and `host_framerate`
+overrides. Snapshot corrections can change this delta; retaining the
+expression does not make it identical to `host_frametime`.
+
+**Draw ordering changes.** Today each particle is drawn before its position,
+velocity and ramp advance. The split updates before drawing, so even coupled
+paths display the advanced position and colour. Accept this as an explicit
+part of the plan, not a no-op: test first-frame appearance, ramp-driven death
+and timedemo output. Particles also advance on simulation steps when drawing
+is skipped. Timestamp expiry remains checked before integration, as today;
+keep ramp-driven removal ordering explicit in the split.
+
+No accumulator: particles integrate gravity and velocity damping, so one
+step of `N*dt` does not equal `N` steps of `dt`, and a particle spawned
+between renders would otherwise receive time from before it existed.
+
+No new state, so no lifecycle to manage — `R_ClearParticles` already runs on
+map load.
+
+#### Group C — coupled paths
+
+Timedemo and any render gated by `stepped` keep the existing timestep,
+including the timedemo 1 ms floor. Group A also retains legacy fade
+arithmetic and the original stair delta on these paths. Group B retains its
+client-time delta but changes draw/update ordering as described above.
+Timedemo stays uncapped; identical particle images or benchmark results are
+not promised. Compare output and performance against the current build.
+
+An earlier draft claimed the fix was a no-op wherever rendering is 1:1 with
+simulation. That was wrong. On a coupled path a render accompanies each
+step, so catch-up steps run back to back and a render-elapsed delta would be
+near zero while `host_frametime` stays `dt` — motion would stall through a
+hitch instead of advancing.
+
+#### Rejected alternatives
+
+- **A `cl.time`-based timestamp per consumer.** Needs explicit
+  initialisation and reset on map and demo changes and on skipped rendering;
+  clamping negative deltas does not prevent large positive jumps; and in
+  stair smoothing the timestamp must advance outside the ascent condition or
+  flat walking accumulates and the next step consumes the whole interval.
+- **Substituting `host_frametime` for `cl.time - cl.oldtime` in particles.**
+  Not equivalent even on coupled paths: `CL_LerpPoint` (`cl_main.c:399,415,425`)
+  can reassign `cl.time` after `CL_ReadFromServer` increments it. The
+  `steptime < 0` guard already in `view.c:965` records that the original
+  authors knew this.
+
+#### Scope
+
+Expected edits:
+
+- `host.c`: pacing mode, render timestamp, scoped swap and particle-update call.
+- `r_part.c`: particle update/draw split.
+- `view.c`: conditional stair delta and fractional palette decay.
+- `snd_dma.c`: fractional ambient fade.
+- Shared headers: declare `R_UpdateParticles` and expose the pacing mode needed
+  by conditional consumers. Keep timestamp and fractional state private.
+
+`screen.c` timers receive the scoped delta without call-site changes.
+The particle update is a new cross-file function; this is not a three-file,
+no-new-symbol change.
+
 ### Phase 4 — reduce busy-spin and investigate stalls
 
 The non-dedicated main loop still spins between due events. Sleep or wait
@@ -315,6 +577,26 @@ otherwise trace loading, I/O and sound work directly.
 
 - Compare steady movement at 72 Hz against the pre-decoupling build using
   repeatable jump distances and strafe runs. Treat hitch differences separately.
+- Phase 6, render-domain effects — compare console retract, centerprint,
+  palette decay and ambient fade at `host_maxfps` 36 / 72 / 144 on the 60 Hz
+  panel. Expect matching duration within render-frame and rounding tolerance.
+  Use fixed starting values and targets. Test fractional fades separately at
+  high render rates, including increments below one integer unit: changing
+  simulation rate on a 60 Hz panel does not exercise that case.
+- Phase 6, controlled fixtures — use a stationary scripted explosion for
+  particle travel, a fixed approach to one stair, and fixed initial pitch for
+  `centerview`. Compare with tolerances: physics, numerical integration and
+  frame quantization prevent exact equality across simulation rates.
+  Check both timestamp-expiring and ramp-killed particles; lifetime need not
+  be identical across rates, but must no longer scale with render frequency.
+- Phase 6, clock consistency — explicit pause/resume should freeze local
+  particles and `oldz` while the console can slide. Separately test console/menu
+  physics suspension and stair convergence. Check `host_framerate 0.05`, map
+  changes, effect resets, fade reversals and pacing-mode transitions.
+- Phase 6, coupled paths — verify legacy timer/stair arithmetic, and compare
+  particle spawn, colour and death frames after the intentional update-order
+  change. Timedemo must remain uncapped; record performance differences rather
+  than assuming the split is neutral.
 - Test 60, 120 and 144 Hz with interpolation on/off, including particle
   progression, console speed, view effects and center-message duration.
 - Test a zero nominal refresh query, display-link failure, display removal,
