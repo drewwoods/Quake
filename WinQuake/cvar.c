@@ -95,6 +95,24 @@ char *Cvar_CompleteVariable (char *partial)
 	return NULL;
 }
 
+/*
+============
+Cvar_CompleteCallback
+============
+*/
+void Cvar_CompleteCallback (char *partial, void (*callback)(char *name))
+{
+	cvar_t		*cvar;
+	int			len;
+
+	len = Q_strlen(partial);
+	if (!len)
+		return;
+
+	for (cvar=cvar_vars ; cvar ; cvar=cvar->next)
+		if (!Q_strncasecmp (partial, cvar->name, len))
+			callback (cvar->name);
+}
 
 /*
 ============

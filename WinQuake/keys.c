@@ -149,6 +149,195 @@ keyname_t keynames[] =
 */
 
 
+static int Complete_CharFold (int c)
+{
+	if (c >= 'A' && c <= 'Z')
+		return c + ('a' - 'A');
+	return c;
+}
+
+static int Complete_NameCmp (const void *a, const void *b)
+{
+	const unsigned char *s1 = *(const unsigned char * const *)a;
+	const unsigned char *s2 = *(const unsigned char * const *)b;
+
+	while (*s1 && Complete_CharFold(*s1) == Complete_CharFold(*s2))
+	{
+		s1++;
+		s2++;
+	}
+	return Complete_CharFold(*s1) - Complete_CharFold(*s2);
+}
+
+static int Complete_SortDedup (char **names, int n)
+{
+	int i, out;
+
+	if (n <= 1)
+		return n;
+
+	qsort (names, n, sizeof(char *), Complete_NameCmp);
+
+	out = 1;
+	for (i = 1; i < n; i++)
+	{
+		if (Complete_NameCmp (&names[out - 1], &names[i]) != 0)
+		{
+			names[out] = names[i];
+			out++;
+		}
+	}
+
+	return out;
+}
+
+static int Complete_LCPLength (char **names, int n)
+{
+	const unsigned char *s1, *s2;
+	int len = 0;
+
+	if (n <= 0)
+		return 0;
+	if (n == 1)
+		return Q_strlen (names[0]);
+
+	s1 = (const unsigned char *)names[0];
+	s2 = (const unsigned char *)names[n - 1];
+
+	while (*s1 && *s2 && Complete_CharFold (*s1) == Complete_CharFold (*s2))
+	{
+		s1++;
+		s2++;
+		len++;
+	}
+
+	return len;
+}
+
+static void Complete_PrintColumns (char **names, int n, int linewidth)
+{
+	int max_item_len = 0;
+	int i, row, col;
+	int col_width, ncols, nrows;
+	char line[2048];
+	int pos;
+
+	if (n <= 0)
+		return;
+
+	if (linewidth >= (int)sizeof(line))
+		linewidth = (int)sizeof(line) - 1;
+
+	for (i = 0; i < n; i++)
+	{
+		int len = Q_strlen (names[i]);
+		if (len > max_item_len)
+			max_item_len = len;
+	}
+
+	col_width = max_item_len + 2;
+	ncols = linewidth / col_width;
+	if (ncols < 1)
+		ncols = 1;
+	nrows = (n + ncols - 1) / ncols;
+
+	for (row = 0; row < nrows; row++)
+	{
+		pos = 0;
+		line[0] = 0;
+		for (col = 0; col < ncols; col++)
+		{
+			int idx = col * nrows + row;
+			int written;
+
+			if (idx >= n)
+				break;
+
+			if (col + 1 == ncols || (col + 1) * nrows + row >= n)
+			{
+				written = snprintf (line + pos, sizeof(line) - pos, "%s", names[idx]);
+			}
+			else
+			{
+				written = snprintf (line + pos, sizeof(line) - pos, "%-*s", col_width, names[idx]);
+			}
+
+			if (written > 0)
+			{
+				pos += written;
+				if (pos >= (int)sizeof(line))
+				{
+					pos = (int)sizeof(line) - 1;
+					break;
+				}
+			}
+		}
+		Con_Printf ("%s\n", line);
+	}
+}
+
+#define MAX_COMPLETION_MATCHES 1024
+
+static char *complete_matches[MAX_COMPLETION_MATCHES];
+static int complete_match_count;
+static qboolean complete_truncated;
+
+static void Complete_Callback (char *name)
+{
+	if (complete_match_count < MAX_COMPLETION_MATCHES)
+		complete_matches[complete_match_count++] = name;
+	else
+		complete_truncated = true;
+}
+
+void CompleteCommand (void)
+{
+	char *s;
+	char *p;
+	int n;
+
+	s = key_lines[edit_line] + 1;
+	if (!*s)
+		return;
+
+	for (p = s; *p; p++)
+	{
+		if (*p == ' ')
+			return;
+	}
+
+	complete_match_count = 0;
+	complete_truncated = false;
+
+	Cmd_CompleteCallback (s, Complete_Callback);
+	Cvar_CompleteCallback (s, Complete_Callback);
+
+	n = Complete_SortDedup (complete_matches, complete_match_count);
+
+	if (n == 0)
+		return;
+
+	if (n == 1 && !complete_truncated)
+	{
+		Q_strcpy (key_lines[edit_line] + 1, complete_matches[0]);
+		key_linepos = Q_strlen (complete_matches[0]) + 1;
+		key_lines[edit_line][key_linepos++] = ' ';
+		key_lines[edit_line][key_linepos] = 0;
+		return;
+	}
+
+	if (!complete_truncated)
+	{
+		int len = Complete_LCPLength (complete_matches, n);
+		Q_memcpy (key_lines[edit_line] + 1, complete_matches[0], len);
+		key_lines[edit_line][1 + len] = 0;
+		key_linepos = 1 + len;
+	}
+
+	Con_Printf ("%s\n", key_lines[edit_line]);
+	Complete_PrintColumns (complete_matches, n, con_linewidth);
+}
+
 /*
 ====================
 Key_Console
@@ -158,8 +347,6 @@ Interactive line editing and console scrollback
 */
 void Key_Console (int key)
 {
-	char	*cmd;
-	
 	if (key == K_ENTER)
 	{
 		Cbuf_AddText (key_lines[edit_line]+1);	// skip the >
@@ -176,19 +363,9 @@ void Key_Console (int key)
 	}
 
 	if (key == K_TAB)
-	{	// command completion
-		cmd = Cmd_CompleteCommand (key_lines[edit_line]+1);
-		if (!cmd)
-			cmd = Cvar_CompleteVariable (key_lines[edit_line]+1);
-		if (cmd)
-		{
-			Q_strcpy (key_lines[edit_line]+1, cmd);
-			key_linepos = Q_strlen(cmd)+1;
-			key_lines[edit_line][key_linepos] = ' ';
-			key_linepos++;
-			key_lines[edit_line][key_linepos] = 0;
-			return;
-		}
+	{
+		CompleteCommand ();
+		return;
 	}
 	
 	if (key == K_BACKSPACE || key == K_LEFTARROW)

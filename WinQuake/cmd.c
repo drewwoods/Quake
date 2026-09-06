@@ -605,6 +605,30 @@ char *Cmd_CompleteCommand (char *partial)
 
 /*
 ============
+Cmd_CompleteCallback
+============
+*/
+void Cmd_CompleteCallback (char *partial, void (*callback)(char *name))
+{
+	cmd_function_t	*cmd;
+	cmdalias_t		*a;
+	int				len;
+
+	len = Q_strlen(partial);
+	if (!len)
+		return;
+
+	for (cmd=cmd_functions ; cmd ; cmd=cmd->next)
+		if (!Q_strncasecmp (partial, cmd->name, len))
+			callback (cmd->name);
+
+	for (a=cmd_alias ; a ; a=a->next)
+		if (!Q_strncasecmp (partial, a->name, len))
+			callback (a->name);
+}
+
+/*
+============
 Cmd_ExecuteString
 
 A complete command line has been parsed, so try to execute it
