@@ -465,9 +465,12 @@ stable to sd 0.25 ms for its whole run:
 | phase | 15.89 ms | 9.72 ms | 1.57 ms |
 | verdict by eye | good | **juddery** | good |
 
-**Reproduction.** `-DQJPROBE` replaces the free-running gate with one locked
-to a real vsync at a chosen offset, so phase becomes an input rather than
-whatever a stall left behind:
+**Reproduction.** The harness is not on this branch. It lives on
+`judder-probe`, which branches from here and adds it behind `#ifdef QJPROBE`,
+so the shipped source stays free of instrumentation. Build it with
+`-DQJPROBE`, and it replaces the free-running gate with one locked to a real
+vsync at a chosen offset, so phase becomes an input rather than whatever a
+stall left behind:
 
 ```
 QJ_PHASE=<ms>       pin one phase for the whole run
