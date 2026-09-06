@@ -447,6 +447,19 @@ ul.reading li:first-child { border-top: 1px solid var(--rule-soft); }
 .first-pass { padding: 16px 20px; margin: 18px 0 28px; border-left: 3px solid var(--cl); background: var(--cl-bg); font-size: 16px; font-style: normal; }
 .first-pass p:last-child { margin-bottom: 0; }
 .first-pass a { color: var(--cl); }
+.era {
+  max-width: 68ch; margin: 1.4em 0 1.6em; padding: 14px 18px;
+  border-left: 3px solid var(--host); background: var(--surface);
+  font-size: 15.5px; font-style: italic; color: var(--ink-2);
+}
+.era p { margin: 0; }
+.era p > strong:first-child {
+  display: block; margin-bottom: 8px; font-style: normal; font-weight: 500;
+  font-family: var(--f-mono); font-size: 10.5px; letter-spacing: 0.14em;
+  text-transform: uppercase; color: var(--muted);
+}
+.era a { color: var(--sim); font-style: normal; }
+.concept .era { max-width: 78ch; margin: 16px 0 0; }
 .concept { margin: 28px 0 34px; padding: 22px 0; border-top: 1px solid var(--rule); border-bottom: 1px solid var(--rule); }
 .concept h3 { font-size: 21px; max-width: 40ch; margin: 0 0 20px; }
 .concept p { font-size: 15px; line-height: 1.55; }

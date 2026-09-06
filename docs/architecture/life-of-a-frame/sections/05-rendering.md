@@ -307,6 +307,8 @@ surfcache_t *D_CacheSurface (msurface_t *surface, int miplevel)
 ```
 The cache is keyed by mip level and invalidated when the texture animates, a dynamic light touches the surface, or a lightstyle changes; otherwise the existing `surfcache_t` (`WinQuake/d_local.h:37-49`) is reused untouched. On a miss, `D_SCAlloc` allocates from a renderer-private heap sized by `SURFCACHE_SIZE_AT_320X200` (`WinQuake/d_local.h:35`) and `R_DrawSurface` rebuilds the pixels. Eviction is not LRU: a single rover pointer sweeps the heap in address order, freeing and coalescing whatever blocks it lands on until the request fits, and wrapping to the start when it runs off the end. `r_cache_thrash` is set when that wrap happens more than once in a frame — the signal that the working set no longer fits.
 
+> **.plan.** “increased surface cache size” — [Carmack, 12 Jun 1996](../../../historical/plans/carmack/by_day/johnc_plan_19960612.txt). The cache budget was a release-time tuning parameter: higher resolutions increased the set of distinct surface/lightmap composites the software path had to keep.
+
 ### Perspective-correct span texturing (`d_scan.c`)
 
 The final step is walking each surface's horizontal spans and writing textured, lit pixels. True per-pixel perspective correction (dividing by depth for every texel) was too slow for 1996 CPUs, so Quake's span drawers compute the perspective-correct `s`/`t` texture coordinates only every *N* pixels and linearly interpolate (affine-map) the texels in between — Abrash's classic "subdivided affine" approximation. The 8-bit portable-C polygon span drawer subdivides every 8 pixels:
@@ -412,6 +414,10 @@ Carmack refused affine mapping for Quake's world geometry, insisting on perspect
 
 Carmack and Abrash resolved this with piecewise-linear approximation: compute exact $(s/z, t/z, 1/z)$ perspective endpoints every 8 or 16 pixels, and linearly interpolate across each span. Abrash documented in [*Black Book* Chapter 68](../../../historical/abrash_quake_1995/chapter-68.md) that the polynomial approximation error across 16 pixels is imperceptible on screen except at extreme glancing angles. The cvar `d_subdiv16` (`WinQuake/d_init.c:148-155`) toggles between 16-pixel (`D_DrawSpans16`) and 8-pixel (`D_DrawSpans8`) modes.
 
+The 1996 `.plan` files start after this mapper shipped, so they do not debate it. The preference is still there thirteen years later: affine swim was a ship-blocker.
+
+> **.plan.** I searched around in the level for a view that would confirm my suspicion, and when I found a clear enough view of some angled geometry I saw the tell-tale mid-polygon affine swim in the texture as I rotated. They were using the software rasterizer on the iPhone. — [Carmack, 26 Mar 2009](../../../historical/plans/carmack/by_day/johnc_plan_20090326.txt), on a later title; same refusal.
+
 #### Slashing FDIV latency via x87 precision control
 
 Even across 8 or 16 pixels, a 39-cycle division latency was too long to hide behind integer pixel writes. Abrash exploited an architectural detail of the x87 FPU documented in [*Black Book* Chapter 63](../../../historical/abrash_quake_1995/chapter-63.md): setting the FPU control word to 24-bit single precision mode via `fldcw` dropped `fdiv` execution time from 39 cycles to 19 cycles.
@@ -429,7 +435,7 @@ Quake executes this mode switch in `WinQuake/r_main.c:972-976` immediately befor
 
 `Sys_LowFPPrecision` (`WinQuake/sys_wina.s:68-72`, `WinQuake/sys_dosa.s:47-51`) loads `single_cw` (`0x003f` masked and configured with `orb $0x0C, %ah` in `WinQuake/sys_wina.s:105` for single precision and chop mode). Once the scene finishes rendering, `Sys_HighFPPrecision` (`WinQuake/r_main.c:1048`) restores 64-bit precision (`full_cw`).
 
-> **Abrash and the Pentium FDIV bug.** Quake's intense reliance on overlapping x87 divisions made it one of the earliest real-world stress tests for the P5 Pentium. John Romero recounted that Abrash reproduced the 1994 Pentium FDIV bug in the engine, isolating how missing entries in Intel's SRT division lookup table caused occasional single-frame visual dropouts and flickering polygons at acute viewing angles.
+> **Pentium FDIV bug.** The overlapping `fdiv` this inner loop depends on is also where Abrash reproduced Intel’s 1994 FDIV bug (missing SRT-table entries; wrong quotients from some camera angles). Romero described that hunt in a 2019 talk; it is not in the `.plan` files. See [Pentium FDIV bug](https://en.wikipedia.org/wiki/Pentium_FDIV_bug).
 
 The C algorithm already amortizes perspective correction across eight pixels. Once it has the texture coordinates and their steps, its inner loop is tiny:
 
@@ -664,7 +670,9 @@ void R_DrawWorld (void)
 
 ### Lightmaps and multitexture
 
-Lightmaps are precomputed low-resolution light grids baked at BSP-compile time and, at runtime, packed into shared `BLOCK_WIDTH x BLOCK_HEIGHT` GL texture atlases (`lightmaps[]`, `WinQuake/gl_rsurf.c:55`; up to `MAX_LIGHTMAPS` textures starting at `texture_extension_number`, `WinQuake/gl_rsurf.c:1613-1614`). Without multitexturing, Quake would have to render every lightmapped surface twice — once for the base texture, once more with the lightmap texture blended over it (visible in the disabled `#if 0` legacy path at `WinQuake/gl_rsurf.c:316`). `GL_ARB_multitexture`/`GL_SGIS_multitexture` let both texture units be sampled and combined in a single rasterization pass, which is exactly what `R_DrawSequentialPoly` (`WinQuake/gl_rsurf.c:413`) does when available:
+Lightmaps are precomputed low-resolution light grids baked at BSP-compile time and, at runtime, packed into shared `BLOCK_WIDTH x BLOCK_HEIGHT` GL texture atlases (`lightmaps[]`, `WinQuake/gl_rsurf.c:55`; up to `MAX_LIGHTMAPS` textures starting at `texture_extension_number`, `WinQuake/gl_rsurf.c:1613-1614`). Without multitexturing, Quake would have to render every lightmapped surface twice — once for the base texture, once more with the lightmap texture blended over it (visible in the disabled `#if 0` legacy path at `WinQuake/gl_rsurf.c:316`). `GL_ARB_multitexture`/`GL_SGIS_multitexture` let both texture units be sampled and combined in a single rasterization pass, which is exactly what `R_DrawSequentialPoly` (`WinQuake/gl_rsurf.c:413`) does when available.
+
+> **.plan.** Because of the very fill-rate intensive nature of the way I implemented this version of glquake (using a blend pass to do the light maps), performance is not likely to be very good on any current generation consumer level board except 3dfx. — [Carmack, 23 Nov 1996](../../../historical/plans/carmack/by_day/johnc_plan_19961123.txt)
 ```c
 // WinQuake/gl_rsurf.c:429-459
 		R_RenderDynamicLightmaps (s);
@@ -951,4 +959,4 @@ Host_Frame
 - Fabien Sanglard, "How Michael Abrash doubled Quake framerate" — benchmark setup and assembly investigation: https://fabiensanglard.net/quake_asm_optimizations/index.html
 - Fabien Sanglard, "Quake Source Code Review": https://fabiensanglard.net/quakeSource/index.php
 - Olivier Montanuy et al., "Unofficial Quake Specs": https://www.gamers.org/dEngine/quake/spec/quake-spec34/
-- John Carmack .plan archive (renderer-era design notes): local archive at `docs/historical/plans/carmack/` ([1996 .plan archive](../../../historical/plans/carmack/by_year/johnc_plan_1996.txt))
+- John Carmack .plan archive (renderer-era design notes): local archive at `docs/historical/plans/carmack/` ([23 Nov 1996, GLQuake blend-pass lightmaps](../../../historical/plans/carmack/by_day/johnc_plan_19961123.txt), [26 Mar 2009, affine swim](../../../historical/plans/carmack/by_day/johnc_plan_20090326.txt))

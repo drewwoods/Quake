@@ -12,6 +12,8 @@ On the client, `SCR_UpdateScreen` (`WinQuake/screen.c:808`) calls `V_RenderView`
 
 On the server side, PVS is consulted once per client per frame inside `SV_WriteEntitiesToClient` (`WinQuake/sv_main.c:427`), called from the server's per-client network update pass during `SV_SendClientMessages` / `Host_ServerFrame`. This is a separate PVS computation (`SV_FatPVS`) from the client's rendering PVS (`Mod_LeafPVS`/`R_MarkLeaves`) even though both ultimately call the same `Mod_DecompressVis`.
 
+> **.plan.** “changed network update to client PVS specific” — [Carmack, 23 Apr 1996](../../../historical/plans/carmack/by_day/johnc_plan_19960423.txt). The archive captures the architectural hinge: PVS stopped being only a renderer accelerator and became a per-client bandwidth policy.
+
 ## On-disk BSP format
 
 The map file begins with a `dheader_t` (`WinQuake/bspfile.h:82-95`) containing a version and 15 `lump_t` `{fileofs, filelen}` directory entries (`WinQuake/bspfile.h:59-80`), version-locked to `BSPVERSION` 29 (`WinQuake/bspfile.h:56`). Each lump is addressed by byte offset. `Mod_LoadModel` reads the file into a temporary buffer; the lump loaders then copy or convert its contents into hunk allocations.
@@ -471,6 +473,8 @@ void R_MarkLights (dlight_t *light, int bit, mnode_t *node)
 ```
 
 Each of up to 32 simultaneous dlights gets its own bit (`1<<i` in `R_PushDlights`, `WinQuake/r_light.c:128`), so a surface's `dlightbits` records *which* lights touch it, letting the rasterizer later blend only the relevant lights' contribution into that surface's lightmap cache rather than resolving lighting per-pixel — another instance of the same pattern as PVS and static lightmaps: push expensive per-object work up to a coarse tree-walk granularity (per-surface, once per frame) rather than paying it per-pixel or per-vertex.
+
+> **.plan.** A 27 Aug 1996 note says a full-size lighting job had to run `vis` first or take “about 1000 times longer,” with a working set above 100 MB ([Carmack](../../../historical/plans/carmack/by_day/johnc_plan_19960827.txt)). PVS was therefore also an offline build dependency: expensive visibility work was moved out of the frame and into the map toolchain.
 
 ## Call graph
 

@@ -115,6 +115,8 @@ Note hull 0's `clip_mins`/`clip_maxs` stay zeroed — a point has no size, so no
 
 The constraint applies to collision against BSP geometry: **there are only three pre-expanded mover sizes.** `SV_HullForEntity` chooses hull 0, 1, or 2 by the moving box's width. A grenade or nail uses the point hull; players and most monsters use the 32×32×56 hull; large monsters use the 64×64×88 hull. Arbitrary entity-vs-entity boxes still work through the generated box hull described below. This is why a rocket can pass through a gap that its player cannot.
 
+> **.plan.** “invisible brushes for clip hull” — [Carmack, 11 Mar 1996](../../../historical/plans/carmack/by_day/johnc_plan_19960311.txt). The collision hull was also a mapper-facing contract: authors could add geometry that shaped movement without adding visible polygons.
+
 Fabien Sanglard's review and Olivier Montanuy's *Unofficial Quake Specs* both cover the hull expansion from the BSP-format side; the specs document the clipnode lump and the per-model `headnode[]` array that selects which hull a submodel uses.
 
 ## `SV_HullForEntity`: picking or fabricating a hull

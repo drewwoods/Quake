@@ -737,6 +737,8 @@ float	CL_LerpPoint (void)
 	frac = (cl.time - cl.mtime[1]) / f;
 ```
 
+The `0.1` rewrite is not an accident of demo playback. Carmack wrote the policy when contrasting NetQuake with QuakeWorld: keep displayed time between the last two server packets so arrival jitter is absorbed ([10 Aug 1996](../../../historical/plans/carmack/by_day/johnc_plan_19960810.txt)).
+
 `sv.active` (running a local/listen server) forces `frac = 1` — snap
 straight to the newest snapshot, no interpolation needed, because the local
 server ticks in lockstep with the client's own frame loop so there's no
@@ -891,4 +893,4 @@ _Host_Frame (host.c:633)
 
 - Fabien Sanglard, "Quake Source Code Review" — network and client architecture chapters: https://fabiensanglard.net/quakeSource/index.php
 - Olivier Montanuy et al., "Unofficial Quake Specs" — protocol opcode/bit-level reference for `svc_*`/`clc_*` and the `U_*` update bitmask: https://www.gamers.org/dEngine/quake/spec/quake-spec34/
-- John Carmack .plan archive (1996) — [1996 .plan archive](../../../historical/plans/carmack/by_year/johnc_plan_1996.txt): Carmack's notes on QuakeWorld's network architecture, explaining the latency-smoothing trade-off in NetQuake vs. client simulation and prediction in QuakeWorld.
+- John Carmack .plan archive (1996) — [10 Aug 1996](../../../historical/plans/carmack/by_day/johnc_plan_19960810.txt): NetQuake keeps displayed time between the last two server packets on purpose; QuakeWorld instead predicts from the newest packet. Year dump: [1996 .plan archive](../../../historical/plans/carmack/by_year/johnc_plan_1996.txt).

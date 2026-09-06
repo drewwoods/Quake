@@ -28,7 +28,10 @@
       <text x="550" y="319" text-anchor="middle">cl.time = 10.150 → fraction = 0.5</text>
     </svg>
   </div>
-  <figcaption><b>The timestamp changes; the stored older position does not.</b> In this illustrative gap, the same two entity positions are interpolated over 100 ms instead of 200 ms. That bounds the interval used for smoothing; it does not reconstruct the missing updates. Source: WinQuake/cl_main.c:391-408, WinQuake/cl_main.c:634-661.</figcaption>
+  <figcaption><b>The timestamp changes; the stored older position does not.</b> In this illustrative gap, the same two entity positions are interpolated over 100 ms instead of 200 ms. That bounds the interval used for smoothing; it does not reconstruct the missing updates. Source: WinQuake/cl_main.c:391-408, WinQuake/cl_main.c:634-661, <a href="../../historical/plans/carmack/by_day/johnc_plan_19960810.txt">Carmack .plan, 10 Aug 1996</a>.</figcaption>
+  <blockquote class="era">
+    <p><strong>.plan.</strong> In the shipping version of Quake, some latency was introduced on purpose to keep the displayed frame simulation time between the last two packets from the server so that the variability in arrival time could be smoothed out. — Carmack, 10 Aug 1996</p>
+  </blockquote>
   <div class="table-scroll">
     <table class="grid">
       <thead><tr><th scope="col">What happens</th><th scope="col">What the engine actually does</th></tr></thead>

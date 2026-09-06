@@ -4,7 +4,7 @@
   <div class="svg-scroll">
     <svg class="explain-svg" viewBox="0 0 820 365" role="img" aria-labelledby="asm-timing-title asm-timing-desc">
       <title id="asm-timing-title">Integer pixel writes overlap an x87 division for the next segment</title>
-      <desc id="asm-timing-desc">First, use the previously issued division to finish boundary k plus 1 and derive steps for segment k. Write pixels zero through three. Next, issue the division for boundary k plus 2, then write pixels four through seven and save segment state while division can run. On returning to LNotLastSegment, consume that result to derive steps for segment k plus 1. Column widths do not represent clock cycles.</desc>
+      <desc id="asm-timing-desc">First, use the previously issued division to finish boundary k plus 1 and derive steps for segment k. Write pixels zero through three. Next, issue the 19-cycle 24-bit FDIV for boundary k plus 2 (39 cycles at 80-bit), then write pixels four through seven and save segment state while division can run. On returning to LNotLastSegment, consume that result to derive steps for segment k plus 1. Column widths do not represent clock cycles.</desc>
       <text x="20" y="25" class="svg-heading">Work advances →</text>
       <text x="245" y="57" text-anchor="middle">Current k · first half</text>
       <text x="471" y="57" text-anchor="middle">Current k · second half</text>
@@ -17,7 +17,7 @@
       <rect x="365" y="77" width="212" height="94" rx="5" class="client-shape"/>
       <text x="471" y="102" text-anchor="middle">Issue FDIV</text>
       <text x="471" y="126" text-anchor="middle">for boundary k+2</text>
-      <text x="471" y="150" text-anchor="middle">Result not used yet</text>
+      <text x="471" y="150" text-anchor="middle">19 cyc · 24-bit</text>
       <rect x="591" y="77" width="212" height="94" rx="5" class="solid-shape"/>
       <text x="697" y="102" text-anchor="middle">Consume result</text>
       <text x="697" y="126" text-anchor="middle">Finish boundary k+2</text>
@@ -36,8 +36,8 @@
       <text x="697" y="255" text-anchor="middle">for segment k+1</text>
       <path d="M471 171V198" class="trace-line" stroke-dasharray="3 3"/>
       <path d="M365 304V313H577V304" class="trace-line"/>
-      <text x="471" y="341" text-anchor="middle">Independent work gives division time to complete</text>
+      <text x="471" y="341" text-anchor="middle">Hides 19-cycle FDIV (39 at 80-bit; Sys_LowFPPrecision)</text>
     </svg>
   </div>
-  <figcaption><b>A dependency diagram, not a cycle-accurate timing chart.</b> In this steady path the next divide is issued after stores 0–3, then overlaps the remaining stores and bookkeeping. The first segment and final short segment use different setup paths. Source: WinQuake/d_draw.s:313-330, WinQuake/d_draw.s:400-509.</figcaption>
+  <figcaption><b>A dependency diagram, not a cycle-accurate timing chart.</b> In this steady path the next divide is issued after stores 0–3, then overlaps the remaining stores and bookkeeping. Pentium <code>fdiv</code> is 39 cycles at 80-bit precision and 19 after <code>Sys_LowFPPrecision</code> sets 24-bit mode — short enough to finish during the integer stores. This is the inner loop Romero later said Abrash used to reproduce Intel’s 1994 FDIV bug. The first segment and final short segment use different setup paths. Source: WinQuake/d_draw.s:313-330, WinQuake/d_draw.s:400-509, <a href="../../historical/abrash_quake_1995/chapter-63.md">Abrash ch. 63</a>.</figcaption>
 </figure>

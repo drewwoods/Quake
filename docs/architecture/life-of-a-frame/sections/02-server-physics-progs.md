@@ -396,6 +396,8 @@ Many operands address words in the flat `pr_globals` array; branch opcodes inste
 
 `PR_LeaveFunction` (`WinQuake/pr_exec.c:333-353`) copies them back. Locals are statically allocated globals with save/restore around calls — a callee-saves convention implemented in software.
 
+> **.plan.** “made an execution stack for progs” — [Carmack, 15 Mar 1996](../../../historical/plans/carmack/by_day/johnc_plan_19960315.txt). The shipping `localstack` is the concrete form of that terse worklog entry: QuakeC keeps its fast flat global array, then saves the callee’s locals around calls to make recursion possible.
+
 The `runaway = 100000` counter (`WinQuake/pr_exec.c:382`, decremented at `:399`) bounds bytecode instruction execution for one invocation. Exhausting it raises `PR_RunError` with a QuakeC stack trace (`PR_StackTrace`, `WinQuake/pr_exec.c:190`). This is a runaway-loop guard, not a general safety sandbox or a time limit on C builtins. `Host_Error` abandons an interactive game; on a dedicated server it exits the process. `pr_xfunction->profile++` on every instruction is a free per-function instruction counter, dumped by the `profile` console command (`PR_Profile_f`, `WinQuake/pr_exec.c:222`) — the mod author's optimization tool, built into the shipping engine.
 
 Two opcodes are not general computation at all. `OP_CALL0`–`OP_CALL8` (`WinQuake/pr_exec.c:620-636`) reuse a negative `first_statement` as a builtin index:

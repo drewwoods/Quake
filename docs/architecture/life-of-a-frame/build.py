@@ -410,7 +410,11 @@ def convert(md, sec_index, sec_id, kicker):
                 buf.append(lines[i].lstrip(">").strip())
                 i += 1
             quote = " ".join(buf)
-            cls = ' class="first-pass"' if quote.startswith("**First pass.") else ''
+            cls = ''
+            if quote.startswith("**First pass."):
+                cls = ' class="first-pass"'
+            elif quote.startswith("**.plan.**"):
+                cls = ' class="era"'
             out.append("<blockquote%s><p>%s</p></blockquote>" % (cls, inline(quote)))
             continue
 

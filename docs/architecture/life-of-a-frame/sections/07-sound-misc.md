@@ -161,6 +161,8 @@ Once every channel's `leftvol`/`rightvol` are current, `S_Update_` (`WinQuake/sn
 
 Sounds loop by adjusting `ch->pos`/`ch->end` against the cached sample data's `loopstart` (`WinQuake/snd_mix.c:310-323`) — when a channel's play cursor reaches `ch->end` and the underlying `sfxcache_t` has no loop point, the channel is simply cleared (`ch->sfx = NULL`) and drops out of the mix on the next `S_Update`.
 
+> **.plan.** “limit sound buffers to 4k, add extra mix points and mix full buffer” — [Carmack, 12 Jun 1996](../../../historical/plans/carmack/by_day/johnc_plan_19960612.txt). The fixed paint buffer and ahead-of-DMA fill are the shape of a live buffer-management problem on 1996 sound hardware, not abstract audio middleware.
+
 ## How sound events reach the client: svc_sound
 
 The server never streams PCM — it only ever tells clients *what* to play. `SV_StartSound` (`WinQuake/sv_main.c:118-171`) packs an `svc_sound` message into the shared unreliable `sv.datagram`:
