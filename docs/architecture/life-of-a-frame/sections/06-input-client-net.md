@@ -891,4 +891,4 @@ _Host_Frame (host.c:633)
 
 - Fabien Sanglard, "Quake Source Code Review" — network and client architecture chapters: https://fabiensanglard.net/quakeSource/index.php
 - Olivier Montanuy et al., "Unofficial Quake Specs" — protocol opcode/bit-level reference for `svc_*`/`clc_*` and the `U_*` update bitmask: https://www.gamers.org/dEngine/quake/spec/quake-spec34/
-- John Carmack .plan archive (design commentary from the era, including networking discussion around the QuakeWorld rewrite) — (unverified specific entries) https://github.com/ESWAT/john-carmack-plan-archive
+- John Carmack .plan archive (1996) — [1996 .plan archive](../../../historical/plans/carmack/by_year/johnc_plan_1996.txt): Carmack's notes on QuakeWorld's network architecture, explaining the latency-smoothing trade-off in NetQuake vs. client simulation and prediction in QuakeWorld.

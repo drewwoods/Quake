@@ -404,6 +404,33 @@ The selection is explicit in `WinQuake/d_init.c:148-155`: the x86 build can choo
 
 ### 1. Keep the integer side working while division runs
 
+#### Historical context: perspective correctness vs. affine warping
+
+In 1995–1996, 3D titles on contemporary platforms (PlayStation 1, Sega Saturn, PC titles like *Descent*) relied on affine texture mapping. Linear interpolation in screen space causes textures on receding walls and floors to warp and swim as the viewpoint shifts.
+
+Carmack refused affine mapping for Quake's world geometry, insisting on perspective-correct texturing. True perspective requires dividing $(s, t)$ by depth $z$ per pixel. On the original P5 Pentium, an 80-bit double-extended precision `fdiv` instruction took 39 clock cycles. Dividing at every pixel on a 90–133 MHz processor was impossible for real-time rendering.
+
+Carmack and Abrash resolved this with piecewise-linear approximation: compute exact $(s/z, t/z, 1/z)$ perspective endpoints every 8 or 16 pixels, and linearly interpolate across each span. Abrash documented in [*Black Book* Chapter 68](../../../historical/abrash_quake_1995/chapter-68.md) that the polynomial approximation error across 16 pixels is imperceptible on screen except at extreme glancing angles. The cvar `d_subdiv16` (`WinQuake/d_init.c:148-155`) toggles between 16-pixel (`D_DrawSpans16`) and 8-pixel (`D_DrawSpans8`) modes.
+
+#### Slashing FDIV latency via x87 precision control
+
+Even across 8 or 16 pixels, a 39-cycle division latency was too long to hide behind integer pixel writes. Abrash exploited an architectural detail of the x87 FPU documented in [*Black Book* Chapter 63](../../../historical/abrash_quake_1995/chapter-63.md): setting the FPU control word to 24-bit single precision mode via `fldcw` dropped `fdiv` execution time from 39 cycles to 19 cycles.
+
+Quake executes this mode switch in `WinQuake/r_main.c:972-976` immediately before edge rasterization:
+
+```c
+// WinQuake/r_main.c:972-976
+// make FDIV fast. This reduces timing precision after we've been running for a
+// while, so we don't do it globally.  This also sets chop mode, and we do it
+// here so that setup stuff like the refresh area calculations match what's
+// done in screen.c
+	Sys_LowFPPrecision ();
+```
+
+`Sys_LowFPPrecision` (`WinQuake/sys_wina.s:68-72`, `WinQuake/sys_dosa.s:47-51`) loads `single_cw` (`0x003f` masked and configured with `orb $0x0C, %ah` in `WinQuake/sys_wina.s:105` for single precision and chop mode). Once the scene finishes rendering, `Sys_HighFPPrecision` (`WinQuake/r_main.c:1048`) restores 64-bit precision (`full_cw`).
+
+> **Abrash and the Pentium FDIV bug.** Quake's intense reliance on overlapping x87 divisions made it one of the earliest real-world stress tests for the P5 Pentium. John Romero recounted that Abrash reproduced the 1994 Pentium FDIV bug in the engine, isolating how missing entries in Intel's SRT division lookup table caused occasional single-frame visual dropouts and flickering polygons at acute viewing angles.
+
 The C algorithm already amortizes perspective correction across eight pixels. Once it has the texture coordinates and their steps, its inner loop is tiny:
 
 ```c
@@ -920,8 +947,8 @@ Host_Frame
 
 ## Further reading
 
-- Michael Abrash, *Graphics Programming Black Book*, chapters on Quake's renderer (edge lists, span sorting, surface caching, perspective texture mapping): https://www.jagregory.com/abrash-black-book/
+- Michael Abrash, *Graphics Programming Black Book*, chapters on Quake's renderer (edge lists, span sorting, surface caching, perspective texture mapping): local archive at `docs/historical/abrash_quake_1995/` ([Chapter 63: Floating-Point Optimization](../../../historical/abrash_quake_1995/chapter-63.md), [Chapter 64: Quake's 3-D Engine](../../../historical/abrash_quake_1995/chapter-64.md), [Chapter 68: Surface Caching and Span Drawing](../../../historical/abrash_quake_1995/chapter-68.md)); also online at https://www.jagregory.com/abrash-black-book/
 - Fabien Sanglard, "How Michael Abrash doubled Quake framerate" — benchmark setup and assembly investigation: https://fabiensanglard.net/quake_asm_optimizations/index.html
 - Fabien Sanglard, "Quake Source Code Review": https://fabiensanglard.net/quakeSource/index.php
 - Olivier Montanuy et al., "Unofficial Quake Specs": https://www.gamers.org/dEngine/quake/spec/quake-spec34/
-- Carmack .plan archive (renderer-era design notes): https://github.com/ESWAT/john-carmack-plan-archive
+- John Carmack .plan archive (renderer-era design notes): local archive at `docs/historical/plans/carmack/` ([1996 .plan archive](../../../historical/plans/carmack/by_year/johnc_plan_1996.txt))
