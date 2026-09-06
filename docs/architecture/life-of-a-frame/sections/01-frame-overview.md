@@ -105,7 +105,7 @@ Then `rand ()` is called once per attempted frame, before `Host_FilterTime` (`Wi
 
 ## `Host_FilterTime`: what `host_frametime` actually means
 
-Everything downstream reads one global, `host_frametime` (`WinQuake/host.c:40`). It is produced here, and it is the single most consequential function in the engine's timing model:
+Everything downstream reads one global, `host_frametime` (`WinQuake/host.c:40`). It is produced here, and it is the single most consequential function in the engine's timing model. DOOM ran on a fixed 35 Hz timebase; decoupling render rate from simulation rate is one of the deliberate breaks catalogued in [what Quake had to close](design:what-quake-had-to-close).
 
 `WinQuake/host.c:501-522`:
 

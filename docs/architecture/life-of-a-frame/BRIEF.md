@@ -11,6 +11,9 @@ ownership, call order and terminology before algorithms or historical rationale.
 
 Edit `sections/*.md`, `template.html` and `diagrams/*.html`, then run
 `python3 docs/architecture/life-of-a-frame/build.py` from the repository root.
+That script is a thin config; the markdown-to-HTML engine is `../build_doc.py`
+and the shared CSS and JS are `../assets/base.{css,js}`, also used by the
+companion guide `../design-history/`. Editing either asset changes both guides.
 The generated `quake-life-of-a-frame.html` is checked in. A standalone
 `::: diagram name` line in Markdown includes `diagrams/name.html`; source
 references in that fragment are linkified by the builder. Relative Markdown
@@ -22,6 +25,13 @@ Verify baseline claims with `git show 3ef8a7a:WinQuake/<file>` and distinguish
 code behavior from inferred design motives. Diagrams must have text equivalents,
 work in light/dark themes and stay usable on narrow screens. Check the generated
 page's links, controls and visual layout after rebuilding.
+
+Design rationale and development history belong in the companion guide
+`../design-history/`, not here. Where a section gestures at *why* a mechanism
+exists, link across with `[label](design:anchor)` instead of expanding on it;
+the builder resolves the `design:` scheme and warns at build time if the target
+anchor no longer exists. The `> **.plan.**` blockquotes are the natural place
+for those links.
 
 The original research brief below describes the detailed reference layer, not
 the expected difficulty of the first reading path.

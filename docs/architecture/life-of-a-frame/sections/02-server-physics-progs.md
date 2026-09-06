@@ -315,7 +315,7 @@ There is even a sub-heuristic for float precision: if stepping up moved the play
 
 ## The QuakeC VM
 
-Quake's game logic is not C. It is compiled QuakeC, shipped as `progs.dat`, loaded by `PR_LoadProgs` (`WinQuake/pr_edict.c:985`) and interpreted by `PR_ExecuteProgram` (`WinQuake/pr_exec.c:361`). This is the design decision that made Quake moddable and is directly responsible for Team Fortress, Threewave CTF, and the entire mod culture that followed.
+Quake's game logic is not C. It is compiled QuakeC, shipped as `progs.dat`, loaded by `PR_LoadProgs` (`WinQuake/pr_edict.c:985`) and interpreted by `PR_ExecuteProgram` (`WinQuake/pr_exec.c:361`). This is the design decision that made Quake moddable and is directly responsible for Team Fortress, Threewave CTF, and the entire mod culture that followed. id had committed to shipping an "open game" as early as the [1993 DOOM announcement](design:the-1993-feature-list-read-as-a-ceiling).
 
 ### The image
 

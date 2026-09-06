@@ -3,3 +3,4 @@ id1/*.cfg
 WinQuake/build
 *.swp
 compile_commands.json
+docs/architecture/__pycache__/

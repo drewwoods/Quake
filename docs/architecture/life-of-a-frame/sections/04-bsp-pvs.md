@@ -16,6 +16,8 @@ On the server side, PVS is consulted once per client per frame inside `SV_WriteE
 
 ## On-disk BSP format
 
+The format is three-dimensional throughout, which is the break from DOOM's plan-view tree; see [a binary tree in two dimensions](design:a-binary-tree-in-two-dimensions).
+
 The map file begins with a `dheader_t` (`WinQuake/bspfile.h:82-95`) containing a version and 15 `lump_t` `{fileofs, filelen}` directory entries (`WinQuake/bspfile.h:59-80`), version-locked to `BSPVERSION` 29 (`WinQuake/bspfile.h:56`). Each lump is addressed by byte offset. `Mod_LoadModel` reads the file into a temporary buffer; the lump loaders then copy or convert its contents into hunk allocations.
 
 The key on-disk structures:

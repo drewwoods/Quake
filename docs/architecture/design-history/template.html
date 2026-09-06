@@ -1,0 +1,107 @@
+<!doctype html>
+<html lang="en">
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Quake: A Design History</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Archivo:wght@600;700;800&family=IBM+Plex+Mono:ital,wght@0,400;0,500;0,600;1,400&family=Source+Serif+4:ital,opsz,wght@0,8..60,400;0,8..60,600;1,8..60,400&display=swap">
+<style>
+{{BASE_CSS}}
+
+/* ------------------------------------------------- design-history only */
+
+
+/* The date rail in the primer: what happened when, at a glance. */
+.timeline { margin: 24px 0 8px; border-top: 1px solid var(--rule); }
+.timeline div {
+  display: grid; grid-template-columns: 8.5em minmax(0, 1fr); gap: 4px 20px;
+  padding: 11px 0; border-bottom: 1px solid var(--rule-soft);
+}
+.timeline dt {
+  font: 500 12px var(--f-mono); letter-spacing: 0.06em; color: var(--sim);
+  text-transform: uppercase; padding-top: 2px;
+}
+.timeline dd { margin: 0; font-size: 15.5px; color: var(--ink-2); }
+.timeline dd b { color: var(--ink); font-weight: 600; }
+@media (max-width: 640px) {
+  .timeline div { grid-template-columns: 1fr; gap: 2px; }
+}
+
+/* Roadmap of chapters, with the unwritten ones visibly pending. */
+.roadmap { margin: 20px 0; padding: 0; list-style: none; }
+.roadmap li { padding: 7px 0; border-bottom: 1px solid var(--rule-soft); font-size: 15.5px; }
+.roadmap li .rm-n { font: 500 12px var(--f-mono); color: var(--muted); margin-right: 12px; }
+.roadmap li.todo { color: var(--muted); }
+.roadmap li.todo::after {
+  content: "planned"; float: right; font: 500 10.5px var(--f-mono);
+  letter-spacing: 0.12em; text-transform: uppercase; color: var(--muted);
+}
+</style>
+
+<header class="masthead">
+  <div class="masthead-in">
+    <h1>Quake: A Design History
+      <span class="h1-sub">Why the engine is shaped the way it is — the constraints, the discarded attempts, and the decisions that stuck</span>
+    </h1>
+    <div class="stamp">id Software · 1993–1997</div>
+  </div>
+</header>
+
+<div class="layout">
+  <nav class="rail" id="rail" aria-label="Table of contents">
+    <button class="rail-toggle" id="rail-toggle" aria-expanded="false">☰ Contents</button>
+    <div class="rail-inner">
+      <div class="rail-head">Contents</div>
+      <p><a href="#start">Start here</a></p>
+      <input type="search" id="nav-search" placeholder="Filter sections…" aria-label="Filter table of contents">
+      <div class="nav-empty" id="nav-empty">No heading matches.</div>
+      {{NAV}}
+    </div>
+  </nav>
+
+  <main id="start">
+    <aside class="scope-note" aria-label="How this guide relates to Life of a Frame">
+      <p><strong>Companion to <a href="../life-of-a-frame/quake-life-of-a-frame.html">Life of a Frame</a>.</strong> That guide answers <em>what the code does</em>, in the order a frame does it. This one answers <em>why it exists and how it got that way</em>, in the order the decisions were made. Neither repeats the other: where the mechanism matters, this guide links across rather than re-explaining it; a dashed link with an arrow opens the other guide.</p>
+    </aside>
+
+    <div class="lede">
+      <p class="eyebrow">Reader's guide</p>
+      <p class="drop">Quake's source reads like a set of answers with the questions filed off. The expanded collision hulls, the precomputed visibility, the surface cache, the 20&nbsp;Hz server tick — each is a settled solution to a problem that was live and unsolved in 1995, and several are the survivors of approaches that were built, measured, and thrown away. This guide reconstructs those questions from the public record: Michael Abrash's contemporaneous chapters, the developers' <code>.plan</code> files, and id's own announcements, all archived under <code>docs/historical/</code>.</p>
+      <p>The material here is <strong>evidence-bounded</strong>. A claim about what the code does is checkable against the code and is marked with a source reference. A claim about what someone was <em>thinking</em> is only as good as the document it came from, so those are quoted and attributed rather than paraphrased into confident narrative. Where the record is thin, the guide says so instead of filling the gap.</p>
+      <p class="note">Dates are as published. <code>.plan</code> files were daily worklogs written for a public <code>finger</code> query, not design documents — they are terse, occasionally wrong, and record what was done that day rather than why. Abrash's chapters were written during and shortly after the work, and are the closest thing to a design record that exists.</p>
+    </div>
+
+    <section class="primer" aria-labelledby="primer-title">
+      <h2 id="primer-title">The shape of the story</h2>
+      <dl class="timeline">
+        <div><dt>Jan 1993</dt><dd><b>DOOM announced.</b> A feature list that defines the ceiling Quake would have to break: texture-mapped with variable-height floors and ceilings, but no true 3-D geometry and sprites for moving things.</dd></div>
+        <div><dt>Mar 1994</dt><dd><b>Quake announced as a design</b>, with no engine and development deferred until fall 1994. Romero's <code>.plan</code> promises a step over DOOM as large as DOOM was over Wolfenstein.</dd></div>
+        <div><dt>Mar 1995</dt><dd><b>Abrash joins id.</b> A prototype engine and a plan already exist. Within three months, almost none of the original visibility design survives.</dd></div>
+        <div><dt>1995</dt><dd><b>The year of discarded renderers.</b> Beam trees, portal clipping, direct-BSP visibility — built, measured, abandoned. Then the PVS.</dd></div>
+        <div><dt>1996</dt><dd><b>Making it fit.</b> Surface caching, Pentium-specific assembly, dialup as an architectural input. Quake ships in June.</dd></div>
+        <div><dt>1996–97</dt><dd><b>After ship.</b> GLQuake concedes the software rasterizer's future; QuakeWorld revisits the networking decision Quake declined to make.</dd></div>
+      </dl>
+      <p><strong>Reading order.</strong> The chapters are chronological and build on each other; unlike <a href="../life-of-a-frame/quake-life-of-a-frame.html">Life of a Frame</a>, this one is meant to be read front to back.</p>
+      <ol class="roadmap">
+        <li><span class="rm-n">01</span><a href="#sec-1">Before Quake: what DOOM could not do</a></li>
+        <li class="todo"><span class="rm-n">02</span>The year of discarded renderers</li>
+        <li class="todo"><span class="rm-n">03</span>Surface caching: making light affordable</li>
+        <li class="todo"><span class="rm-n">04</span>Designing for one processor</li>
+        <li class="todo"><span class="rm-n">05</span>Shipping constraints: bandwidth, memory, deadline</li>
+        <li class="todo"><span class="rm-n">06</span>QuakeC: why a virtual machine</li>
+        <li class="todo"><span class="rm-n">07</span>After ship: GLQuake and QuakeWorld</li>
+      </ol>
+    </section>
+
+    {{BODY}}
+
+    <p class="colophon">Sources are the archives under <code>docs/historical/</code>: Michael Abrash's <em>Graphics Programming Black Book</em> chapters 60–70, the id Software developer <code>.plan</code> collection, id's 1993–95 Usenet announcements, and the DOOM source release notes. Code references point at <a target="_blank" rel="noopener" href="https://github.com/id-Software/Quake">id-Software/Quake</a>; the mechanisms behind them are documented in <a href="../life-of-a-frame/quake-life-of-a-frame.html">Life of a Frame</a>.</p>
+  </main>
+</div>
+
+<script>
+{{BASE_JS}}
+</script>
+
+</html>
