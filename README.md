@@ -1,8 +1,11 @@
 ## Overview
 
 Vanilla Quake, slightly modified to compile on current Linux distributions
+and macOS.
 
 ## Installing Dependencies
+
+### Linux
 
 ```sh
 sudo dpkg --add-architecture i386
@@ -10,7 +13,23 @@ sudo apt update
 sudo apt install build-essential libc6-dev-i386 libx11-dev:i386 libegl1-mesa-dev:i386 libxxf86dga1:i386 libxxf86dga1-dev libxxf86vm1:i386 libxxf86vm-dev
 ```
 
+### macOS
+
+Only the Xcode command line tools:
+
+```sh
+xcode-select --install
+```
+
 ## Building
+
+### macOS
+
+```sh
+make -C WinQuake -f Makefile.macos
+```
+
+This builds `build/macos/release/quake` and `build/macos/release/glquake`.
 
 ### WinQuake (this is probably what you want)
 
@@ -52,6 +71,18 @@ result, use DOS or FreeDOS with `quake.exe`, `cwsdpmi.exe`, and an `id1`
 directory containing licensed Quake game data.
 
 ## Running
+
+### macOS
+
+```sh
+./WinQuake/build/macos/release/glquake -width 800 -height 600
+```
+
+Windowed by default; `-fullscreen` gives a borderless window over the whole
+screen. The GL surface is the size you ask for and the display scales it up,
+which keeps the original art looking like itself; pass `-hidpi` to render at
+the display's native resolution instead. Add `-basedir <quake-base-dir>` to
+play retail data.
 
 ### Shareware (included)
 

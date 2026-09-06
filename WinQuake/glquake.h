@@ -27,8 +27,19 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 #include <windows.h>
 #endif
 
+#ifdef __APPLE__
+#include <OpenGL/gl.h>
+#include <OpenGL/glext.h>
+#include <OpenGL/glu.h>
+// The legacy-profile mac GL headers never define APIENTRY; the calling
+// convention is the default one here anyway.
+#ifndef APIENTRY
+#define APIENTRY
+#endif
+#else
 #include <GL/gl.h>
 #include <GL/glu.h>
+#endif
 
 void GL_BeginRendering (int *x, int *y, int *width, int *height);
 void GL_EndRendering (void);

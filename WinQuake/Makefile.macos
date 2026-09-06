@@ -1,28 +1,29 @@
 #
-# Native macOS build for the original Quake software renderer.
-#
-# Cocoa presents the 8-bit framebuffer and supplies keyboard and mouse events.
-# Core Audio plays the output from Quake's original software mixer.
+# Native macOS builds for software Quake and GLQuake.
 #
 
 CC              ?= clang
 BUILD_ROOT      ?= build/macos
 CONFIG          ?= release
 BUILD_DIR        = $(BUILD_ROOT)/$(CONFIG)
-TARGET           = $(BUILD_DIR)/quake
+SOFTWARE_TARGET  = $(BUILD_DIR)/quake
+GL_TARGET        = $(BUILD_DIR)/glquake
 
-COMMON_CFLAGS    = -std=gnu89 -fcommon -Dstricmp=strcasecmp \
-	-Dstrnicmp=strncasecmp -include strings.h \
+COMMON_CFLAGS    = -std=gnu89 -fcommon -fno-strict-aliasing \
+	-Dstricmp=strcasecmp -Dstrnicmp=strncasecmp -include strings.h \
 	-Wno-deprecated-declarations
 release_CFLAGS   = -O2
 debug_CFLAGS     = -O0 -g
 CFLAGS           := $(COMMON_CFLAGS) $($(CONFIG)_CFLAGS) $(CFLAGS)
 OBJCFLAGS        := $(CFLAGS) -fobjc-arc $(OBJCFLAGS)
+GL_CFLAGS        = $(CFLAGS) -DGLQUAKE
+GL_OBJCFLAGS     = $(OBJCFLAGS) -DGLQUAKE
 unexport CFLAGS OBJCFLAGS
 LDLIBS            = -framework Cocoa -framework CoreGraphics \
-	-framework AudioUnit -framework AudioToolbox -framework CoreAudio -framework QuartzCore -lm
+	-framework AudioUnit -framework AudioToolbox -framework CoreAudio \
+	-framework QuartzCore -framework OpenGL -framework ApplicationServices -lm
 
-SOURCES = \
+SOFTWARE_SOURCES = \
 	cl_demo.c cl_input.c cl_main.c cl_parse.c cl_tent.c chase.c \
 	cmd.c common.c console.c crc.c cvar.c draw.c \
 	d_edge.c d_fill.c d_init.c d_modech.c d_part.c d_polyse.c \
@@ -36,21 +37,51 @@ SOURCES = \
 	sv_main.c sv_phys.c sv_move.c sv_user.c zone.c view.c wad.c world.c \
 	cd_null.c snd_dma.c snd_mem.c snd_mix.c snd_macos.c sys_linux.c
 
-OBJECTS = $(SOURCES:%.c=$(BUILD_DIR)/%.o) $(BUILD_DIR)/vid_macos.o
-DEPS    = $(OBJECTS:.o=.d)
+GL_SOURCES = \
+	cl_demo.c cl_input.c cl_main.c cl_parse.c cl_tent.c chase.c \
+	cmd.c common.c console.c crc.c cvar.c \
+	gl_draw.c gl_mesh.c gl_model.c gl_refrag.c gl_rlight.c gl_rmain.c \
+	gl_rmisc.c gl_rsurf.c gl_screen.c gl_test.c gl_warp.c \
+	host.c host_cmd.c keys.c menu.c mathlib.c \
+	net_dgrm.c net_loop.c net_main.c net_vcr.c net_udp.c net_bsd.c \
+	pr_cmds.c pr_edict.c pr_exec.c r_part.c sbar.c \
+	sv_main.c sv_phys.c sv_move.c sv_user.c zone.c view.c wad.c world.c \
+	cd_null.c snd_dma.c snd_mem.c snd_mix.c snd_macos.c sys_linux.c \
+	gl_vidcocoa.c
 
-.PHONY: all release debug clean run
+SOFTWARE_OBJECTS = $(SOFTWARE_SOURCES:%.c=$(BUILD_DIR)/%.o) \
+	$(BUILD_DIR)/vid_macos.o
+GL_OBJECTS       = $(GL_SOURCES:%.c=$(BUILD_DIR)/obj/glquake/%.o) \
+	$(BUILD_DIR)/obj/glquake/vid_cocoa.o
+DEPS             = $(SOFTWARE_OBJECTS:.o=.d) $(GL_OBJECTS:.o=.d)
+
+.PHONY: all release debug glquake clean run run-glquake
 
 all: release
 
 release:
-	$(MAKE) -f Makefile.macos CONFIG=release $(BUILD_ROOT)/release/quake
+	$(MAKE) -f Makefile.macos CONFIG=release \
+		$(BUILD_ROOT)/release/quake $(BUILD_ROOT)/release/glquake
 
 debug:
-	$(MAKE) -f Makefile.macos CONFIG=debug $(BUILD_ROOT)/debug/quake
+	$(MAKE) -f Makefile.macos CONFIG=debug \
+		$(BUILD_ROOT)/debug/quake $(BUILD_ROOT)/debug/glquake
 
-$(TARGET): $(OBJECTS)
-	$(CC) $(OBJECTS) -o $@ $(LDLIBS)
+glquake: $(GL_TARGET)
+
+$(SOFTWARE_TARGET): $(SOFTWARE_OBJECTS)
+	$(CC) $(SOFTWARE_OBJECTS) -o $@ $(LDLIBS)
+
+$(GL_TARGET): $(GL_OBJECTS)
+	$(CC) $(GL_OBJECTS) -o $@ $(LDLIBS)
+
+$(BUILD_DIR)/obj/glquake/%.o: %.c
+	@mkdir -p $(dir $@)
+	$(CC) $(GL_CFLAGS) -MMD -MP -c $< -o $@
+
+$(BUILD_DIR)/obj/glquake/vid_cocoa.o: vid_cocoa.m
+	@mkdir -p $(dir $@)
+	$(CC) $(GL_OBJCFLAGS) -MMD -MP -c $< -o $@
 
 $(BUILD_DIR)/%.o: %.c
 	@mkdir -p $(dir $@)
@@ -62,6 +93,9 @@ $(BUILD_DIR)/vid_macos.o: vid_macos.m
 
 run: release
 	cd .. && WinQuake/$(BUILD_ROOT)/release/quake
+
+run-glquake: release
+	cd .. && WinQuake/$(BUILD_ROOT)/release/glquake
 
 clean:
 	rm -rf $(BUILD_ROOT)
