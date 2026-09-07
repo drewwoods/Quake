@@ -842,3 +842,6 @@ PF_setorigin -> SV_LinkEdict                           pr_cmds.c:120
 - Michael Abrash, *Graphics Programming Black Book*, ch. 59–64 — BSP construction and traversal; the same tree the collision hulls are derived from: https://www.jagregory.com/abrash-black-book/
 - QuakeC reference — `traceline`, `walkmove`, `movetogoal`, `droptofloor`, and the `trace_*` globals: https://www.gamers.org/dEngine/quake/spec/quake-spec34/qc-menu.htm
 - John Carmack .plan archive — contemporaneous notes on collision, stuck players, and hull limitations: https://github.com/ESWAT/john-carmack-plan-archive
+- Matthew Earl (Matt's Ramblings), "Uncovering Quake's unseen collision hulls" (2025) — the expanded hulls visualised against the render geometry: https://www.youtube.com/watch?v=3KjMjHJ3WQg
+- Matthew Earl (Matt's Ramblings), "BSP Trees: The Magic Behind Collision Detection in Quake" (2023) — the trace as a tree descent: https://www.youtube.com/watch?v=wLHXn8IlAiA
+- Matthew Earl (Matt's Ramblings), "Shooting Through Walls: Unraveling the Code Behind Quake's Lightning Gun Bug" (2023) — a trace bug traced to its source: https://www.youtube.com/watch?v=4gNYTqn3qRc

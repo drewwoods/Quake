@@ -159,7 +159,34 @@ chapter is read locally.
 
 Mirrored from [jagregory/abrash-black-book](https://github.com/jagregory/abrash-black-book),
 whose README states only: "Reproduced with blessing of Michael Abrash, converted and
-maintained by James Gregory." The upstream repository carries no explicit licence file,
-and no formal grant from Michael Abrash or the Coriolis Group is published there. Treat
-this as a mirror held on the author's stated blessing rather than under a named open
-licence, and check with upstream before redistributing.
+maintained by James Gregory." That repository carries no licence file.
+
+For the Quake chapters specifically there is a published grant. Abrash released
+chapters 64 and 66-70 himself in 2000 as *Ramblings in Realtime*
+([Blue's News](https://www.bluesnews.com/abrash/), or this
+[mirror](https://valvedev.info/archives/abrash/contents.html) if that host blocks
+you), with a permissions note that reads in part:
+
+> These articles are Copyright (c) 2000 by Michael Abrash, all rights reserved
+> except as explicitly granted herein. Permission is granted for unmodified
+> non-commercial electronic reproduction and printing for personal use. [...] it
+> can be electronically copied and posted on the Internet freely so long as the
+> material is not modified (all files must be kept together and the contents must
+> be unchanged), but you may not put it in a book or on a CD or other
+> non-electronic medium, and you may not charge for download or access
+> specifically to this material.
+
+He credits the Coriolis Group with granting him permission to do so, and explains
+the motive: "John recently made the Quake source code freely available, and in
+that spirit I am making these articles, which together are a useful annotation to
+that code, available as well."
+
+Two caveats worth stating plainly rather than glossing:
+
+1. That grant covers the six Quake articles, not the other sixty-four chapters
+   here, whose status rests on the upstream "blessing" claim alone.
+2. The grant is conditioned on the material being unmodified. This mirror is a
+   Markdown conversion, so it is a reformatting of the original.
+
+Treat this as a mirror held on the author's stated goodwill, not under a named
+open licence, and check upstream before redistributing.

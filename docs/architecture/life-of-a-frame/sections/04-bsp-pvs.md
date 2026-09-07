@@ -544,3 +544,4 @@ Collision (server physics, world.c)
 - Quake BSP file format spec: https://www.gamers.org/dEngine/quake/spec/quake-spec34/qkspec_4.htm
 - John Carmack .plan archive (design rationale from the original author, contemporaneous with Quake's development): local archive at `docs/historical/plans/carmack/` ([1996 .plan archive](../../../historical/plans/carmack/by_year/johnc_plan_1996.txt))
 - Matthew Earl (Matt's Ramblings), "Quake's PVS: A hidden gem of rendering optimization" — the portal graph and the leaf-to-leaf visibility bitmap, animated: https://www.youtube.com/watch?v=IfCRHSIg6zo
+- ericw-tools — the maintained qbsp/vis/light toolchain the mapping community uses today; the practical counterpart to the compile-time costs described here: https://github.com/ericwa/ericw-tools (docs: https://ericw-tools.readthedocs.io/)

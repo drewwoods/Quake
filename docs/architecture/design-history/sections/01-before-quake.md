@@ -102,3 +102,6 @@ One caveat on the evidence in this chapter. The retrospective quoted above was w
 - Michael Abrash, *Graphics Programming Black Book*, ch. 64, "Quake's Visible-Surface Determination" — DOOM's 2-D tree contrasted with Quake's, and the polygon budgets: [local copy](../../../historical/abrash_black_book/chapter-64.md)
 - John Romero, id Software founding history — context on the Wolfenstein-to-DOOM step: [`docs/historical/idnews/id_history.txt`](../../../historical/idnews/id_history.txt)
 - Fabien Sanglard, "Quake Source Code Review": https://fabiensanglard.net/quakeSource/index.php
+- Matthew Earl (Matt's Ramblings), "Uncovering Quake's unseen collision hulls" (2025) — the expanded hulls visualised against the render geometry: https://www.youtube.com/watch?v=3KjMjHJ3WQg
+- Matthew Earl (Matt's Ramblings), "BSP Trees: The Magic Behind Collision Detection in Quake" (2023) — the trace as a tree descent: https://www.youtube.com/watch?v=wLHXn8IlAiA
+- David Kushner, *Masters of Doom* (Random House, 2003, ISBN 978-0812972153) — narrative history of id through Quake's release. Secondary and journalistic; good for people and chronology, not for technical claims.
