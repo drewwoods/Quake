@@ -240,11 +240,17 @@
   /* Class "era" covers two kinds of block: real .plan entries and labelled
      asides ("Pentium FDIV bug."). Only the first should look like a finger
      session, and the builder emits no class to tell them apart, so tag them
-     from the ".plan." label here. Handle and date come from the archive link:
-     .../plans/carmack/by_day/johnc_plan_19960315.txt reads as
-     `finger johnc@idsoftware.com`, 1996-03-15. Handles are only claimed for
-     authors whose address is on record; the rest get a bare .plan header. */
-  var PLAN_HANDLE = { carmack: "johnc", john_romero: "romero" };
+     from the ".plan." label here. Handle and host come from the archive
+     path: directory default, then a basename override. Do not guess.
+     .../plans/carmack/by_day/johnc_plan_19960315.txt -> johnc@idsoftware.com
+     .../plans/john_romero/ion_storm_1997-12-14.txt  -> romero@ionstorm.com */
+  var PLAN_DIR = {
+    carmack: { handle: "johnc", host: "idsoftware.com" },
+    john_romero: { handle: "johnr", host: "idsoftware.com" }
+  };
+  var PLAN_FILE = {
+    "ion_storm_1997-12-14.txt": { handle: "romero", host: "ionstorm.com" }
+  };
 
   [].slice.call(document.querySelectorAll("blockquote.era")).forEach(function (bq) {
     var first = bq.querySelector("p");
@@ -256,7 +262,8 @@
     var href = link ? link.getAttribute("href") : "";
     var who = href.match(/\/plans\/([^\/]+)\//);
     var day = href.match(/(\d{4})-?(\d{2})-?(\d{2})\.txt$/);
-    var handle = who ? PLAN_HANDLE[who[1]] : null;
+    var base = (href.match(/[^\/]+\.txt$/) || [""])[0];
+    var acct = PLAN_FILE[base] || (who ? PLAN_DIR[who[1]] : null);
 
     var bar = document.createElement("div");
     bar.className = "finger-bar";
@@ -264,7 +271,9 @@
     cmd.className = "finger-cmd";
     /* No archive link, so no attributable handle: `finger @host` is the real
        command for "whoever is on this machine". Do not guess an author. */
-    cmd.textContent = handle ? "finger " + handle + "@idsoftware.com" : "finger @idsoftware.com";
+    cmd.textContent = acct
+      ? "finger " + acct.handle + "@" + acct.host
+      : "finger @idsoftware.com";
     var meta = document.createElement("span");
     meta.className = "finger-meta";
     meta.textContent = day ? ".plan · " + day[1] + "-" + day[2] + "-" + day[3] : ".plan";

@@ -92,10 +92,10 @@
         <g transform="translate(14,32)">
           <rect x="0" y="0" width="280" height="150" class="dr-tint"/>
           <rect x="135" y="0" width="145" height="32" class="dr-warn-tint"/>
-          <!-- Boundaries on polygon planes: the dividing wall (x=135, visible only
-               across the doorway gap) and one split in each room. L4 is the strip
-               above the doorway sightline of panels 2 and 3, so it is genuinely
-               hidden from this point while still reachable from elsewhere in L1. -->
+          <!-- Only x=135 is a polygon plane (the dividing wall). x=70 and y=32
+               are illustrative, so L4 can sit above the doorway sightline of
+               panels 2 and 3: hidden from this point, reachable from elsewhere
+               in L1. -->
           <path d="M70 0V150M135 0V150M135 32H280" class="dr-leafline"/>
           <use href="#dr-scene"/>
           <rect x="135" y="0" width="145" height="32" class="dr-warn-edge"/>
@@ -111,5 +111,5 @@
       </g>
     </svg>
   </div>
-  <figcaption><b>A schematic, not a measurement.</b> One scene — two rooms, a doorway, eight wall polygons, one viewpoint — under four schemes. The <b>painter’s algorithm</b> draws every polygon in the frustum; the defect is not only the overdraw but the gap between best and worst case. The <b>beam tree</b> projects wedges from the viewpoint and stops early once they fill the screen, but a sightline through the doorway to the far wall never closes the tree, so every polygon is tested anyway. <b>Portals</b> clip recursively through the doorway and draw only what is visible, paying in clipping every frame. The <b>PVS</b> that shipped answers per leaf, so there is no runtime search — and it over-reports by construction, because it records what is visible from anywhere in a leaf rather than from this point: L4, the strip along the far room’s top wall, sits outside the doorway sightline of panels 2 and 3, yet the set still contains it. Angles, leaf sizes and polygon counts are illustrative; the leaf boundaries follow polygon planes, as a BSP’s do. Source: <a href="../../historical/abrash_black_book/chapter-64.md">Abrash ch. 64</a>, sections “The Beam Tree”, “3-D Engine du Jour” and “Breakthrough!”; WinQuake/r_main.c:493-519.</figcaption>
+  <figcaption><b>A schematic, not a measurement.</b> One scene — two rooms, a doorway, eight wall polygons, one viewpoint — under four schemes. The <b>painter’s algorithm</b> draws every polygon in the frustum; the defect is not only the overdraw but the gap between best and worst case. The <b>beam tree</b> projects wedges from the viewpoint and stops early once they fill the screen, but a sightline through the doorway to the far wall never closes the tree, so every polygon is tested anyway. <b>Portals</b> clip recursively through the doorway and draw only what is visible, paying in clipping every frame. The <b>PVS</b> that shipped answers per leaf, so there is no runtime search — and it over-reports by construction, because it records what is visible from anywhere in a leaf rather than from this point: L4, the strip along the far room’s top wall, sits outside the doorway sightline of panels 2 and 3, yet the set still contains it. Angles, leaf sizes and polygon counts are illustrative. Only the dividing-wall split sits on a polygon plane; the other two leaf cuts are drawn for the illustration. Source: <a href="../../historical/abrash_black_book/chapter-64.md">Abrash ch. 64</a>, sections “The Beam Tree”, “3-D Engine du Jour” and “Breakthrough!”.</figcaption>
 </figure>

@@ -134,7 +134,7 @@ The passages the design history leans on most:
 | Chapter | What it establishes |
 | :--- | :--- |
 | [59](chapter-59.md) | BSP trees from first principles. Chapter 60 opens by continuing from here. |
-| [60](chapter-60.md) | Building a BSP compiler; how Carmack recruited Abrash to id in March 1995. |
+| [60](chapter-60.md) | Building a 2-D BSP compiler over line segments; the recruitment story (the March 1995 start date is in chapter 64). |
 | [61](chapter-61.md) | Rotations, view coordinate systems, transformation matrices. |
 | [62](chapter-62.md) | A working BSP renderer; the front-to-back traversal later chapters assume. |
 | [63](chapter-63.md) | Floating point in a real-time loop — the x87 precision-control trick that halves `fdiv` latency. |
