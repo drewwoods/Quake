@@ -60,6 +60,11 @@ worthless to write confident design narrative from memory.
   publication — he is reconstructing, not transcribing.
 - Where the record is thin, say so. "The archive does not record why" is a
   legitimate and useful sentence.
+- The local archive comes first. Where it is silent, the web is fair game:
+  name the source and its date inline, prefer primary or well-sourced secondary
+  work (Sanglard, vintage hardware archives with citations) over wikis, and say
+  in the prose which claims rest on it. Mark anything you could not corroborate
+  as unverified.
 - Chapter titles: the table in `../../historical/abrash_quake_1995/README.md`
   has several titles that do not match the chapter files. Cite the heading
   inside the chapter file, not the README table.
@@ -112,5 +117,91 @@ in `template.html`.
    deadline compromises that are visible in the source.
 6. **QuakeC: why a virtual machine** — the "open game" commitment traced from
    the 1993 DOOM announcement to `progs.dat`.
-7. **After ship** — GLQuake as a concession, QuakeWorld as the networking
-   decision NetQuake declined to make.
+7. **VQuake: the surface cache on hardware** — the first accelerated Quake, and
+   the one that kept the software architecture. Detailed plan below.
+8. **After ship** — GLQuake as a concession, QuakeWorld as the networking
+   decision NetQuake declined to make, and the codepath cost that ended the
+   era of per-vendor ports.
+
+## Chapter 7 in detail: VQuake
+
+**The argument.** VQuake (2 December 1996, Rendition Vérité V1000) was the
+first hardware-accelerated Quake, six weeks ahead of GLQuake. It matters to
+this guide for one reason: it is the counterfactual. The Vérité was
+programmable, so the port did *not* have to discard the software renderer's
+architecture — it kept the edge list, the span sorting and the surface cache,
+and moved only span drawing onto the chip. GLQuake threw all of that out for
+two-pass alpha lighting. Chapter 7 uses the pair to show that surface caching
+was not a software-era hack but a real architectural choice with a hardware
+future, and that what killed it was economics rather than merit.
+
+**Where it sits.** After chapter 3 (surface caching) establishes the mechanism
+and before chapter 8 explains why the mechanism was abandoned. Chapters 3, 7
+and 8 are one argument in three parts.
+
+**Beats.**
+
+1. *What the Vérité was.* A 25 MHz programmable RISC core with 128 KiB of
+   microcode and 4 MiB of unified memory, 25 Mpix/s fill (12.5 with z-test),
+   and no hardware z-buffer. Not a fixed-function triangle engine. Contrast
+   3dfx Voodoo at ~50 Mpix/s, which Carmack measured himself.
+2. *Why a proprietary API.* Direct3D and OpenGL were ruled out on performance
+   grounds; VQuake used Rendition's Speedy3D with custom Vérité code.
+3. *The port that kept the architecture.* CPU builds the edge list and span
+   lists exactly as in software Quake; the Vérité DMAs span descriptors and
+   draws them. CPU builds lit, tiled surfaces in system RAM; the Vérité DMAs
+   them into an onboard surface cache. Cross-link the mechanism to Life of a
+   Frame rather than re-explaining it.
+4. *Where it hurt.* The DMA step is pure overhead. Textures must be 16-bpp for
+   hardware filtering, doubling the software version's 8-bpp footprint inside
+   4 MiB shared with a z-buffer and two pages. Surface-cache thrash shows up as
+   sluggishness "when coming around corners into complex scenes or when
+   spinning" (Abrash) — the same failure mode as software Quake, but with a bus
+   transfer in the loop.
+5. *Why it ended.* Not quality: Carmack rated the image and the architecture
+   well. Codepath cost. The 12 May 1997 `.plan` is the chapter's closing quote,
+   and it is the general principle the whole guide has been building toward.
+
+**Evidence note to preserve.** Abrash and Rendition give different primary
+reasons for keeping span generation on the CPU: Abrash frames it as fill-rate
+economy at high resolution, Walt Donovan frames it as working around the
+absence of a hardware z-buffer. Both are consistent with the design; do not
+collapse them into one motive. Say that the sources emphasise different halves.
+
+**Sources, already located.**
+
+- Abrash, *Black Book* ch. 70, section "Verite Quake" — the definitive
+  technical account: `../../historical/abrash_quake_1995/chapter-70.md:662`.
+  The adjacent "GLQuake" section gives the two-pass alpha lighting contrast.
+- Carmack `.plan` 22 Aug 1996 — first impressions, and the surface-cache tell:
+  "We do take a bit of a hit when we have to generate a lot of 16 bit surfaces,
+  so occasionally the framerate gets a bit uneven."
+  `../../historical/plans/carmack/by_day/johnc_plan_19960822.txt`
+- Carmack `.plan` 13 Dec 1996 — the hardware survey with measured fill rates,
+  and "the risc architecture allows a lot of room for optimization."
+  `../../historical/plans/carmack/by_day/johnc_plan_19961213.txt`
+- Carmack `.plan` 23 Feb 1997 — the unification plan that became Quake 2's
+  renderer: `.../johnc_plan_19970223.txt`
+- Carmack `.plan` 2 Apr 1997 — "A verite module will come later." It slipped.
+  `.../johnc_plan_19970402.txt`
+- Carmack `.plan` 12 May 1997 — the closing quote:
+  "every codepath that gets added holds back future innovation... Just having
+  software and gl is a lot of work, and I have allready commited to verite
+  support." `.../johnc_plan_19970512.txt`
+- Carmack `.plan` 12 Feb 1998 and 13 Mar 1998 — the Vérité V2100/V2200 assessed
+  through an OpenGL ICD, i.e. the native-port era already over.
+- Brian Hook `.plan` 14 Dec 1997 — measured V2200 numbers, fill-limited:
+  `../../historical/plans/brian_hook/1997-12-15.txt`
+- Fabien Sanglard, "The story of the Rendition Vérité 1000",
+  https://fabiensanglard.net/vquake/ — V1000 internals and interviews with Walt
+  Donovan, including the 1-clock 32x32 multiply and the bilinear-load
+  instruction. Authorship of the port (Walt Donovan and Stefan Podell of
+  Rendition, with Abrash) comes from here, not from the local archive.
+- VQuake release date 2 Dec 1996 and GLQuake 22 Jan 1997: Sanglard, above, and
+  https://quake.fandom.com/wiki/VQuake. Treat the wiki as weak corroboration
+  only; if a firmer date surfaces in the archive, prefer it.
+
+**Gap.** The archive holds no id-side account of the VQuake porting work
+itself — Abrash's chapter is written after the fact and Rendition did the
+implementation. Anything about day-to-day decisions during the port is
+unavailable; say so rather than inferring.

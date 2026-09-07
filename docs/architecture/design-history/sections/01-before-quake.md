@@ -2,7 +2,7 @@
 
 Quake's architecture is easier to read as a list of answers to DOOM's limits than as a design in its own right. DOOM shipped in December 1993 with a renderer built on a two-dimensional binary space partition, sprites for every moving thing, and a fixed camera orientation. Each of those was a deliberate trade that bought a playable frame rate on a 386, and each became a wall that the next engine had to go through rather than around. This chapter establishes what that wall was, using id's own 1993 announcement, Carmack's later retrospective on the DOOM code, and Romero's 1994 announcement of Quake — which described the game before its engine existed.
 
-> **First pass.** DOOM's BSP tree was two-dimensional and was used only for drawing. Quake's is three-dimensional and is used for drawing, collision, and network visibility alike. Almost everything distinctive about Quake's runtime follows from widening that one structure and then finding work for it. The next planned chapter covers the year of prototypes that decided *how* to use it.
+> **First pass.** DOOM's BSP tree was two-dimensional and was used only for drawing. Quake's is three-dimensional and is used for drawing, collision, and network visibility alike. Almost everything distinctive about Quake's runtime follows from widening that one structure and then finding work for it. [Next: the year of prototypes that decided *how* to use it](#sec-2).
 
 ## The 1993 feature list, read as a ceiling
 
@@ -38,7 +38,7 @@ typedef struct mplane_s
 } mplane_t;
 ```
 
-The key difference is that `normal` is a `vec3_t`. Polygons can sit at any angle, so ramps and arbitrary architecture become expressible; leaves are convex volumes rather than convex floor regions, so rooms can stack; and the tree can answer questions about points anywhere in space rather than points on a plan. The cost is a much harder compile — turning a set of arbitrary polygons into a well-behaved 3-D tree is the subject of Abrash's [chapter 60, "Compiling BSP Trees"](../../../historical/abrash_quake_1995/chapter-60.md) — and a much harder visibility problem, which the planned chapter on discarded renderers will cover. The [on-disk BSP format](frame:on-disk-bsp-format) and the [node and leaf graph it loads into](frame:loading-in-model-c-from-disk-lumps-to-the-mnode-t-mleaf-t-graph) are documented in Life of a Frame.
+The key difference is that `normal` is a `vec3_t`. Polygons can sit at any angle, so ramps and arbitrary architecture become expressible; leaves are convex volumes rather than convex floor regions, so rooms can stack; and the tree can answer questions about points anywhere in space rather than points on a plan. The cost is a much harder compile — turning a set of arbitrary polygons into a well-behaved 3-D tree is the subject of Abrash's [chapter 60, "Compiling BSP Trees"](../../../historical/abrash_quake_1995/chapter-60.md) — and a much harder visibility problem, which [the year of discarded renderers](#sec-2) covers. The [on-disk BSP format](frame:on-disk-bsp-format) and the [node and leaf graph it loads into](frame:loading-in-model-c-from-disk-lumps-to-the-mnode-t-mleaf-t-graph) are documented in Life of a Frame.
 
 ## The BSP that only drew
 
@@ -71,7 +71,7 @@ Quake was public long before it was real. John Romero's `.plan` of 18 March 1994
 
 Two things are worth extracting. The first is the ambition, stated as a ratio rather than a feature: the step from DOOM to Quake was to be at least as large as the step from Wolfenstein to DOOM. Wolfenstein's walls were axis-aligned and eight feet thick; DOOM's could be at any angle and any thickness. The equivalent leap was a full third dimension, and the planned chapters on discarded renderers, surface caching, and one-processor design describe the cost of having promised it.
 
-The second is the schedule. Quake is announced in March 1994, development is not to begin until autumn, and the game shipped in June 1996. Abrash did not join id until March 1995 ([*Black Book*, ch. 60](../../../historical/abrash_quake_1995/chapter-60.md)), by which point "John already had an engine prototyped and a plan in mind" — a plan that the planned chapter on discarded renderers will examine, and that almost entirely failed to survive contact with the problem. The title *The Fight for Justice* did not survive either. What was shipped shares an ambition with the announcement and very little else, which is a useful calibration on how much of Quake's design was intended in advance versus discovered under deadline.
+The second is the schedule. Quake is announced in March 1994, development is not to begin until autumn, and the game shipped in June 1996. Abrash did not join id until March 1995 ([*Black Book*, ch. 60](../../../historical/abrash_quake_1995/chapter-60.md)), by which point "John already had an engine prototyped and a plan in mind" — a plan that [the year of discarded renderers](#sec-2) examines, and that almost entirely failed to survive contact with the problem. The title *The Fight for Justice* did not survive either. What was shipped shares an ambition with the announcement and very little else, which is a useful calibration on how much of Quake's design was intended in advance versus discovered under deadline.
 
 The same `.plan` records the development environment in passing — "To get the entire world running NEXTSTEP for development" — and NeXTSTEP is why the source contains a `NeXT` build path and why the tools were written the way they were.
 
@@ -87,7 +87,7 @@ Reading the two announcements against each other gives a concrete list of what c
 | Light per sector, per band | [Per-surface lightmaps](frame:lightmaps-and-light-styles-r-light-c) | Offline light compile; surface caching to afford it (ch. 3) |
 | BSP used for rendering only | Same tree for render, collision, and network | Expanded hulls; PVS as a bandwidth policy (ch. 5) |
 | ~3,000 polygons per level | ~10,000 polygons per level | Overdraw becomes the dominant cost (ch. 2) |
-| 35 Hz fixed timebase | [Variable frame time, 20 Hz server tick](frame:host-filtertime-what-host-frametime-actually-means) | Interpolation on the client (ch. 7) |
+| 35 Hz fixed timebase | [Variable frame time, 20 Hz server tick](frame:host-filtertime-what-host-frametime-actually-means) | Interpolation on the client (ch. 8) |
 
 The polygon counts are Abrash's: "a good-sized Quake level contains on the order of 10,000 polygons, about three times as many polygons as a comparable DOOM level" ([ch. 64](../../../historical/abrash_quake_1995/chapter-64.md)). The DOOM timebase is Carmack's own aside in the source release notes, where he lists "there are some issues with DOOM's 35 hz timebase" among the obstacles to a hardware-accelerated port. Quake lets the host use a measured delta while a dedicated server targets `sys_ticrate`; a listen server still runs one server tick inside each accepted host frame. Remote clients therefore need to [interpolate entity positions](frame:entity-interpolation-entity-t-cl-mtime-cl-relinkentities) between received states.
 

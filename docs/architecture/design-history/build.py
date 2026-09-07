@@ -15,6 +15,7 @@ DOC = build_doc.Doc(
     # Chapters are added here as they are written; see BRIEF.md for the plan.
     files=[
         ("01-before-quake.md", "Origins"),
+        ("02-discarded-renderers.md", "Visibility"),
     ],
     xrefs={"frame": os.path.join("..", "life-of-a-frame",
                                  "quake-life-of-a-frame.html")},
