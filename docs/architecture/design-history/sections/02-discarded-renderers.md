@@ -1,12 +1,12 @@
 # The Year of Discarded Renderers
 
-Between March 1995 and the middle of 1996, Quake's visible-surface determination was rebuilt from scratch repeatedly. A beam tree was written, tuned, and abandoned. At least five other approaches were prototyped or seriously argued and dropped. The design that shipped — precompute, for every leaf in the map, the set of leaves potentially visible from it, then at runtime draw only those — was not on the original plan and was in place roughly a year before release. This chapter follows that sequence, because the shape of the surviving code is unintelligible without it: the potentially visible set looks like an obvious idea in hindsight, and reading it as an obvious idea gets its cost model exactly backwards.
+Between March 1995 and the middle of 1996, Quake's visible-surface determination was rebuilt from scratch repeatedly. A beam tree was written, tuned, and abandoned. At least five other approaches were prototyped or seriously argued and dropped. The design that shipped — precompute, for every leaf in the map, the set of leaves potentially visible from it, then at runtime draw only those — was not on the original plan and arrived within roughly a year of Abrash's joining, well before release. This chapter follows that sequence, because the shape of the surviving code is unintelligible without it: the potentially visible set looks like an obvious idea in hindsight, and reading it as an obvious idea gets its cost model exactly backwards.
 
 > **First pass.** Quake's problem was never "how do I draw a polygon fast." It was overdraw: in a ten-thousand-polygon level most of what is inside the view frustum is hidden behind something else, and drawing it anyway is wasted work that scales with level complexity. The discarded approaches tried to make world visibility tractable at runtime. The one that shipped moved that work offline; runtime rendering still resolved pixel visibility. Next: what that decision made affordable.
 
 ## The problem, stated precisely
 
-Abrash defines the target in [chapter 64, "Quake's Visible-Surface Determination"](../../../historical/abrash_quake_1995/chapter-64.md), and the definition is worth keeping in mind because every rejected approach failed against one clause of it:
+Abrash defines the target in [chapter 64, "Quake's Visible-Surface Determination"](../../../historical/abrash_black_book/chapter-64.md), and the definition is worth keeping in mind because every rejected approach failed against one clause of it:
 
 > The process of VSD would ideally work as follows: First, you would cull all polygons that are completely outside the view frustum (view pyramid), and would clip away the irrelevant portions of any polygons that are partially outside. Then, you would draw only those pixels of each polygon that are actually visible from the current viewpoint [...] Finally, in a perfect world, the tests to figure out what parts of which polygons are visible would be free, and the processing time would be the same for all possible viewpoints, giving the game a smooth visual flow.
 
@@ -14,7 +14,7 @@ Two parts were tractable. A BSP makes coarse frustum culling cheap, because each
 
 The last clause is the one that does the damage. A painter's-algorithm renderer draws every polygon in the frustum, hidden or not; Abrash estimates worst-case overdraw in a Quake level "10 times or more," meaning each pixel written ten times on average. The problem is not only that this is slow. It is that best case and worst case diverge, so the frame rate swings as the player turns. A design that is fast in a corridor and unplayable in an atrium has not solved the problem.
 
-> **Abrash, ch. 64.** In terms of graphics, Quake is to DOOM as DOOM was to its predecessor, Wolfenstein 3-D. [...] Already, a good-sized Quake level contains on the order of 10,000 polygons, about three times as many polygons as a comparable DOOM level. [Local copy](../../../historical/abrash_quake_1995/chapter-64.md)
+> **Abrash, ch. 64.** In terms of graphics, Quake is to DOOM as DOOM was to its predecessor, Wolfenstein 3-D. [...] Already, a good-sized Quake level contains on the order of 10,000 polygons, about three times as many polygons as a comparable DOOM level. [Local copy](../../../historical/abrash_black_book/chapter-64.md)
 
 ## The prototype, and how long it lasted
 
@@ -61,6 +61,8 @@ Carmack next tried extracting visibility directly from the world BSP tree, reaso
 > When I came in on Monday, John had the look of a man who had broken through to the other side—and also the look of a man who hadn't had much sleep. [...] At 3:30 Monday morning, as he lay in bed, thinking about portals, he thought of precalculating and storing in each leaf a list of all leaves visible from that leaf, and then at runtime just drawing the visible leaves back-to-front for whatever leaf the viewpoint happens to be in, ignoring all other leaves entirely.
 
 The move was to stop computing world visibility at runtime and start looking it up. The discarded approaches tried to make that calculation cheaper; the PVS removes it from the frame loop. Abrash draws the general lesson through a colleague's aphorism — "almost all programming can be viewed as an exercise in caching" — and calls the reframing the inspired part, rather than the algorithm.
+
+The archive does not date this. What it bounds: Abrash joined in March 1995; chapter 64 was written "several months" into his time there, with "a few more months to go," describes the PVS prototype as already working, and was published while Quake was still unshipped; the game shipped in June 1996. That places the breakthrough somewhere in the second half of 1995 — closer to six or nine months before release than twelve. Any tighter figure would be invention.
 
 One correction the chapter itself supplies, and which this guide should not sand off: Carmack did not experience it as a eureka. Abrash reports him saying "precalculating the PVS was a logical evolution of the approaches he had been considering, that there was no moment when he said 'Eureka!'" The dramatic version is Abrash's framing of a colleague's work; the participant's version is that it fell out of a week of thinking about portals. Both are in the same paragraph, and the disagreement is itself informative about how such designs actually arrive.
 
@@ -111,9 +113,13 @@ The implementation details belong in Life of a Frame. The design decision is the
 
 ## Further reading
 
-- Michael Abrash, *Graphics Programming Black Book*, ch. 64, "Quake's Visible-Surface Determination" — the primary source for this entire chapter: [local copy](../../../historical/abrash_quake_1995/chapter-64.md); also https://www.jagregory.com/abrash-black-book/
-- Michael Abrash, *Graphics Programming Black Book*, ch. 66, "Quake's Hidden-Surface Removal" — the edge list and the limited use of a z-buffer: [local copy](../../../historical/abrash_quake_1995/chapter-66.md)
-- Michael Abrash, *Graphics Programming Black Book*, ch. 67, "Sorted Spans in Action" — the span-sorting decision benchmarked: [local copy](../../../historical/abrash_quake_1995/chapter-67.md)
+- Michael Abrash, *Graphics Programming Black Book*, ch. 64, "Quake's Visible-Surface Determination" — the primary source for this entire chapter: [local copy](../../../historical/abrash_black_book/chapter-64.md); also https://www.jagregory.com/abrash-black-book/
+- Michael Abrash, *Graphics Programming Black Book*, ch. 66, "Quake's Hidden-Surface Removal" — the edge list and the limited use of a z-buffer: [local copy](../../../historical/abrash_black_book/chapter-66.md)
+- Michael Abrash, *Graphics Programming Black Book*, ch. 67, "Sorted Spans in Action" — the span-sorting decision benchmarked: [local copy](../../../historical/abrash_black_book/chapter-67.md)
 - John Carmack, `.plan` archive, March–August 1996 — the PVS in use as general infrastructure: [15 Mar](../../../historical/plans/carmack/by_day/johnc_plan_19960315.txt), [11 Mar](../../../historical/plans/carmack/by_day/johnc_plan_19960311.txt), [6 Apr](../../../historical/plans/carmack/by_day/johnc_plan_19960406.txt), [23 Apr](../../../historical/plans/carmack/by_day/johnc_plan_19960423.txt), [27 Aug](../../../historical/plans/carmack/by_day/johnc_plan_19960827.txt)
 - Seth Teller, *Visibility Preprocessing for Interactive Walkthroughs*, SIGGRAPH 91, pp. 61–69, and *Visibility Computations in Densely Occluded Polyhedral Environments* (dissertation) — prior art on precomputed visibility, cited in Abrash's own reference list
 - Fabien Sanglard, "Quake Source Code Review" — the runtime side of the PVS: https://fabiensanglard.net/quakeSource/index.php
+- **Visual explainers.** Secondary readings of the same code and archive — good for intuition, not evidence:
+- Matthew Earl (Matt's Ramblings), "Quake's PVS: A hidden gem of rendering optimization" — the portal graph and the leaf-to-leaf visibility bitmap, animated: https://www.youtube.com/watch?v=IfCRHSIg6zo
+- Matthew Earl (Matt's Ramblings), "How Quake's software renderer ELIMINATES overdraw" — the edge list and span sorting, visualised. Title carries a flashing-images warning: https://www.youtube.com/watch?v=zdXsHWHxeBY
+- Matt's Ramblings, channel index — further Quake engine explainers: https://www.youtube.com/@MattsRamblings

@@ -99,6 +99,6 @@ These files are preserved from the following primary historical archives:
 For technical communications, engine announcements, and architectural documentation created prior to the start of the `.plan` format in February 1996, see the sibling archives in [`docs/historical/`](../):
 * [`doom_1993/`](../doom_1993/): The 1993 DOOM engine specification press release and Carmack's retrospective.
 * [`idnews/`](../idnews/): 21 official id Software Usenet announcements (1993–1995).
-* [`abrash_quake_1995/`](../abrash_quake_1995/): Michael Abrash's documentation of Quake's engine development with John Carmack in 1995.
+* [`abrash_black_book/`](../abrash_black_book/): Michael Abrash's documentation of Quake's engine development with John Carmack in 1995.
 
 

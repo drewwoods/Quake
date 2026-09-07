@@ -429,9 +429,13 @@ def convert(md, sec_index, sec_id, kicker):
                 i += 1
             quote = " ".join(buf)
             cls = ''
+            # A blockquote opening with a bold label is a labelled block: an
+            # archive quote ("**.plan.**", "**Abrash, ch. 64.**") or an aside
+            # ("**Pentium FDIV bug.**"). Both take the same label treatment;
+            # an unlabelled blockquote stays an ordinary inline quotation.
             if quote.startswith("**First pass."):
                 cls = ' class="first-pass"'
-            elif quote.startswith("**.plan.**"):
+            elif re.match(r"\*\*[^*]+\*\*", quote):
                 cls = ' class="era"'
             out.append("<blockquote%s><p>%s</p></blockquote>" % (cls, inline(quote)))
             continue

@@ -60,12 +60,16 @@ worthless to write confident design narrative from memory.
   publication — he is reconstructing, not transcribing.
 - Where the record is thin, say so. "The archive does not record why" is a
   legitimate and useful sentence.
+- Video explainers (Matt's Ramblings, Fabien Sanglard's write-ups) are
+  secondary readings of the same code and archive. Cite them to help a reader
+  build intuition, never as evidence for a claim about intent — chase the
+  primary source they are reading and cite that instead.
 - The local archive comes first. Where it is silent, the web is fair game:
   name the source and its date inline, prefer primary or well-sourced secondary
   work (Sanglard, vintage hardware archives with citations) over wikis, and say
   in the prose which claims rest on it. Mark anything you could not corroborate
   as unverified.
-- Chapter titles: the table in `../../historical/abrash_quake_1995/README.md`
+- Chapter titles: the table in `../../historical/abrash_black_book/README.md`
   has several titles that do not match the chapter files. Cite the heading
   inside the chapter file, not the README table.
 
@@ -110,7 +114,9 @@ in `template.html`.
 2. **The year of discarded renderers** — the prototype Abrash arrived to find,
    beam trees, portal clipping, direct-BSP visibility, and the PVS.
 3. **Surface caching** — separating high-frequency texture from low-frequency
-   light; why this made lighting affordable at all.
+   light; why this made lighting affordable at all. Primary sources: Abrash
+   ch. 68 and 69. For intuition first, Matthew Earl's "Shedding light on Quake I
+   and II lightmapping" (https://www.youtube.com/watch?v=bxientPsqRg).
 4. **Designing for one processor** — the Pentium's paired pipes and FPU
    overlap as an architectural input, not an optimization pass.
 5. **Shipping constraints** — dialup bandwidth, the surface cache budget,
@@ -171,7 +177,7 @@ collapse them into one motive. Say that the sources emphasise different halves.
 **Sources, already located.**
 
 - Abrash, *Black Book* ch. 70, section "Verite Quake" — the definitive
-  technical account: `../../historical/abrash_quake_1995/chapter-70.md:662`.
+  technical account: `../../historical/abrash_black_book/chapter-70.md:662`.
   The adjacent "GLQuake" section gives the two-pass alpha lighting contrast.
 - Carmack `.plan` 22 Aug 1996 — first impressions, and the surface-cache tell:
   "We do take a bit of a hit when we have to generate a lot of 16 bit surfaces,

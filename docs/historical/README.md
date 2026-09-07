@@ -29,8 +29,9 @@ docs/historical/
 │   ├── idTalks_released_1.4b.txt       # John Romero on DOOM 1.4 beta
 │   ├── id_history.txt                  # John Romero on id Software's early founding history
 │   └── ... (21 files total)
-└── abrash_quake_1995/            # Michael Abrash's documentation of Quake's engine development (1995)
+└── abrash_black_book/            # Michael Abrash's documentation of Quake's engine development (1995)
     ├── README.md                       # Detailed chapter breakdown and Carmack's key breakthroughs
+    ├── images/                         # The 44 figures referenced by the chapters
     ├── chapter-60.md                   # Compiling BSP Trees (Carmack recruits Abrash to id Software)
     ├── chapter-64.md                   # Visible-Surface Determination: Carmack's PVS and the 3D BSP
     ├── chapter-66.md                   # Quake's 3-D Engine: The Big Picture
@@ -81,7 +82,7 @@ Before public `.plan` files existed, id Software maintained an active presence o
 ---
 
 ## 4. The 1995 Quake Architectural Breakthroughs (Michael Abrash)
-Folder: [`abrash_quake_1995/`](abrash_quake_1995/)
+Folder: [`abrash_black_book/`](abrash_black_book/)
 
 In 1995, Carmack recruited Michael Abrash from Microsoft to id Software in Mesquite, Texas. Their collaboration produced the core architectural innovations of the *Quake* engine:
 1. **Precomputed Potentially Visible Sets (PVS)**: Solved real-time 3D visible surface determination by precalculating inter-leaf visibility in `qbsp`.
