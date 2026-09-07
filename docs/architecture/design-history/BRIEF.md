@@ -154,14 +154,19 @@ annotating everything costs more readability than it buys.
 ## Chapter 7 in detail: VQuake
 
 **The argument.** VQuake (2 December 1996, Rendition Vérité V1000) was the
-first hardware-accelerated Quake, six weeks ahead of GLQuake. It matters to
+first hardware-accelerated Quake, seven weeks ahead of GLQuake. It matters to
 this guide for one reason: it is the counterfactual. The Vérité was
 programmable, so the port did *not* have to discard the software renderer's
 architecture — it kept the edge list, the span sorting and the surface cache,
 and moved only span drawing onto the chip. GLQuake threw all of that out for
 two-pass alpha lighting. Chapter 7 uses the pair to show that surface caching
 was not a software-era hack but a real architectural choice with a hardware
-future, and that what killed it was economics rather than merit.
+future. Keep two reasons distinct rather than merging them into one thesis:
+Abrash's stated reason two-pass alpha lighting won is **fill rate** — 3dfx had
+enough of it and the Vérité did not — while **codepath cost** is why the native
+Vérité port was later abandoned. The first is about the technique, the second
+about maintaining a per-vendor port. Do not write "economics rather than merit"
+as if it covered both.
 
 **Where it sits.** After chapter 3 (surface caching) establishes the mechanism
 and before chapter 8 explains why the mechanism was abandoned. Chapters 3, 7
@@ -227,9 +232,13 @@ collapse them into one motive. Say that the sources emphasise different halves.
   Donovan, including the 1-clock 32x32 multiply and the bilinear-load
   instruction. Authorship of the port (Walt Donovan and Stefan Podell of
   Rendition, with Abrash) comes from here, not from the local archive.
-- VQuake release date 2 Dec 1996 and GLQuake 22 Jan 1997: Sanglard, above, and
-  https://quake.fandom.com/wiki/VQuake. Treat the wiki as weak corroboration
-  only; if a firmer date surfaces in the archive, prefer it.
+- GLQuake's release date is in the local archive, and must be cited from there:
+  `../../historical/plans/carmack/by_day/johnc_plan_19970122.txt`, "A preliminary
+  release of glquake and the 3dfx driver has been put on our ftp site in the
+  idstuff/unsup directory."
+- VQuake's 2 Dec 1996 date is *not* in the local archive. Sanglard is the source;
+  https://quake.fandom.com/wiki/VQuake corroborates weakly. Say in the prose that
+  this date rests on a secondary source, and prefer the archive if it surfaces.
 
 **Gap.** The archive holds no id-side account of the VQuake porting work
 itself — Abrash's chapter is written after the fact and Rendition did the

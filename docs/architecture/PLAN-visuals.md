@@ -8,6 +8,10 @@ Constraints throughout: diagrams need text equivalents, must work in light
 and dark themes, must survive narrow screens, and `build.py` must stay offline
 and stdlib-only. Generated data lands in the checked-in HTML.
 
+Label simplified simulations explicitly; reserve measured claims for actual
+captures. Keep interactions local to the concept, without a browser port of
+the engine.
+
 Two decisions this plan makes implicitly, recorded so they are deliberate:
 
 - **Single-file property is dropped.** The guides currently inline everything
@@ -25,6 +29,9 @@ Two decisions this plan makes implicitly, recorded so they are deliberate:
 3. Timeline graphic (Design History)
 
 The first two carry the most explanatory weight; the third is cheap.
+
+Among the additions below, start with D6 (DOOM geometry), F6 (collision), and
+D7 (historical decisions). They extend coverage beyond visibility and rendering.
 
 ## Design History
 
@@ -65,6 +72,21 @@ is inferred. Mark claims inline with a small tag. Markdown form: `{code}`,
 Render `> **.plan.**` blockquotes as a terminal panel: header line
 `finger johnc@idsoftware.com`, the file date, monospace body. CSS only; the
 builder already tags these blockquotes.
+
+### D6. Can DOOM represent this room?
+
+An interactive cutaway beside Chapter 1's dimensionality discussion. Toggle
+a ramp, stacked rooms, and sloping ceilings; show which representation breaks
+and why. Pair the floor plan with the 3D view so the limitation is concrete.
+Use a small SVG scene with labelled controls and a static comparison fallback.
+
+### D7. Choose before reading the history
+
+At a historical turning point, present the requirements known then and a few
+candidate approaches. Readers choose before revealing the actual decision,
+its evidence, and its tradeoff. Explain why discarded approaches looked
+promising; distinguish documented constraints from reconstructed reasoning.
+Use disclosure cards, keeping the evidence available without JS.
 
 ## Life of a Frame
 
@@ -122,6 +144,41 @@ Script the captures from a `.cfg` that plays `demo1`, pauses at fixed points and
 toggles the cvar, so the pairs share a viewpoint exactly and can be regenerated.
 Record the build commit in each caption: these are evidence, not decoration.
 
+### F6. Collision playground
+
+Extend the collision diagram: move a player box toward a wall, corner, or
+doorway. Toggle the equivalent point moving through expanded collision
+geometry; show the contact normal and remaining slide. Ask "Will this move
+clear the doorway?" before stepping the trace. Provide keyboard controls and
+a fixed worked example. Label the simplified geometry and link the trace and
+slide steps to the relevant code.
+
+### F7. Network delay lab
+
+Extend the interpolation diagram with controls for packet interval, delay,
+and loss. Show server position, received snapshots, and displayed position
+together. Readers predict smooth movement, a pause, or a snap before the next
+update. Follow the documented NetQuake behavior, including interpolation
+limits; do not silently substitute QuakeWorld prediction. Include a stepped
+timeline and a static example.
+
+### F8. Memory allocator sandbox
+
+Show Hunk, Zone, and Cache in a memory strip. Step through a scripted sequence:
+load a map, load a sound, grow the hunk, change maps. Readers predict what
+survives, moves, or gets evicted, then inspect the result and responsible
+allocator. Use illustrative sizes and verified allocator rules; distinguish
+the model/sound Cache from the software renderer's surface cache. Include the
+sequence as a static table.
+
+### F9. Hear spatialization
+
+Move a synthetic sound source around a listener and rotate the listener.
+Display left/right volume meters while playing the result, using the source
+code's spatialization rules. Start audio only on request; provide mute and
+keyboard controls. The meters and a static worked example must teach the
+concept without audio. Place beside `S_Update` and spatialization.
+
 ## Both guides
 
 - **Theme toggle.** Currently system-only. Button in the masthead, preference
@@ -139,7 +196,13 @@ Record the build commit in each caption: these are evidence, not decoration.
   Uses the `<details>` idiom already established for code folds and call
   graphs, so no new pattern and no JS. Life of a Frame's static "Check your
   understanding" paragraph in `template.html` is the prototype; the format
-  generalises. Cheap, and the only item here that tests rather than shows.
+  generalises. Cheap, and a foundation for the decision and diagnosis cards.
+- **"What broke?" cases.** Show a screenshot or short recording of a
+  deliberately induced fault, then offer likely responsible stages. Reveal
+  the relevant state and code path after the reader chooses. Use reproducible
+  captures with the build commit and fault setup recorded, following F5.
+  Pair recordings with stills and a text description. Place runtime cases in
+  Life of a Frame; cross-link from relevant design tradeoffs in Design History.
 
 ## Order of work
 
@@ -149,6 +212,12 @@ Record the build commit in each caption: these are evidence, not decoration.
 4. D2, D4: builder directives.
 5. F2, F5: need a running baseline build.
 6. F3, F4, xref preview, mini map.
+
+Additional concept work, in priority order:
+
+1. D6, F6, D7: geometry, collision, and historical decisions.
+2. F7, F8, F9: networking, memory, and sound.
+3. "What broke?" cases: after F5 establishes reproducible captures.
 
 Self-test cards can slot in anywhere; they need no machinery and are the
 cheapest item in the plan.
