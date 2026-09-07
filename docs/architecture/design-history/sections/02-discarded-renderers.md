@@ -32,7 +32,9 @@ The original design drew front-to-back and tracked, in a second BSP tree, which 
 
 It starts as one beam — the frustum — with everything outside marked solid and the inside empty. Walking the world tree front-to-back, each polygon is converted into a beam by running planes from its edges through the viewpoint. Whatever part of that beam intersects empty space in the beam tree is visible, and is added to the beam tree as solid. When the beam tree is entirely solid, nothing further can be visible and the walk stops. Drawing happens afterwards: once the tree is complete, the visible portions of the polygons that contributed to it are rasterized.
 
-The reason to use 3-D beams rather than a 2-D screen region is arithmetic. Every beam plane passes through the viewpoint, so testing a vertex against one is a dot product with the plane normal and a sign check, and generating a beam from a polygon edge is a single cross product. There is no projection and no division in the inner test.
+The reason to use 3-D beams rather than a 2-D screen region is arithmetic. Every beam plane passes through the viewpoint, so testing a vertex against one is a dot product with the plane normal and a sign check, and generating a beam from a polygon edge is a single cross product. There is no projection and no division in the inner test. {quoted}
+
+::: plate ../../../historical/abrash_black_book/images/64-05.jpg Planes extend from the viewpoint through a triangle’s edges, enclosing a wedge in 3-D. | **Figure 64.5 — the beam.** Each polygon edge and the viewpoint define a beam plane. Michael Abrash, *Graphics Programming Black Book*, [chapter 64](../../../historical/abrash_black_book/chapter-64.md), figure 64.5; original image, unchanged. [Archive and reproduction note](../../../historical/abrash_black_book/README.md#source--license).
 
 It failed on the last clause of the specification. The early-out looks like it caps the worst case, but a view across the top of a level, or out to the sky, never fills the beam tree, so every polygon in the frustum gets tested. Numerical precision left thin cracks that also prevented the tree closing. Abrash's verdict:
 
@@ -64,7 +66,7 @@ Carmack next tried extracting visibility directly from the world BSP tree, reaso
 
 The move was to stop computing world visibility at runtime and start looking it up. The discarded approaches tried to make that calculation cheaper; the PVS removes it from the frame loop. Abrash draws the general lesson through a colleague's aphorism — "almost all programming can be viewed as an exercise in caching" — and calls the reframing the inspired part, rather than the algorithm.
 
-The archive does not date this. What it bounds: Abrash joined in March 1995; chapter 64 was written "several months" into his time there, with "a few more months to go," describes the PVS prototype as already working, and was published while Quake was still unshipped; the game shipped in June 1996. That places the breakthrough in 1995, most likely around the middle of the year and so roughly a year before release. The archive supports no tighter figure than that.
+The archive does not date this. What it bounds: Abrash joined in March 1995; chapter 64 was written "several months" into his time there, with "a few more months to go," describes the PVS prototype as already working, and was published while Quake was still unshipped; the game shipped in June 1996. That places the breakthrough in 1995, most likely around the middle of the year and so roughly a year before release. The archive supports no tighter figure than that. {inferred}
 
 One correction the chapter itself supplies, and which this guide should not sand off: Carmack did not experience it as a eureka. Abrash reports him saying "precalculating the PVS was a logical evolution of the approaches he had been considering, that there was no moment when he said 'Eureka!'" The dramatic version is Abrash's framing of a colleague's work; the participant's version is that it was a logical next step. Note also what the preceding week was actually spent on: extracting visibility directly from the world BSP tree, not portals. Portals enter at 3:30 on the Monday morning, as the thing he was thinking about when the precomputation idea arrived. Abrash reports both accounts within a few paragraphs of each other, and the gap between them is itself informative about how such designs arrive.
 
@@ -72,7 +74,7 @@ Nor was the underlying idea unprecedented. Abrash's own reference list for the c
 
 ## Making it fit
 
-Abrash reports that the first raw, uncompressed PVS was several megabytes. Four changes brought it down to roughly 20 KB for a good-sized level:
+Abrash reports that the first raw, uncompressed PVS was several megabytes. Four changes brought it down to roughly 20 KB for a good-sized level: {quoted}
 
 1. Store the set as a bit vector, one bit per leaf, rather than a list.
 2. Compress it with run-length encoding of zero bytes, which works extremely well because the rows are sparse. Life of a Frame covers [the decompressor](frame:mod-leafpvs-mod-decompressvis-rle-decompression).
@@ -83,7 +85,9 @@ The fourth explains a rule every Quake mapper has met: a leak prevents the norma
 
 ## What it bought, and what it cost
 
-The PVS is deliberately imprecise. It records what is visible from *anywhere* in a leaf, not from the actual viewpoint, so it over-reports. Abrash gives the resulting overdraw as "typically on the order of 50 percent but ranging up to 150 percent."
+The PVS is deliberately imprecise. It records what is visible from *anywhere* in a leaf, not from the actual viewpoint, so it over-reports. Abrash gives the resulting overdraw as "typically on the order of 50 percent but ranging up to 150 percent." {quoted}
+
+::: plate ../../../historical/abrash_black_book/images/64-02.jpg Overhead map: rays from the viewpoint bound a viewing wedge; heavy wall segments mark only the portions visible through gaps between solid blocks. | **Figure 64.2 — exact visibility from one viewpoint.** The PVS is coarser: it admits leaves visible from anywhere in the viewer’s leaf. This is the chapter’s exact-visibility illustration, not a PVS diagram. Michael Abrash, *Graphics Programming Black Book*, [chapter 64](../../../historical/abrash_black_book/chapter-64.md), figure 64.2; original image, unchanged. [Archive and reproduction note](../../../historical/abrash_black_book/README.md#source--license).
 
 That inaccuracy is the entire point. Every rejected approach bought precision with runtime work that grew with scene complexity; the PVS accepts bounded imprecision in exchange for a lookup. The payoff is in the third clause of the original specification:
 

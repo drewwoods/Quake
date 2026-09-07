@@ -14,6 +14,8 @@ Plus Quake-specific transforms:
   * "## Key data structures"  ->  table
   * "## Further reading"      ->  link list
   * [text](frame:sec-5)       ->  cross-doc link, anchor checked at build time
+  * ::: plate path caption   ->  local image with a Markdown caption
+  * {code}/{quoted}/{inferred} -> inline evidence labels (outside code spans)
 """
 
 import html
@@ -88,6 +90,8 @@ MD_LINK = re.compile(r"\[([^\]]+)\]\(([^)\s]+)\)")
 BARE_URL = re.compile(r"(?<![\"=>])\bhttps?://[^\s<>()]+[^\s<>().,;:]")
 BOLD = re.compile(r"\*\*([^*]+)\*\*")
 ITAL = re.compile(r"(?<![*\w])\*([^*\n]+)\*(?!\*)")
+EVIDENCE = re.compile(r"\{(code|quoted|inferred)\}")
+EVIDENCE_LABELS = {"code": "Code", "quoted": "Source", "inferred": "Inference"}
 
 
 def inline(text, spans=None):
@@ -144,6 +148,8 @@ def inline(text, spans=None):
     text = BOLD.sub(r"<strong>\1</strong>", text)
     text = ITAL.sub(r"<em>\1</em>", text)
     text = link_refs(text)
+    text = EVIDENCE.sub(lambda m: '<span class="ev ev-%s">%s</span>'
+                        % (m.group(1), EVIDENCE_LABELS[m.group(1)]), text)
 
     def unstash(m):
         body = link_refs(html.escape(spans[int(m.group(1))]))
@@ -175,6 +181,22 @@ def slugify(text):
 # ---------------------------------------------------------------- blocks
 
 _code_seq = [0]
+
+
+def render_plate(path, caption):
+    """Reference archive images in place; captions carry description and credit."""
+    source = os.path.normpath(os.path.join(SRC, path))
+    if not os.path.isfile(source):
+        raise ValueError("Plate image not found: %s" % path)
+    url = html.escape(os.path.relpath(source, HERE), quote=True)
+    description, separator, credit = caption.partition(" | ")
+    if separator:
+        caption = credit
+    alt = MD_LINK.sub(lambda m: m.group(1), description).replace("`", "").replace("*", "")
+    return ('<figure class="plate"><a href="%s">'
+            '<img src="%s" alt="%s" loading="lazy" decoding="async"></a>'
+            '<figcaption>%s</figcaption></figure>'
+            % (url, url, html.escape(alt, quote=True), inline(caption)))
 
 
 def render_code(code, lang, ref, folded=False, idx=0):
@@ -324,6 +346,13 @@ def convert(md, sec_index, sec_id, kicker):
     while i < n:
         ln = lines[i]
 
+        # --- archive plates; fail early on missing local assets ----------
+        plate = re.fullmatch(r"::: plate (\S+) (.+)", ln)
+        if plate:
+            out.append(render_plate(plate.group(1), plate.group(2)))
+            i += 1
+            continue
+
         # --- authored, accessible diagrams ------------------------------
         diagram = re.fullmatch(r"::: diagram ([a-z0-9-]+)", ln)
         if diagram:
@@ -332,6 +361,9 @@ def convert(md, sec_index, sec_id, kicker):
                 out.append(link_refs(f.read()))
             i += 1
             continue
+
+        if ln.startswith("::: "):
+            raise ValueError("Unknown or malformed directive: %s" % ln)
 
         # --- fenced code ------------------------------------------------
         if ln.startswith("```"):
@@ -464,7 +496,7 @@ def convert(md, sec_index, sec_id, kicker):
         if ln.strip():
             buf = []
             while (i < n and lines[i].strip()
-                   and not lines[i].startswith(("```", "#", "|", ">"))
+                   and not lines[i].startswith(("```", "#", "|", ">", "::: "))
                    and not re.match(r"^\s*(?:[-*]|\d+\.)\s+\S", lines[i])
                    and not re.match(r"^-{3,}\s*$", lines[i])):
                 buf.append(lines[i].strip())
@@ -534,8 +566,8 @@ def build(doc):
 
     template = open(os.path.join(doc.here, doc.template), encoding="utf-8").read()
 
-    # Shared look and behaviour, inlined so each generated guide stays a single
-    # self-contained file that opens over file://. Injected verbatim: unlike the
+    # Shared look and behaviour, inlined so guides open over file://; plates
+    # remain local sibling assets. Injected verbatim: unlike the
     # markdown fragments below, CSS and JS must not go through link_refs().
     for placeholder, asset in (("{{BASE_CSS}}", "base.css"), ("{{BASE_JS}}", "base.js")):
         with open(os.path.join(ASSETS, asset), encoding="utf-8") as f:

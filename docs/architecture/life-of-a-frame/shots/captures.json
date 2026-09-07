@@ -1,0 +1,49 @@
+{
+  "commit": "7a74a7c6d901e39f907b39bec94819476bb7b845",
+  "scene": "demo1, 200 wait commands after timedemo starts; 640\u00d7480; fixed host_framerate 0.05",
+  "pairs": [
+    {
+      "id": "visibility",
+      "title": "Visibility: more submitted geometry need not change the view",
+      "before": "normal.png",
+      "after": "no-vis.png",
+      "before_label": "r_novis 0",
+      "after_label": "r_novis 1",
+      "description": "PVS rejection is disabled. Walls still occlude geometry through depth testing, so a similar image does not imply equal rendering work."
+    },
+    {
+      "id": "entities",
+      "title": "World geometry and entities",
+      "before": "normal.png",
+      "after": "no-entities.png",
+      "before_label": "r_drawentities 1",
+      "after_label": "r_drawentities 0",
+      "description": "The enemy, pickup and weapon disappear. The bars also disappear: moving brush models are entities. The static BSP world and particles remain."
+    },
+    {
+      "id": "lightmaps",
+      "title": "The lightmap pass",
+      "before": "normal.png",
+      "after": "lightmap.png",
+      "before_label": "r_lightmap 0",
+      "after_label": "r_lightmap 1",
+      "description": "The multipass path draws its lightmap texture without the usual blend. This diagnostic is not a final illumination-only render; entities keep their textures. Both captures use -nomtex and gl_texsort 1."
+    },
+    {
+      "id": "speeds",
+      "title": "Renderer counters in the console notification area",
+      "before": "normal.png",
+      "after": "speeds.png",
+      "before_label": "r_speeds 0",
+      "after_label": "r_speeds 1",
+      "description": "The top-left console notifications show milliseconds, world polygons (wpoly), and entity polygons (epoly). Several recent frames remain visible; the displayed timing is one instrumented run."
+    }
+  ],
+  "notes": [
+    "Captured from clean native macOS commit 7a74a7c, not documentation baseline 3ef8a7a. Host and GL render paths cited here are unchanged between those commits.",
+    "Unedited engine screenshots, converted from TGA to PNG with sips. No overlays were drawn onto the images.",
+    "Separate scripted runs use the same demo-message index, fixed 0.05-second simulation step, and camera. The baseline pause command does not freeze demo playback; timedemo plus wait supplies reproducible frame selection instead.",
+    "All shots use -nomtex, gl_texsort 1, viewsize 100, and muted audio. r_lightmap has no effect in the default multitexture path.",
+    "Each variant has a companion .cfg. Reproduce from the repository with python3 docs/architecture/life-of-a-frame/capture.py. This creates a temporary clean export and builds the pinned revision."
+  ]
+}

@@ -274,6 +274,20 @@ figcaption {
 }
 figcaption b { color: var(--ink-2); font-weight: 600; }
 
+/* Keep archival scans unmodified; captions provide their text equivalent. */
+.plate { margin: 28px 0; break-inside: avoid; }
+.plate > a { display: block; width: fit-content; max-width: 100%; }
+.plate img { display: block; max-width: 100%; height: auto; background: white; }
+.plate figcaption { padding-top: 12px; }
+.ev {
+  display: inline-block; padding: 0 5px; border: 1px solid currentColor;
+  border-radius: 3px; font: 11px/1.6 var(--f-mono); vertical-align: 1px;
+  white-space: nowrap;
+}
+.ev-code { color: var(--cl); background: var(--cl-bg); }
+.ev-quoted { color: var(--host); background: var(--surface); }
+.ev-inferred { color: var(--sim); background: var(--sim-bg); }
+
 /* ---------------------------------------------------------------- sections */
 .section { border-top: 1px solid var(--rule); margin-top: 56px; padding-top: 30px; }
 .sec-title {

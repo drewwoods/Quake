@@ -46,8 +46,9 @@ Inline SVG in `diagrams/discarded-renderers.html`, included with
 ### D2. Black Book plates
 
 Abrash granted permission (commit e2d40aa). `docs/historical/abrash_black_book/`
-holds 197 chapter images. Embed chapter 64's beam-tree and PVS figures as
-captioned plates. Needs a `::: plate path caption` directive in `build_doc.py`
+holds 197 chapter images. Embed chapter 64's beam-tree (64.5) and viewpoint
+visibility (64.2) figures as captioned plates. The latter is not a PVS diagram;
+explain that distinction. Needs a `::: plate path caption` directive in `build_doc.py`
 that copies or references the image and emits `<figure class="plate">`.
 Attribution line in the caption, every time.
 
@@ -112,8 +113,11 @@ raw lumps.
 
 `host_speeds 1` prints per-stage times. Run `timedemo demo1` on the baseline
 build, average the numbers, store them in `life-of-a-frame/timings.json`.
-Builder scales a bar inside each stage box to its share of the frame. Record
-the machine and commit in the caption.
+Builder scales bars for the measured buckets; do not assign costs to stages
+the profiler does not isolate. Its integer-millisecond `server` bucket includes
+work outside server simulation, and demo playback has no active server.
+Explain rounding and bucket boundaries; record the machine and commit in the
+caption.
 
 ### F3. One packet, dissected
 
@@ -140,8 +144,10 @@ is registered in `WinQuake/r_main.c:199` and consumed in `WinQuake/d_edge.c:187`
 both software-renderer only, and `gl_rmain.c` never references it. Capture that
 one from a software build or drop it.
 
-Script the captures from a `.cfg` that plays `demo1`, pauses at fixed points and
-toggles the cvar, so the pairs share a viewpoint exactly and can be regenerated.
+Script the captures from a `.cfg` at the same `demo1` frame in separate runs,
+with a fixed simulation delta, so pairs share a viewpoint and can be regenerated.
+Demo playback ignores pause. Use `-nomtex` and `gl_texsort 1` for the lightmap
+comparison: the multitexture path bypasses `r_lightmap`.
 Record the build commit in each caption: these are evidence, not decoration.
 
 ### F6. Collision playground
@@ -205,6 +211,29 @@ concept without audio. Place beside `S_Update` and spatialization.
   Life of a Frame; cross-link from relevant design tradeoffs in Design History.
 
 ## Order of work
+
+### Status at pause (2026-09-07)
+
+- **Step 4 complete.** D2 plates and D4 evidence badges implemented, with
+  authoring syntax in Design History's brief. Builder checks and desktop dark /
+  narrow light browser review passed. External links: 25 reachable, one known
+  bot-blocked host.
+- **Step 5 unfinished.** Real 640×480 screenshots and capture configs are in
+  `life-of-a-frame/shots/`; `capture.py`, `timings.cfg`, `timings.log`, and
+  `visuals.py` are work in progress. Do not treat draft measurements as verified.
+  Captures use native macOS commit `7a74a7c`, whose relevant host/render files
+  match guide baseline `3ef8a7a`. Initial lightmap capture was identical to the
+  normal image; capture work switched to `-nomtex` / `gl_texsort 1`.
+- **Resume step 5:** validate the newly saved `timings.json` and `shots/captures.json`,
+  document capture provenance/regeneration in `shots/README.md`, verify all
+  final pairs share the viewpoint and show the intended differences, and review
+  the completed timedemo log (the old native build can crash after completion).
+  Apply `life-of-a-frame/step5-integration.patch` to restore the draft guide
+  integration, rebuild both guides, then verify timing
+  bars, keyboard sliders, narrow screens, both themes, and print/no-JS fallbacks.
+  Rerun local asset/anchor checks and `check-links.py`.
+
+### Original sequence
 
 1. D1, D3, D5: no new build machinery, Design History stops being text-only.
 2. Theme toggle and print stylesheet: shared, small.

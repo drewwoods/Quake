@@ -98,6 +98,17 @@ rendering and should not appear here.
 text equivalents, must work in light and dark themes, and must stay usable on
 narrow screens.
 
+`::: plate path caption` embeds a local image; paths resolve from `sections/`,
+as links do. Use `::: plate path description | caption` to separate plain-text
+image description from a Markdown caption. Include attribution and an archive
+link in every caption. Images stay in place: distribute their archive paths
+alongside the HTML. The build fails if an image is missing.
+
+End selected claims with `{code}`, `{quoted}`, or `{inferred}` for evidence
+tags. `{quoted}` labels source testimony, including paraphrases; it does not
+imply verbatim quotation. Keep the supporting citation. Code spans and fenced
+listings preserve these strings literally.
+
 ## Build
 
     python3 docs/architecture/design-history/build.py

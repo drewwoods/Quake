@@ -1,0 +1,1286 @@
+Added packfile /var/folders/l2/_wjwcktn6qzgjkskxgd8hpn80000gn/T/quake-doc-capture-0olhljah/id1/pak0.pak (339 files)
+FindFile: can't find gfx/pop.lmp
+Playing shareware version.
+PackFile: /var/folders/l2/_wjwcktn6qzgjkskxgd8hpn80000gn/T/quake-doc-capture-0olhljah/id1/pak0.pak : gfx.wad
+Console initialized.
+UDP Initialized
+Exe: 23:03:13 Sep  7 2026
+16.0 megabyte heap
+PackFile: /var/folders/l2/_wjwcktn6qzgjkskxgd8hpn80000gn/T/quake-doc-capture-0olhljah/id1/pak0.pak : gfx/palette.lmp
+PackFile: /var/folders/l2/_wjwcktn6qzgjkskxgd8hpn80000gn/T/quake-doc-capture-0olhljah/id1/pak0.pak : gfx/colormap.lmp
+GL_VENDOR: Apple
+GL_RENDERER: Apple M2
+GL_VERSION: 2.1 Metal - 90.5
+Video mode 640x480 initialized.
+PackFile: /var/folders/l2/_wjwcktn6qzgjkskxgd8hpn80000gn/T/quake-doc-capture-0olhljah/id1/pak0.pak : gfx/conback.lmp
+
+Sound Initialization
+Core Audio initialized: 11025 Hz, 16-bit stereo
+Sound sampling rate: 11025
+PackFile: /var/folders/l2/_wjwcktn6qzgjkskxgd8hpn80000gn/T/quake-doc-capture-0olhljah/id1/pak0.pak : sound/ambience/water1.wav
+PackFile: /var/folders/l2/_wjwcktn6qzgjkskxgd8hpn80000gn/T/quake-doc-capture-0olhljah/id1/pak0.pak : sound/ambience/wind2.wav
+PackFile: /var/folders/l2/_wjwcktn6qzgjkskxgd8hpn80000gn/T/quake-doc-capture-0olhljah/id1/pak0.pak : sound/wizard/hit.wav
+PackFile: /var/folders/l2/_wjwcktn6qzgjkskxgd8hpn80000gn/T/quake-doc-capture-0olhljah/id1/pak0.pak : sound/hknight/hit.wav
+PackFile: /var/folders/l2/_wjwcktn6qzgjkskxgd8hpn80000gn/T/quake-doc-capture-0olhljah/id1/pak0.pak : sound/weapons/tink1.wav
+PackFile: /var/folders/l2/_wjwcktn6qzgjkskxgd8hpn80000gn/T/quake-doc-capture-0olhljah/id1/pak0.pak : sound/weapons/ric1.wav
+PackFile: /var/folders/l2/_wjwcktn6qzgjkskxgd8hpn80000gn/T/quake-doc-capture-0olhljah/id1/pak0.pak : sound/weapons/ric2.wav
+PackFile: /var/folders/l2/_wjwcktn6qzgjkskxgd8hpn80000gn/T/quake-doc-capture-0olhljah/id1/pak0.pak : sound/weapons/ric3.wav
+PackFile: /var/folders/l2/_wjwcktn6qzgjkskxgd8hpn80000gn/T/quake-doc-capture-0olhljah/id1/pak0.pak : sound/weapons/r_exp3.wav
+========Quake Initialized=========
+macOS Quake -- Version 1.300
+PackFile: /var/folders/l2/_wjwcktn6qzgjkskxgd8hpn80000gn/T/quake-doc-capture-0olhljah/id1/pak0.pak : quake.rc
+execing quake.rc
+PackFile: /var/folders/l2/_wjwcktn6qzgjkskxgd8hpn80000gn/T/quake-doc-capture-0olhljah/id1/pak0.pak : default.cfg
+execing default.cfg
+FindFile: /var/folders/l2/_wjwcktn6qzgjkskxgd8hpn80000gn/T/quake-doc-capture-0olhljah/id1/config.cfg
+execing config.cfg
+FindFile: can't find autoexec.cfg
+couldn't exec autoexec.cfg
+FindFile: /var/folders/l2/_wjwcktn6qzgjkskxgd8hpn80000gn/T/quake-doc-capture-0olhljah/id1/timings.cfg
+execing timings.cfg
+Playing demo from demo1.dem.
+PackFile: /var/folders/l2/_wjwcktn6qzgjkskxgd8hpn80000gn/T/quake-doc-capture-0olhljah/id1/pak0.pak : demo1.dem
+
+
+[1d][1e][1e][1e][1e][1e][1e][1e][1e][1e][1e][1e][1e][1e][1e][1e][1e][1e][1e][1e][1e][1e][1e][1e][1e][1e][1e][1e][1e][1e][1e][1e][1e][1e][1e][1e][1f]
+
+[02]the Necropolis
+PackFile: /var/folders/l2/_wjwcktn6qzgjkskxgd8hpn80000gn/T/quake-doc-capture-0olhljah/id1/pak0.pak : maps/e1m3.bsp
+PackFile: /var/folders/l2/_wjwcktn6qzgjkskxgd8hpn80000gn/T/quake-doc-capture-0olhljah/id1/pak0.pak : progs/player.mdl
+FindFile: can't find glquake/player.ms2
+meshing progs/player.mdl...
+PackFile: /var/folders/l2/_wjwcktn6qzgjkskxgd8hpn80000gn/T/quake-doc-capture-0olhljah/id1/pak0.pak : progs/eyes.mdl
+FindFile: can't find glquake/eyes.ms2
+meshing progs/eyes.mdl...
+PackFile: /var/folders/l2/_wjwcktn6qzgjkskxgd8hpn80000gn/T/quake-doc-capture-0olhljah/id1/pak0.pak : progs/h_player.mdl
+FindFile: can't find glquake/h_player.ms2
+meshing progs/h_player.mdl...
+PackFile: /var/folders/l2/_wjwcktn6qzgjkskxgd8hpn80000gn/T/quake-doc-capture-0olhljah/id1/pak0.pak : progs/gib1.mdl
+FindFile: can't find glquake/gib1.ms2
+meshing progs/gib1.mdl...
+PackFile: /var/folders/l2/_wjwcktn6qzgjkskxgd8hpn80000gn/T/quake-doc-capture-0olhljah/id1/pak0.pak : progs/gib2.mdl
+FindFile: can't find glquake/gib2.ms2
+meshing progs/gib2.mdl...
+PackFile: /var/folders/l2/_wjwcktn6qzgjkskxgd8hpn80000gn/T/quake-doc-capture-0olhljah/id1/pak0.pak : progs/gib3.mdl
+FindFile: can't find glquake/gib3.ms2
+meshing progs/gib3.mdl...
+PackFile: /var/folders/l2/_wjwcktn6qzgjkskxgd8hpn80000gn/T/quake-doc-capture-0olhljah/id1/pak0.pak : progs/s_bubble.spr
+PackFile: /var/folders/l2/_wjwcktn6qzgjkskxgd8hpn80000gn/T/quake-doc-capture-0olhljah/id1/pak0.pak : progs/s_explod.spr
+PackFile: /var/folders/l2/_wjwcktn6qzgjkskxgd8hpn80000gn/T/quake-doc-capture-0olhljah/id1/pak0.pak : progs/v_axe.mdl
+FindFile: can't find glquake/v_axe.ms2
+meshing progs/v_axe.mdl...
+PackFile: /var/folders/l2/_wjwcktn6qzgjkskxgd8hpn80000gn/T/quake-doc-capture-0olhljah/id1/pak0.pak : progs/v_shot.mdl
+FindFile: can't find glquake/v_shot.ms2
+meshing progs/v_shot.mdl...
+PackFile: /var/folders/l2/_wjwcktn6qzgjkskxgd8hpn80000gn/T/quake-doc-capture-0olhljah/id1/pak0.pak : progs/v_nail.mdl
+FindFile: can't find glquake/v_nail.ms2
+meshing progs/v_nail.mdl...
+PackFile: /var/folders/l2/_wjwcktn6qzgjkskxgd8hpn80000gn/T/quake-doc-capture-0olhljah/id1/pak0.pak : progs/v_rock.mdl
+FindFile: can't find glquake/v_rock.ms2
+meshing progs/v_rock.mdl...
+PackFile: /var/folders/l2/_wjwcktn6qzgjkskxgd8hpn80000gn/T/quake-doc-capture-0olhljah/id1/pak0.pak : progs/v_shot2.mdl
+FindFile: can't find glquake/v_shot2.ms2
+meshing progs/v_shot2.mdl...
+PackFile: /var/folders/l2/_wjwcktn6qzgjkskxgd8hpn80000gn/T/quake-doc-capture-0olhljah/id1/pak0.pak : progs/v_nail2.mdl
+FindFile: can't find glquake/v_nail2.ms2
+meshing progs/v_nail2.mdl...
+PackFile: /var/folders/l2/_wjwcktn6qzgjkskxgd8hpn80000gn/T/quake-doc-capture-0olhljah/id1/pak0.pak : progs/v_rock2.mdl
+FindFile: can't find glquake/v_rock2.ms2
+meshing progs/v_rock2.mdl...
+PackFile: /var/folders/l2/_wjwcktn6qzgjkskxgd8hpn80000gn/T/quake-doc-capture-0olhljah/id1/pak0.pak : progs/bolt.mdl
+FindFile: can't find glquake/bolt.ms2
+meshing progs/bolt.mdl...
+PackFile: /var/folders/l2/_wjwcktn6qzgjkskxgd8hpn80000gn/T/quake-doc-capture-0olhljah/id1/pak0.pak : progs/bolt2.mdl
+FindFile: can't find glquake/bolt2.ms2
+meshing progs/bolt2.mdl...
+PackFile: /var/folders/l2/_wjwcktn6qzgjkskxgd8hpn80000gn/T/quake-doc-capture-0olhljah/id1/pak0.pak : progs/bolt3.mdl
+FindFile: can't find glquake/bolt3.ms2
+meshing progs/bolt3.mdl...
+PackFile: /var/folders/l2/_wjwcktn6qzgjkskxgd8hpn80000gn/T/quake-doc-capture-0olhljah/id1/pak0.pak : progs/lavaball.mdl
+FindFile: can't find glquake/lavaball.ms2
+meshing progs/lavaball.mdl...
+PackFile: /var/folders/l2/_wjwcktn6qzgjkskxgd8hpn80000gn/T/quake-doc-capture-0olhljah/id1/pak0.pak : progs/missile.mdl
+FindFile: can't find glquake/missile.ms2
+meshing progs/missile.mdl...
+PackFile: /var/folders/l2/_wjwcktn6qzgjkskxgd8hpn80000gn/T/quake-doc-capture-0olhljah/id1/pak0.pak : progs/grenade.mdl
+FindFile: can't find glquake/grenade.ms2
+meshing progs/grenade.mdl...
+PackFile: /var/folders/l2/_wjwcktn6qzgjkskxgd8hpn80000gn/T/quake-doc-capture-0olhljah/id1/pak0.pak : progs/spike.mdl
+FindFile: can't find glquake/spike.ms2
+meshing progs/spike.mdl...
+PackFile: /var/folders/l2/_wjwcktn6qzgjkskxgd8hpn80000gn/T/quake-doc-capture-0olhljah/id1/pak0.pak : progs/s_spike.mdl
+FindFile: can't find glquake/s_spike.ms2
+meshing progs/s_spike.mdl...
+PackFile: /var/folders/l2/_wjwcktn6qzgjkskxgd8hpn80000gn/T/quake-doc-capture-0olhljah/id1/pak0.pak : progs/backpack.mdl
+FindFile: can't find glquake/backpack.ms2
+meshing progs/backpack.mdl...
+PackFile: /var/folders/l2/_wjwcktn6qzgjkskxgd8hpn80000gn/T/quake-doc-capture-0olhljah/id1/pak0.pak : progs/zom_gib.mdl
+FindFile: can't find glquake/zom_gib.ms2
+meshing progs/zom_gib.mdl...
+PackFile: /var/folders/l2/_wjwcktn6qzgjkskxgd8hpn80000gn/T/quake-doc-capture-0olhljah/id1/pak0.pak : progs/v_light.mdl
+FindFile: can't find glquake/v_light.ms2
+meshing progs/v_light.mdl...
+PackFile: /var/folders/l2/_wjwcktn6qzgjkskxgd8hpn80000gn/T/quake-doc-capture-0olhljah/id1/pak0.pak : progs/flame2.mdl
+FindFile: can't find glquake/flame2.ms2
+meshing progs/flame2.mdl...
+PackFile: /var/folders/l2/_wjwcktn6qzgjkskxgd8hpn80000gn/T/quake-doc-capture-0olhljah/id1/pak0.pak : progs/flame.mdl
+FindFile: can't find glquake/flame.ms2
+meshing progs/flame.mdl...
+PackFile: /var/folders/l2/_wjwcktn6qzgjkskxgd8hpn80000gn/T/quake-doc-capture-0olhljah/id1/pak0.pak : progs/zombie.mdl
+FindFile: can't find glquake/zombie.ms2
+meshing progs/zombie.mdl...
+PackFile: /var/folders/l2/_wjwcktn6qzgjkskxgd8hpn80000gn/T/quake-doc-capture-0olhljah/id1/pak0.pak : progs/h_zombie.mdl
+FindFile: can't find glquake/h_zombie.ms2
+meshing progs/h_zombie.mdl...
+PackFile: /var/folders/l2/_wjwcktn6qzgjkskxgd8hpn80000gn/T/quake-doc-capture-0olhljah/id1/pak0.pak : progs/w_g_key.mdl
+FindFile: can't find glquake/w_g_key.ms2
+meshing progs/w_g_key.mdl...
+PackFile: /var/folders/l2/_wjwcktn6qzgjkskxgd8hpn80000gn/T/quake-doc-capture-0olhljah/id1/pak0.pak : progs/ogre.mdl
+FindFile: can't find glquake/ogre.ms2
+meshing progs/ogre.mdl...
+PackFile: /var/folders/l2/_wjwcktn6qzgjkskxgd8hpn80000gn/T/quake-doc-capture-0olhljah/id1/pak0.pak : progs/h_ogre.mdl
+FindFile: can't find glquake/h_ogre.ms2
+meshing progs/h_ogre.mdl...
+PackFile: /var/folders/l2/_wjwcktn6qzgjkskxgd8hpn80000gn/T/quake-doc-capture-0olhljah/id1/pak0.pak : progs/wizard.mdl
+FindFile: can't find glquake/wizard.ms2
+meshing progs/wizard.mdl...
+PackFile: /var/folders/l2/_wjwcktn6qzgjkskxgd8hpn80000gn/T/quake-doc-capture-0olhljah/id1/pak0.pak : progs/h_wizard.mdl
+FindFile: can't find glquake/h_wizard.ms2
+meshing progs/h_wizard.mdl...
+PackFile: /var/folders/l2/_wjwcktn6qzgjkskxgd8hpn80000gn/T/quake-doc-capture-0olhljah/id1/pak0.pak : progs/w_spike.mdl
+FindFile: can't find glquake/w_spike.ms2
+meshing progs/w_spike.mdl...
+PackFile: /var/folders/l2/_wjwcktn6qzgjkskxgd8hpn80000gn/T/quake-doc-capture-0olhljah/id1/pak0.pak : progs/demon.mdl
+FindFile: can't find glquake/demon.ms2
+meshing progs/demon.mdl...
+PackFile: /var/folders/l2/_wjwcktn6qzgjkskxgd8hpn80000gn/T/quake-doc-capture-0olhljah/id1/pak0.pak : progs/h_demon.mdl
+FindFile: can't find glquake/h_demon.ms2
+meshing progs/h_demon.mdl...
+PackFile: /var/folders/l2/_wjwcktn6qzgjkskxgd8hpn80000gn/T/quake-doc-capture-0olhljah/id1/pak0.pak : progs/g_nail.mdl
+FindFile: can't find glquake/g_nail.ms2
+meshing progs/g_nail.mdl...
+PackFile: /var/folders/l2/_wjwcktn6qzgjkskxgd8hpn80000gn/T/quake-doc-capture-0olhljah/id1/pak0.pak : maps/b_shell1.bsp
+PackFile: /var/folders/l2/_wjwcktn6qzgjkskxgd8hpn80000gn/T/quake-doc-capture-0olhljah/id1/pak0.pak : maps/b_bh25.bsp
+PackFile: /var/folders/l2/_wjwcktn6qzgjkskxgd8hpn80000gn/T/quake-doc-capture-0olhljah/id1/pak0.pak : maps/b_bh10.bsp
+PackFile: /var/folders/l2/_wjwcktn6qzgjkskxgd8hpn80000gn/T/quake-doc-capture-0olhljah/id1/pak0.pak : progs/g_shot.mdl
+FindFile: can't find glquake/g_shot.ms2
+meshing progs/g_shot.mdl...
+PackFile: /var/folders/l2/_wjwcktn6qzgjkskxgd8hpn80000gn/T/quake-doc-capture-0olhljah/id1/pak0.pak : maps/b_shell0.bsp
+PackFile: /var/folders/l2/_wjwcktn6qzgjkskxgd8hpn80000gn/T/quake-doc-capture-0olhljah/id1/pak0.pak : maps/b_rock0.bsp
+PackFile: /var/folders/l2/_wjwcktn6qzgjkskxgd8hpn80000gn/T/quake-doc-capture-0olhljah/id1/pak0.pak : maps/b_nail1.bsp
+PackFile: /var/folders/l2/_wjwcktn6qzgjkskxgd8hpn80000gn/T/quake-doc-capture-0olhljah/id1/pak0.pak : progs/armor.mdl
+FindFile: can't find glquake/armor.ms2
+meshing progs/armor.mdl...
+PackFile: /var/folders/l2/_wjwcktn6qzgjkskxgd8hpn80000gn/T/quake-doc-capture-0olhljah/id1/pak0.pak : maps/b_nail0.bsp
+PackFile: /var/folders/l2/_wjwcktn6qzgjkskxgd8hpn80000gn/T/quake-doc-capture-0olhljah/id1/pak0.pak : maps/b_rock1.bsp
+PackFile: /var/folders/l2/_wjwcktn6qzgjkskxgd8hpn80000gn/T/quake-doc-capture-0olhljah/id1/pak0.pak : progs/g_rock.mdl
+FindFile: can't find glquake/g_rock.ms2
+meshing progs/g_rock.mdl...
+PackFile: /var/folders/l2/_wjwcktn6qzgjkskxgd8hpn80000gn/T/quake-doc-capture-0olhljah/id1/pak0.pak : progs/invisibl.mdl
+FindFile: can't find glquake/invisibl.ms2
+meshing progs/invisibl.mdl...
+PackFile: /var/folders/l2/_wjwcktn6qzgjkskxgd8hpn80000gn/T/quake-doc-capture-0olhljah/id1/pak0.pak : sound/weapons/rocket1i.wav
+PackFile: /var/folders/l2/_wjwcktn6qzgjkskxgd8hpn80000gn/T/quake-doc-capture-0olhljah/id1/pak0.pak : sound/weapons/sgun1.wav
+PackFile: /var/folders/l2/_wjwcktn6qzgjkskxgd8hpn80000gn/T/quake-doc-capture-0olhljah/id1/pak0.pak : sound/weapons/guncock.wav
+PackFile: /var/folders/l2/_wjwcktn6qzgjkskxgd8hpn80000gn/T/quake-doc-capture-0olhljah/id1/pak0.pak : sound/weapons/spike2.wav
+PackFile: /var/folders/l2/_wjwcktn6qzgjkskxgd8hpn80000gn/T/quake-doc-capture-0olhljah/id1/pak0.pak : sound/weapons/grenade.wav
+PackFile: /var/folders/l2/_wjwcktn6qzgjkskxgd8hpn80000gn/T/quake-doc-capture-0olhljah/id1/pak0.pak : sound/weapons/bounce.wav
+PackFile: /var/folders/l2/_wjwcktn6qzgjkskxgd8hpn80000gn/T/quake-doc-capture-0olhljah/id1/pak0.pak : sound/weapons/shotgn2.wav
+PackFile: /var/folders/l2/_wjwcktn6qzgjkskxgd8hpn80000gn/T/quake-doc-capture-0olhljah/id1/pak0.pak : sound/demon/dland2.wav
+PackFile: /var/folders/l2/_wjwcktn6qzgjkskxgd8hpn80000gn/T/quake-doc-capture-0olhljah/id1/pak0.pak : sound/misc/h2ohit1.wav
+PackFile: /var/folders/l2/_wjwcktn6qzgjkskxgd8hpn80000gn/T/quake-doc-capture-0olhljah/id1/pak0.pak : sound/items/itembk2.wav
+PackFile: /var/folders/l2/_wjwcktn6qzgjkskxgd8hpn80000gn/T/quake-doc-capture-0olhljah/id1/pak0.pak : sound/player/plyrjmp8.wav
+PackFile: /var/folders/l2/_wjwcktn6qzgjkskxgd8hpn80000gn/T/quake-doc-capture-0olhljah/id1/pak0.pak : sound/player/land.wav
+PackFile: /var/folders/l2/_wjwcktn6qzgjkskxgd8hpn80000gn/T/quake-doc-capture-0olhljah/id1/pak0.pak : sound/player/land2.wav
+PackFile: /var/folders/l2/_wjwcktn6qzgjkskxgd8hpn80000gn/T/quake-doc-capture-0olhljah/id1/pak0.pak : sound/player/drown1.wav
+PackFile: /var/folders/l2/_wjwcktn6qzgjkskxgd8hpn80000gn/T/quake-doc-capture-0olhljah/id1/pak0.pak : sound/player/drown2.wav
+PackFile: /var/folders/l2/_wjwcktn6qzgjkskxgd8hpn80000gn/T/quake-doc-capture-0olhljah/id1/pak0.pak : sound/player/gasp1.wav
+PackFile: /var/folders/l2/_wjwcktn6qzgjkskxgd8hpn80000gn/T/quake-doc-capture-0olhljah/id1/pak0.pak : sound/player/gasp2.wav
+PackFile: /var/folders/l2/_wjwcktn6qzgjkskxgd8hpn80000gn/T/quake-doc-capture-0olhljah/id1/pak0.pak : sound/player/h2odeath.wav
+PackFile: /var/folders/l2/_wjwcktn6qzgjkskxgd8hpn80000gn/T/quake-doc-capture-0olhljah/id1/pak0.pak : sound/misc/talk.wav
+PackFile: /var/folders/l2/_wjwcktn6qzgjkskxgd8hpn80000gn/T/quake-doc-capture-0olhljah/id1/pak0.pak : sound/player/teledth1.wav
+PackFile: /var/folders/l2/_wjwcktn6qzgjkskxgd8hpn80000gn/T/quake-doc-capture-0olhljah/id1/pak0.pak : sound/misc/r_tele1.wav
+PackFile: /var/folders/l2/_wjwcktn6qzgjkskxgd8hpn80000gn/T/quake-doc-capture-0olhljah/id1/pak0.pak : sound/misc/r_tele2.wav
+PackFile: /var/folders/l2/_wjwcktn6qzgjkskxgd8hpn80000gn/T/quake-doc-capture-0olhljah/id1/pak0.pak : sound/misc/r_tele3.wav
+PackFile: /var/folders/l2/_wjwcktn6qzgjkskxgd8hpn80000gn/T/quake-doc-capture-0olhljah/id1/pak0.pak : sound/misc/r_tele4.wav
+PackFile: /var/folders/l2/_wjwcktn6qzgjkskxgd8hpn80000gn/T/quake-doc-capture-0olhljah/id1/pak0.pak : sound/misc/r_tele5.wav
+PackFile: /var/folders/l2/_wjwcktn6qzgjkskxgd8hpn80000gn/T/quake-doc-capture-0olhljah/id1/pak0.pak : sound/weapons/lock4.wav
+PackFile: /var/folders/l2/_wjwcktn6qzgjkskxgd8hpn80000gn/T/quake-doc-capture-0olhljah/id1/pak0.pak : sound/weapons/pkup.wav
+PackFile: /var/folders/l2/_wjwcktn6qzgjkskxgd8hpn80000gn/T/quake-doc-capture-0olhljah/id1/pak0.pak : sound/items/armor1.wav
+PackFile: /var/folders/l2/_wjwcktn6qzgjkskxgd8hpn80000gn/T/quake-doc-capture-0olhljah/id1/pak0.pak : sound/weapons/lhit.wav
+PackFile: /var/folders/l2/_wjwcktn6qzgjkskxgd8hpn80000gn/T/quake-doc-capture-0olhljah/id1/pak0.pak : sound/player/gib.wav
+PackFile: /var/folders/l2/_wjwcktn6qzgjkskxgd8hpn80000gn/T/quake-doc-capture-0olhljah/id1/pak0.pak : sound/player/udeath.wav
+PackFile: /var/folders/l2/_wjwcktn6qzgjkskxgd8hpn80000gn/T/quake-doc-capture-0olhljah/id1/pak0.pak : sound/player/tornoff2.wav
+PackFile: /var/folders/l2/_wjwcktn6qzgjkskxgd8hpn80000gn/T/quake-doc-capture-0olhljah/id1/pak0.pak : sound/player/pain1.wav
+PackFile: /var/folders/l2/_wjwcktn6qzgjkskxgd8hpn80000gn/T/quake-doc-capture-0olhljah/id1/pak0.pak : sound/player/pain2.wav
+PackFile: /var/folders/l2/_wjwcktn6qzgjkskxgd8hpn80000gn/T/quake-doc-capture-0olhljah/id1/pak0.pak : sound/player/pain3.wav
+PackFile: /var/folders/l2/_wjwcktn6qzgjkskxgd8hpn80000gn/T/quake-doc-capture-0olhljah/id1/pak0.pak : sound/player/pain4.wav
+PackFile: /var/folders/l2/_wjwcktn6qzgjkskxgd8hpn80000gn/T/quake-doc-capture-0olhljah/id1/pak0.pak : sound/player/pain5.wav
+PackFile: /var/folders/l2/_wjwcktn6qzgjkskxgd8hpn80000gn/T/quake-doc-capture-0olhljah/id1/pak0.pak : sound/player/pain6.wav
+PackFile: /var/folders/l2/_wjwcktn6qzgjkskxgd8hpn80000gn/T/quake-doc-capture-0olhljah/id1/pak0.pak : sound/player/death1.wav
+PackFile: /var/folders/l2/_wjwcktn6qzgjkskxgd8hpn80000gn/T/quake-doc-capture-0olhljah/id1/pak0.pak : sound/player/death2.wav
+PackFile: /var/folders/l2/_wjwcktn6qzgjkskxgd8hpn80000gn/T/quake-doc-capture-0olhljah/id1/pak0.pak : sound/player/death3.wav
+PackFile: /var/folders/l2/_wjwcktn6qzgjkskxgd8hpn80000gn/T/quake-doc-capture-0olhljah/id1/pak0.pak : sound/player/death4.wav
+PackFile: /var/folders/l2/_wjwcktn6qzgjkskxgd8hpn80000gn/T/quake-doc-capture-0olhljah/id1/pak0.pak : sound/player/death5.wav
+PackFile: /var/folders/l2/_wjwcktn6qzgjkskxgd8hpn80000gn/T/quake-doc-capture-0olhljah/id1/pak0.pak : sound/weapons/ax1.wav
+PackFile: /var/folders/l2/_wjwcktn6qzgjkskxgd8hpn80000gn/T/quake-doc-capture-0olhljah/id1/pak0.pak : sound/player/axhit1.wav
+PackFile: /var/folders/l2/_wjwcktn6qzgjkskxgd8hpn80000gn/T/quake-doc-capture-0olhljah/id1/pak0.pak : sound/player/axhit2.wav
+PackFile: /var/folders/l2/_wjwcktn6qzgjkskxgd8hpn80000gn/T/quake-doc-capture-0olhljah/id1/pak0.pak : sound/player/h2ojump.wav
+PackFile: /var/folders/l2/_wjwcktn6qzgjkskxgd8hpn80000gn/T/quake-doc-capture-0olhljah/id1/pak0.pak : sound/player/slimbrn2.wav
+PackFile: /var/folders/l2/_wjwcktn6qzgjkskxgd8hpn80000gn/T/quake-doc-capture-0olhljah/id1/pak0.pak : sound/player/inh2o.wav
+PackFile: /var/folders/l2/_wjwcktn6qzgjkskxgd8hpn80000gn/T/quake-doc-capture-0olhljah/id1/pak0.pak : sound/player/inlava.wav
+PackFile: /var/folders/l2/_wjwcktn6qzgjkskxgd8hpn80000gn/T/quake-doc-capture-0olhljah/id1/pak0.pak : sound/misc/outwater.wav
+PackFile: /var/folders/l2/_wjwcktn6qzgjkskxgd8hpn80000gn/T/quake-doc-capture-0olhljah/id1/pak0.pak : sound/player/lburn1.wav
+PackFile: /var/folders/l2/_wjwcktn6qzgjkskxgd8hpn80000gn/T/quake-doc-capture-0olhljah/id1/pak0.pak : sound/player/lburn2.wav
+PackFile: /var/folders/l2/_wjwcktn6qzgjkskxgd8hpn80000gn/T/quake-doc-capture-0olhljah/id1/pak0.pak : sound/misc/water1.wav
+PackFile: /var/folders/l2/_wjwcktn6qzgjkskxgd8hpn80000gn/T/quake-doc-capture-0olhljah/id1/pak0.pak : sound/misc/water2.wav
+PackFile: /var/folders/l2/_wjwcktn6qzgjkskxgd8hpn80000gn/T/quake-doc-capture-0olhljah/id1/pak0.pak : sound/doors/medtry.wav
+PackFile: /var/folders/l2/_wjwcktn6qzgjkskxgd8hpn80000gn/T/quake-doc-capture-0olhljah/id1/pak0.pak : sound/doors/meduse.wav
+PackFile: /var/folders/l2/_wjwcktn6qzgjkskxgd8hpn80000gn/T/quake-doc-capture-0olhljah/id1/pak0.pak : sound/doors/stndr1.wav
+PackFile: /var/folders/l2/_wjwcktn6qzgjkskxgd8hpn80000gn/T/quake-doc-capture-0olhljah/id1/pak0.pak : sound/doors/stndr2.wav
+PackFile: /var/folders/l2/_wjwcktn6qzgjkskxgd8hpn80000gn/T/quake-doc-capture-0olhljah/id1/pak0.pak : sound/misc/null.wav
+PackFile: /var/folders/l2/_wjwcktn6qzgjkskxgd8hpn80000gn/T/quake-doc-capture-0olhljah/id1/pak0.pak : sound/plats/train2.wav
+PackFile: /var/folders/l2/_wjwcktn6qzgjkskxgd8hpn80000gn/T/quake-doc-capture-0olhljah/id1/pak0.pak : sound/plats/train1.wav
+PackFile: /var/folders/l2/_wjwcktn6qzgjkskxgd8hpn80000gn/T/quake-doc-capture-0olhljah/id1/pak0.pak : sound/buttons/switch02.wav
+PackFile: /var/folders/l2/_wjwcktn6qzgjkskxgd8hpn80000gn/T/quake-doc-capture-0olhljah/id1/pak0.pak : sound/doors/drclos4.wav
+PackFile: /var/folders/l2/_wjwcktn6qzgjkskxgd8hpn80000gn/T/quake-doc-capture-0olhljah/id1/pak0.pak : sound/doors/doormv1.wav
+PackFile: /var/folders/l2/_wjwcktn6qzgjkskxgd8hpn80000gn/T/quake-doc-capture-0olhljah/id1/pak0.pak : sound/ambience/fire1.wav
+PackFile: /var/folders/l2/_wjwcktn6qzgjkskxgd8hpn80000gn/T/quake-doc-capture-0olhljah/id1/pak0.pak : sound/doors/basesec1.wav
+PackFile: /var/folders/l2/_wjwcktn6qzgjkskxgd8hpn80000gn/T/quake-doc-capture-0olhljah/id1/pak0.pak : sound/doors/basesec2.wav
+PackFile: /var/folders/l2/_wjwcktn6qzgjkskxgd8hpn80000gn/T/quake-doc-capture-0olhljah/id1/pak0.pak : sound/doors/latch2.wav
+PackFile: /var/folders/l2/_wjwcktn6qzgjkskxgd8hpn80000gn/T/quake-doc-capture-0olhljah/id1/pak0.pak : sound/doors/winch2.wav
+PackFile: /var/folders/l2/_wjwcktn6qzgjkskxgd8hpn80000gn/T/quake-doc-capture-0olhljah/id1/pak0.pak : sound/zombie/z_idle.wav
+PackFile: /var/folders/l2/_wjwcktn6qzgjkskxgd8hpn80000gn/T/quake-doc-capture-0olhljah/id1/pak0.pak : sound/zombie/z_idle1.wav
+PackFile: /var/folders/l2/_wjwcktn6qzgjkskxgd8hpn80000gn/T/quake-doc-capture-0olhljah/id1/pak0.pak : sound/zombie/z_shot1.wav
+PackFile: /var/folders/l2/_wjwcktn6qzgjkskxgd8hpn80000gn/T/quake-doc-capture-0olhljah/id1/pak0.pak : sound/zombie/z_gib.wav
+PackFile: /var/folders/l2/_wjwcktn6qzgjkskxgd8hpn80000gn/T/quake-doc-capture-0olhljah/id1/pak0.pak : sound/zombie/z_pain.wav
+PackFile: /var/folders/l2/_wjwcktn6qzgjkskxgd8hpn80000gn/T/quake-doc-capture-0olhljah/id1/pak0.pak : sound/zombie/z_pain1.wav
+PackFile: /var/folders/l2/_wjwcktn6qzgjkskxgd8hpn80000gn/T/quake-doc-capture-0olhljah/id1/pak0.pak : sound/zombie/z_fall.wav
+PackFile: /var/folders/l2/_wjwcktn6qzgjkskxgd8hpn80000gn/T/quake-doc-capture-0olhljah/id1/pak0.pak : sound/zombie/z_miss.wav
+PackFile: /var/folders/l2/_wjwcktn6qzgjkskxgd8hpn80000gn/T/quake-doc-capture-0olhljah/id1/pak0.pak : sound/zombie/z_hit.wav
+PackFile: /var/folders/l2/_wjwcktn6qzgjkskxgd8hpn80000gn/T/quake-doc-capture-0olhljah/id1/pak0.pak : sound/zombie/idle_w2.wav
+PackFile: /var/folders/l2/_wjwcktn6qzgjkskxgd8hpn80000gn/T/quake-doc-capture-0olhljah/id1/pak0.pak : sound/plats/medplat1.wav
+PackFile: /var/folders/l2/_wjwcktn6qzgjkskxgd8hpn80000gn/T/quake-doc-capture-0olhljah/id1/pak0.pak : sound/plats/medplat2.wav
+PackFile: /var/folders/l2/_wjwcktn6qzgjkskxgd8hpn80000gn/T/quake-doc-capture-0olhljah/id1/pak0.pak : sound/buttons/airbut1.wav
+PackFile: /var/folders/l2/_wjwcktn6qzgjkskxgd8hpn80000gn/T/quake-doc-capture-0olhljah/id1/pak0.pak : sound/misc/medkey.wav
+PackFile: /var/folders/l2/_wjwcktn6qzgjkskxgd8hpn80000gn/T/quake-doc-capture-0olhljah/id1/pak0.pak : sound/ambience/hum1.wav
+PackFile: /var/folders/l2/_wjwcktn6qzgjkskxgd8hpn80000gn/T/quake-doc-capture-0olhljah/id1/pak0.pak : sound/ogre/ogdrag.wav
+PackFile: /var/folders/l2/_wjwcktn6qzgjkskxgd8hpn80000gn/T/quake-doc-capture-0olhljah/id1/pak0.pak : sound/ogre/ogdth.wav
+PackFile: /var/folders/l2/_wjwcktn6qzgjkskxgd8hpn80000gn/T/quake-doc-capture-0olhljah/id1/pak0.pak : sound/ogre/ogidle.wav
+PackFile: /var/folders/l2/_wjwcktn6qzgjkskxgd8hpn80000gn/T/quake-doc-capture-0olhljah/id1/pak0.pak : sound/ogre/ogidle2.wav
+PackFile: /var/folders/l2/_wjwcktn6qzgjkskxgd8hpn80000gn/T/quake-doc-capture-0olhljah/id1/pak0.pak : sound/ogre/ogpain1.wav
+PackFile: /var/folders/l2/_wjwcktn6qzgjkskxgd8hpn80000gn/T/quake-doc-capture-0olhljah/id1/pak0.pak : sound/ogre/ogsawatk.wav
+PackFile: /var/folders/l2/_wjwcktn6qzgjkskxgd8hpn80000gn/T/quake-doc-capture-0olhljah/id1/pak0.pak : sound/ogre/ogwake.wav
+PackFile: /var/folders/l2/_wjwcktn6qzgjkskxgd8hpn80000gn/T/quake-doc-capture-0olhljah/id1/pak0.pak : sound/wizard/wattack.wav
+PackFile: /var/folders/l2/_wjwcktn6qzgjkskxgd8hpn80000gn/T/quake-doc-capture-0olhljah/id1/pak0.pak : sound/wizard/wdeath.wav
+PackFile: /var/folders/l2/_wjwcktn6qzgjkskxgd8hpn80000gn/T/quake-doc-capture-0olhljah/id1/pak0.pak : sound/wizard/widle1.wav
+PackFile: /var/folders/l2/_wjwcktn6qzgjkskxgd8hpn80000gn/T/quake-doc-capture-0olhljah/id1/pak0.pak : sound/wizard/widle2.wav
+PackFile: /var/folders/l2/_wjwcktn6qzgjkskxgd8hpn80000gn/T/quake-doc-capture-0olhljah/id1/pak0.pak : sound/wizard/wpain.wav
+PackFile: /var/folders/l2/_wjwcktn6qzgjkskxgd8hpn80000gn/T/quake-doc-capture-0olhljah/id1/pak0.pak : sound/wizard/wsight.wav
+PackFile: /var/folders/l2/_wjwcktn6qzgjkskxgd8hpn80000gn/T/quake-doc-capture-0olhljah/id1/pak0.pak : sound/demon/ddeath.wav
+PackFile: /var/folders/l2/_wjwcktn6qzgjkskxgd8hpn80000gn/T/quake-doc-capture-0olhljah/id1/pak0.pak : sound/demon/dhit2.wav
+PackFile: /var/folders/l2/_wjwcktn6qzgjkskxgd8hpn80000gn/T/quake-doc-capture-0olhljah/id1/pak0.pak : sound/demon/djump.wav
+PackFile: /var/folders/l2/_wjwcktn6qzgjkskxgd8hpn80000gn/T/quake-doc-capture-0olhljah/id1/pak0.pak : sound/demon/dpain1.wav
+PackFile: /var/folders/l2/_wjwcktn6qzgjkskxgd8hpn80000gn/T/quake-doc-capture-0olhljah/id1/pak0.pak : sound/demon/idle1.wav
+PackFile: /var/folders/l2/_wjwcktn6qzgjkskxgd8hpn80000gn/T/quake-doc-capture-0olhljah/id1/pak0.pak : sound/demon/sight2.wav
+PackFile: /var/folders/l2/_wjwcktn6qzgjkskxgd8hpn80000gn/T/quake-doc-capture-0olhljah/id1/pak0.pak : sound/items/health1.wav
+PackFile: /var/folders/l2/_wjwcktn6qzgjkskxgd8hpn80000gn/T/quake-doc-capture-0olhljah/id1/pak0.pak : sound/items/r_item1.wav
+PackFile: /var/folders/l2/_wjwcktn6qzgjkskxgd8hpn80000gn/T/quake-doc-capture-0olhljah/id1/pak0.pak : sound/misc/secret.wav
+PackFile: /var/folders/l2/_wjwcktn6qzgjkskxgd8hpn80000gn/T/quake-doc-capture-0olhljah/id1/pak0.pak : sound/items/inv1.wav
+PackFile: /var/folders/l2/_wjwcktn6qzgjkskxgd8hpn80000gn/T/quake-doc-capture-0olhljah/id1/pak0.pak : sound/items/inv2.wav
+PackFile: /var/folders/l2/_wjwcktn6qzgjkskxgd8hpn80000gn/T/quake-doc-capture-0olhljah/id1/pak0.pak : sound/items/inv3.wav
+PackFile: /var/folders/l2/_wjwcktn6qzgjkskxgd8hpn80000gn/T/quake-doc-capture-0olhljah/id1/pak0.pak : sound/ambience/drip1.wav
+PackFile: /var/folders/l2/_wjwcktn6qzgjkskxgd8hpn80000gn/T/quake-doc-capture-0olhljah/id1/pak0.pak : sound/ambience/swamp2.wav
+PackFile: /var/folders/l2/_wjwcktn6qzgjkskxgd8hpn80000gn/T/quake-doc-capture-0olhljah/id1/pak0.pak : sound/ambience/swamp1.wav
+2122 tot 2120 server   2 gfx   0 snd
+ 13 tot   9 server   4 gfx   0 snd
+  2 tot   0 server   2 gfx   0 snd
+ 10 tot   0 server  10 gfx   0 snd
+  6 tot   0 server   6 gfx   0 snd
+  9 tot   0 server   9 gfx   0 snd
+  7 tot   0 server   7 gfx   0 snd
+ 10 tot   0 server  10 gfx   0 snd
+  6 tot   0 server   6 gfx   0 snd
+ 10 tot   0 server  10 gfx   0 snd
+  6 tot   0 server   6 gfx   0 snd
+ 10 tot   0 server  10 gfx   0 snd
+  6 tot   0 server   6 gfx   0 snd
+  9 tot   0 server   9 gfx   0 snd
+  7 tot   0 server   7 gfx   0 snd
+  9 tot   0 server   9 gfx   0 snd
+  6 tot   0 server   6 gfx   0 snd
+  9 tot   0 server   9 gfx   0 snd
+  6 tot   0 server   6 gfx   0 snd
+ 10 tot   0 server  10 gfx   0 snd
+  6 tot   0 server   6 gfx   0 snd
+ 10 tot   0 server  10 gfx   0 snd
+  5 tot   0 server   5 gfx   0 snd
+  9 tot   0 server   9 gfx   0 snd
+  6 tot   0 server   6 gfx   0 snd
+  9 tot   0 server   9 gfx   0 snd
+ 15 tot   8 server   7 gfx   0 snd
+You got the shells
+  6 tot   2 server   4 gfx   0 snd
+  9 tot   0 server   9 gfx   0 snd
+  6 tot   0 server   6 gfx   0 snd
+  9 tot   0 server   9 gfx   0 snd
+  6 tot   0 server   6 gfx   0 snd
+ 10 tot   0 server  10 gfx   0 snd
+  5 tot   0 server   5 gfx   0 snd
+  8 tot   0 server   8 gfx   0 snd
+  7 tot   0 server   7 gfx   0 snd
+  9 tot   0 server   9 gfx   0 snd
+  6 tot   0 server   6 gfx   0 snd
+  9 tot   0 server   9 gfx   0 snd
+  7 tot   0 server   7 gfx   0 snd
+  9 tot   0 server   9 gfx   0 snd
+  6 tot   0 server   6 gfx   0 snd
+  9 tot   0 server   9 gfx   0 snd
+  7 tot   0 server   7 gfx   0 snd
+  9 tot   0 server   9 gfx   0 snd
+  6 tot   0 server   6 gfx   0 snd
+  9 tot   0 server   9 gfx   0 snd
+  6 tot   0 server   6 gfx   0 snd
+  9 tot   0 server   9 gfx   0 snd
+You got the Grenade Launcher
+  6 tot   0 server   6 gfx   0 snd
+  9 tot   0 server   9 gfx   0 snd
+  6 tot   0 server   6 gfx   0 snd
+  9 tot   0 server   9 gfx   0 snd
+  6 tot   0 server   6 gfx   0 snd
+  9 tot   0 server   9 gfx   0 snd
+  7 tot   0 server   7 gfx   0 snd
+  9 tot   0 server   9 gfx   0 snd
+  6 tot   0 server   6 gfx   0 snd
+  9 tot   0 server   9 gfx   0 snd
+  7 tot   0 server   7 gfx   0 snd
+  9 tot   0 server   9 gfx   0 snd
+  7 tot   0 server   7 gfx   0 snd
+  9 tot   0 server   9 gfx   0 snd
+  6 tot   0 server   6 gfx   0 snd
+  9 tot   0 server   9 gfx   0 snd
+  7 tot   0 server   7 gfx   0 snd
+  9 tot   0 server   9 gfx   0 snd
+  6 tot   0 server   6 gfx   0 snd
+ 10 tot   0 server  10 gfx   0 snd
+  6 tot   0 server   6 gfx   0 snd
+  9 tot   0 server   9 gfx   0 snd
+  7 tot   0 server   7 gfx   0 snd
+  9 tot   0 server   9 gfx   0 snd
+  7 tot   0 server   7 gfx   0 snd
+  9 tot   0 server   9 gfx   0 snd
+  6 tot   0 server   6 gfx   0 snd
+ 10 tot   0 server  10 gfx   0 snd
+  6 tot   0 server   6 gfx   0 snd
+  9 tot   0 server   9 gfx   0 snd
+  6 tot   0 server   6 gfx   0 snd
+  9 tot   0 server   9 gfx   0 snd
+  6 tot   0 server   6 gfx   0 snd
+  9 tot   0 server   9 gfx   0 snd
+  6 tot   0 server   6 gfx   0 snd
+  9 tot   0 server   9 gfx   0 snd
+  6 tot   0 server   6 gfx   0 snd
+  9 tot   0 server   9 gfx   0 snd
+  7 tot   0 server   7 gfx   0 snd
+  9 tot   0 server   9 gfx   0 snd
+  7 tot   0 server   7 gfx   0 snd
+  9 tot   0 server   9 gfx   0 snd
+  7 tot   0 server   7 gfx   0 snd
+  9 tot   0 server   9 gfx   0 snd
+  7 tot   0 server   7 gfx   0 snd
+  8 tot   0 server   8 gfx   0 snd
+  8 tot   0 server   8 gfx   0 snd
+  9 tot   0 server   9 gfx   0 snd
+  6 tot   0 server   6 gfx   0 snd
+  8 tot   0 server   8 gfx   0 snd
+  7 tot   0 server   7 gfx   0 snd
+  9 tot   0 server   9 gfx   0 snd
+  7 tot   0 server   7 gfx   0 snd
+  9 tot   0 server   9 gfx   0 snd
+  6 tot   0 server   6 gfx   0 snd
+  9 tot   0 server   9 gfx   0 snd
+  7 tot   0 server   7 gfx   0 snd
+  9 tot   0 server   9 gfx   0 snd
+  7 tot   0 server   7 gfx   0 snd
+  9 tot   0 server   9 gfx   0 snd
+  7 tot   0 server   7 gfx   0 snd
+  9 tot   0 server   9 gfx   0 snd
+  7 tot   0 server   7 gfx   0 snd
+  9 tot   0 server   9 gfx   0 snd
+  6 tot   0 server   6 gfx   0 snd
+  9 tot   0 server   9 gfx   0 snd
+  7 tot   0 server   7 gfx   0 snd
+  9 tot   0 server   9 gfx   0 snd
+  6 tot   0 server   6 gfx   0 snd
+  9 tot   0 server   9 gfx   0 snd
+  6 tot   0 server   6 gfx   0 snd
+  9 tot   0 server   9 gfx   0 snd
+  7 tot   0 server   7 gfx   0 snd
+  9 tot   0 server   9 gfx   0 snd
+  7 tot   0 server   7 gfx   0 snd
+  8 tot   0 server   8 gfx   0 snd
+  7 tot   0 server   7 gfx   0 snd
+  8 tot   0 server   8 gfx   0 snd
+  7 tot   0 server   7 gfx   0 snd
+  9 tot   0 server   9 gfx   0 snd
+  6 tot   0 server   6 gfx   0 snd
+  9 tot   0 server   9 gfx   0 snd
+  6 tot   0 server   6 gfx   0 snd
+  9 tot   0 server   9 gfx   0 snd
+  6 tot   0 server   6 gfx   0 snd
+  9 tot   0 server   9 gfx   0 snd
+  6 tot   0 server   6 gfx   0 snd
+You receive 25 health
+You get 2 rockets  
+  9 tot   0 server   9 gfx   0 snd
+  6 tot   0 server   6 gfx   0 snd
+  9 tot   0 server   9 gfx   0 snd
+  6 tot   0 server   6 gfx   0 snd
+ 11 tot   0 server  11 gfx   0 snd
+  4 tot   0 server   4 gfx   0 snd
+  9 tot   0 server   9 gfx   0 snd
+  6 tot   0 server   6 gfx   0 snd
+  9 tot   0 server   9 gfx   0 snd
+  6 tot   0 server   6 gfx   0 snd
+  9 tot   0 server   9 gfx   0 snd
+  7 tot   0 server   7 gfx   0 snd
+  8 tot   0 server   8 gfx   0 snd
+  7 tot   0 server   7 gfx   0 snd
+  9 tot   0 server   9 gfx   0 snd
+  6 tot   0 server   6 gfx   0 snd
+  9 tot   0 server   9 gfx   0 snd
+  7 tot   0 server   7 gfx   0 snd
+  9 tot   0 server   9 gfx   0 snd
+  7 tot   0 server   7 gfx   0 snd
+  9 tot   0 server   9 gfx   0 snd
+  6 tot   0 server   6 gfx   0 snd
+  9 tot   0 server   9 gfx   0 snd
+  6 tot   0 server   6 gfx   0 snd
+  9 tot   0 server   9 gfx   0 snd
+  7 tot   0 server   7 gfx   0 snd
+  8 tot   0 server   8 gfx   0 snd
+  7 tot   0 server   7 gfx   0 snd
+  9 tot   0 server   9 gfx   0 snd
+  7 tot   0 server   7 gfx   0 snd
+  9 tot   0 server   9 gfx   0 snd
+  6 tot   0 server   6 gfx   0 snd
+  9 tot   0 server   9 gfx   0 snd
+  6 tot   0 server   6 gfx   0 snd
+  9 tot   0 server   9 gfx   0 snd
+  7 tot   0 server   7 gfx   0 snd
+ 10 tot   0 server  10 gfx   0 snd
+  6 tot   0 server   6 gfx   0 snd
+  9 tot   0 server   9 gfx   0 snd
+  7 tot   0 server   7 gfx   0 snd
+  9 tot   0 server   9 gfx   0 snd
+  6 tot   0 server   6 gfx   0 snd
+  8 tot   0 server   8 gfx   0 snd
+  7 tot   0 server   7 gfx   0 snd
+  9 tot   0 server   9 gfx   0 snd
+  7 tot   0 server   7 gfx   0 snd
+  9 tot   0 server   9 gfx   0 snd
+  7 tot   0 server   7 gfx   0 snd
+  8 tot   0 server   8 gfx   0 snd
+  7 tot   0 server   7 gfx   0 snd
+  9 tot   0 server   9 gfx   0 snd
+  6 tot   0 server   6 gfx   0 snd
+ 10 tot   0 server  10 gfx   0 snd
+  6 tot   0 server   6 gfx   0 snd
+  9 tot   0 server   9 gfx   0 snd
+  6 tot   0 server   6 gfx   0 snd
+ 10 tot   0 server  10 gfx   0 snd
+  6 tot   0 server   6 gfx   0 snd
+  9 tot   0 server   9 gfx   0 snd
+  6 tot   0 server   6 gfx   0 snd
+  9 tot   0 server   9 gfx   0 snd
+  6 tot   0 server   6 gfx   0 snd
+ 10 tot   0 server  10 gfx   0 snd
+  6 tot   0 server   6 gfx   0 snd
+  9 tot   0 server   9 gfx   0 snd
+  6 tot   0 server   6 gfx   0 snd
+  9 tot   0 server   9 gfx   0 snd
+  6 tot   0 server   6 gfx   0 snd
+  9 tot   0 server   9 gfx   0 snd
+  7 tot   0 server   7 gfx   0 snd
+  8 tot   0 server   8 gfx   0 snd
+  7 tot   0 server   7 gfx   0 snd
+  8 tot   0 server   8 gfx   0 snd
+  7 tot   0 server   7 gfx   0 snd
+  9 tot   0 server   9 gfx   0 snd
+  6 tot   0 server   6 gfx   0 snd
+  8 tot   0 server   8 gfx   0 snd
+  7 tot   0 server   7 gfx   0 snd
+  8 tot   0 server   8 gfx   0 snd
+  8 tot   0 server   8 gfx   0 snd
+  9 tot   0 server   9 gfx   0 snd
+  7 tot   0 server   7 gfx   0 snd
+  8 tot   0 server   8 gfx   0 snd
+  7 tot   0 server   7 gfx   0 snd
+  8 tot   0 server   8 gfx   0 snd
+  7 tot   0 server   7 gfx   0 snd
+  8 tot   0 server   8 gfx   0 snd
+  7 tot   0 server   7 gfx   0 snd
+You got the rockets
+  9 tot   0 server   9 gfx   0 snd
+  6 tot   0 server   6 gfx   0 snd
+  9 tot   0 server   9 gfx   0 snd
+  7 tot   0 server   7 gfx   0 snd
+  9 tot   0 server   9 gfx   0 snd
+  6 tot   0 server   6 gfx   0 snd
+  9 tot   0 server   9 gfx   0 snd
+  6 tot   0 server   6 gfx   0 snd
+  9 tot   0 server   9 gfx   0 snd
+  7 tot   0 server   7 gfx   0 snd
+ 10 tot   0 server  10 gfx   0 snd
+  6 tot   0 server   6 gfx   0 snd
+  9 tot   0 server   9 gfx   0 snd
+  6 tot   0 server   6 gfx   0 snd
+  8 tot   0 server   8 gfx   0 snd
+  7 tot   0 server   7 gfx   0 snd
+  8 tot   0 server   8 gfx   0 snd
+  7 tot   0 server   7 gfx   0 snd
+  8 tot   0 server   8 gfx   0 snd
+  7 tot   0 server   7 gfx   0 snd
+  8 tot   0 server   8 gfx   0 snd
+  7 tot   0 server   7 gfx   0 snd
+  9 tot   0 server   9 gfx   0 snd
+  7 tot   0 server   7 gfx   0 snd
+  9 tot   0 server   9 gfx   0 snd
+  6 tot   0 server   6 gfx   0 snd
+  8 tot   0 server   8 gfx   0 snd
+  7 tot   0 server   7 gfx   0 snd
+  9 tot   0 server   9 gfx   0 snd
+  7 tot   0 server   7 gfx   0 snd
+  9 tot   0 server   9 gfx   0 snd
+  7 tot   0 server   7 gfx   0 snd
+ 13 tot   0 server  13 gfx   0 snd
+  2 tot   0 server   2 gfx   0 snd
+  8 tot   0 server   8 gfx   0 snd
+  7 tot   0 server   7 gfx   0 snd
+You got the nailgun
+  9 tot   0 server   9 gfx   0 snd
+  7 tot   0 server   7 gfx   0 snd
+  8 tot   0 server   8 gfx   0 snd
+  7 tot   0 server   7 gfx   0 snd
+  8 tot   0 server   8 gfx   0 snd
+  7 tot   0 server   7 gfx   0 snd
+  8 tot   0 server   8 gfx   0 snd
+  8 tot   0 server   8 gfx   0 snd
+  9 tot   0 server   9 gfx   0 snd
+  7 tot   0 server   7 gfx   0 snd
+  8 tot   0 server   8 gfx   0 snd
+  7 tot   0 server   7 gfx   0 snd
+  8 tot   0 server   8 gfx   0 snd
+  7 tot   0 server   7 gfx   0 snd
+  9 tot   0 server   9 gfx   0 snd
+  7 tot   0 server   7 gfx   0 snd
+  8 tot   0 server   8 gfx   0 snd
+  7 tot   0 server   7 gfx   0 snd
+  8 tot   0 server   8 gfx   0 snd
+  7 tot   0 server   7 gfx   0 snd
+ 10 tot   0 server  10 gfx   0 snd
+  6 tot   0 server   6 gfx   0 snd
+  8 tot   0 server   8 gfx   0 snd
+  7 tot   0 server   7 gfx   0 snd
+  9 tot   0 server   9 gfx   0 snd
+  7 tot   0 server   7 gfx   0 snd
+  8 tot   0 server   8 gfx   0 snd
+  7 tot   0 server   7 gfx   0 snd
+  8 tot   0 server   8 gfx   0 snd
+  7 tot   0 server   7 gfx   0 snd
+  9 tot   0 server   9 gfx   0 snd
+  7 tot   0 server   7 gfx   0 snd
+  9 tot   0 server   9 gfx   0 snd
+  7 tot   0 server   7 gfx   0 snd
+  9 tot   0 server   9 gfx   0 snd
+  6 tot   0 server   6 gfx   0 snd
+  9 tot   0 server   9 gfx   0 snd
+  7 tot   0 server   7 gfx   0 snd
+  8 tot   0 server   8 gfx   0 snd
+  7 tot   0 server   7 gfx   0 snd
+  8 tot   0 server   8 gfx   0 snd
+  8 tot   0 server   8 gfx   0 snd
+  9 tot   0 server   9 gfx   0 snd
+  7 tot   0 server   7 gfx   0 snd
+  8 tot   0 server   8 gfx   0 snd
+  7 tot   0 server   7 gfx   0 snd
+  8 tot   0 server   8 gfx   0 snd
+  7 tot   0 server   7 gfx   0 snd
+  9 tot   0 server   9 gfx   0 snd
+  7 tot   0 server   7 gfx   0 snd
+  8 tot   0 server   8 gfx   0 snd
+  7 tot   0 server   7 gfx   0 snd
+  8 tot   0 server   8 gfx   0 snd
+  7 tot   0 server   7 gfx   0 snd
+  8 tot   0 server   8 gfx   0 snd
+  7 tot   0 server   7 gfx   0 snd
+  8 tot   0 server   8 gfx   0 snd
+  7 tot   0 server   7 gfx   0 snd
+  9 tot   0 server   9 gfx   0 snd
+  7 tot   0 server   7 gfx   0 snd
+  8 tot   0 server   8 gfx   0 snd
+  7 tot   0 server   7 gfx   0 snd
+  9 tot   0 server   9 gfx   0 snd
+  7 tot   0 server   7 gfx   0 snd
+  9 tot   0 server   9 gfx   0 snd
+  6 tot   0 server   6 gfx   0 snd
+  8 tot   0 server   8 gfx   0 snd
+  7 tot   0 server   7 gfx   0 snd
+  9 tot   0 server   9 gfx   0 snd
+  6 tot   0 server   6 gfx   0 snd
+  8 tot   0 server   8 gfx   0 snd
+  7 tot   0 server   7 gfx   0 snd
+  8 tot   0 server   8 gfx   0 snd
+  8 tot   0 server   8 gfx   0 snd
+  7 tot   0 server   7 gfx   0 snd
+  8 tot   0 server   8 gfx   0 snd
+  8 tot   0 server   8 gfx   0 snd
+  8 tot   0 server   8 gfx   0 snd
+  8 tot   0 server   8 gfx   0 snd
+  7 tot   0 server   7 gfx   0 snd
+  9 tot   0 server   9 gfx   0 snd
+  7 tot   0 server   7 gfx   0 snd
+  6 tot   0 server   6 gfx   0 snd
+  9 tot   0 server   9 gfx   0 snd
+  6 tot   0 server   6 gfx   0 snd
+  9 tot   0 server   9 gfx   0 snd
+  6 tot   0 server   6 gfx   0 snd
+  9 tot   0 server   9 gfx   0 snd
+  7 tot   0 server   7 gfx   0 snd
+  8 tot   0 server   8 gfx   0 snd
+  6 tot   0 server   6 gfx   0 snd
+ 10 tot   0 server  10 gfx   0 snd
+  6 tot   0 server   6 gfx   0 snd
+ 10 tot   0 server  10 gfx   0 snd
+  6 tot   0 server   6 gfx   0 snd
+ 10 tot   0 server  10 gfx   0 snd
+  6 tot   0 server   6 gfx   0 snd
+ 10 tot   0 server  10 gfx   0 snd
+  5 tot   0 server   5 gfx   0 snd
+ 10 tot   0 server  10 gfx   0 snd
+  5 tot   0 server   5 gfx   0 snd
+ 10 tot   0 server  10 gfx   0 snd
+  6 tot   0 server   6 gfx   0 snd
+ 10 tot   0 server  10 gfx   0 snd
+  6 tot   0 server   6 gfx   0 snd
+ 10 tot   0 server  10 gfx   0 snd
+ 16 tot   0 server  16 gfx   0 snd
+  6 tot   0 server   6 gfx   0 snd
+ 10 tot   0 server  10 gfx   0 snd
+  6 tot   0 server   6 gfx   0 snd
+ 10 tot   0 server  10 gfx   0 snd
+  6 tot   0 server   6 gfx   0 snd
+ 10 tot   0 server  10 gfx   0 snd
+You got the nails
+  6 tot   0 server   6 gfx   0 snd
+ 10 tot   0 server  10 gfx   0 snd
+  6 tot   0 server   6 gfx   0 snd
+ 10 tot   0 server  10 gfx   0 snd
+  6 tot   0 server   6 gfx   0 snd
+ 10 tot   0 server  10 gfx   0 snd
+  6 tot   0 server   6 gfx   0 snd
+ 10 tot   0 server  10 gfx   0 snd
+  6 tot   0 server   6 gfx   0 snd
+ 10 tot   0 server  10 gfx   0 snd
+  6 tot   0 server   6 gfx   0 snd
+ 10 tot   0 server  10 gfx   0 snd
+  6 tot   0 server   6 gfx   0 snd
+ 10 tot   0 server  10 gfx   0 snd
+  6 tot   0 server   6 gfx   0 snd
+ 10 tot   0 server  10 gfx   0 snd
+  6 tot   0 server   6 gfx   0 snd
+ 10 tot   0 server  10 gfx   0 snd
+  6 tot   0 server   6 gfx   0 snd
+ 10 tot   0 server  10 gfx   0 snd
+  6 tot   0 server   6 gfx   0 snd
+ 10 tot   0 server  10 gfx   0 snd
+  6 tot   0 server   6 gfx   0 snd
+ 10 tot   0 server  10 gfx   0 snd
+  6 tot   0 server   6 gfx   0 snd
+  9 tot   0 server   9 gfx   0 snd
+  7 tot   0 server   7 gfx   0 snd
+  9 tot   0 server   9 gfx   0 snd
+  6 tot   0 server   6 gfx   0 snd
+  9 tot   0 server   9 gfx   0 snd
+  6 tot   0 server   6 gfx   0 snd
+  9 tot   0 server   9 gfx   0 snd
+  6 tot   0 server   6 gfx   0 snd
+ 10 tot   0 server  10 gfx   0 snd
+  6 tot   0 server   6 gfx   0 snd
+  9 tot   0 server   9 gfx   0 snd
+  5 tot   0 server   5 gfx   0 snd
+ 10 tot   0 server  10 gfx   0 snd
+  5 tot   0 server   5 gfx   0 snd
+ 10 tot   0 server  10 gfx   0 snd
+  5 tot   0 server   5 gfx   0 snd
+ 11 tot   0 server  11 gfx   0 snd
+  5 tot   0 server   5 gfx   0 snd
+ 10 tot   0 server  10 gfx   0 snd
+  5 tot   0 server   5 gfx   0 snd
+ 10 tot   0 server  10 gfx   0 snd
+  5 tot   0 server   5 gfx   0 snd
+ 10 tot   0 server  10 gfx   0 snd
+  5 tot   0 server   5 gfx   0 snd
+ 11 tot   0 server  11 gfx   0 snd
+  5 tot   0 server   5 gfx   0 snd
+ 10 tot   0 server  10 gfx   0 snd
+  5 tot   0 server   5 gfx   0 snd
+ 11 tot   0 server  11 gfx   0 snd
+You got the nails
+  5 tot   0 server   5 gfx   0 snd
+ 11 tot   0 server  11 gfx   0 snd
+  5 tot   0 server   5 gfx   0 snd
+ 11 tot   0 server  11 gfx   0 snd
+  5 tot   0 server   5 gfx   0 snd
+ 11 tot   0 server  11 gfx   0 snd
+ 16 tot   0 server  16 gfx   0 snd
+  5 tot   0 server   5 gfx   0 snd
+ 11 tot   0 server  11 gfx   0 snd
+  5 tot   0 server   5 gfx   0 snd
+ 11 tot   0 server  11 gfx   0 snd
+ 16 tot   0 server  16 gfx   0 snd
+  4 tot   0 server   4 gfx   0 snd
+ 11 tot   0 server  11 gfx   0 snd
+  4 tot   0 server   4 gfx   0 snd
+ 11 tot   0 server  11 gfx   0 snd
+  5 tot   0 server   5 gfx   0 snd
+ 11 tot   0 server  11 gfx   0 snd
+  4 tot   0 server   4 gfx   0 snd
+ 11 tot   0 server  11 gfx   0 snd
+  5 tot   0 server   5 gfx   0 snd
+You receive 15 health
+ 11 tot   0 server  11 gfx   0 snd
+  4 tot   0 server   4 gfx   0 snd
+ 11 tot   0 server  11 gfx   0 snd
+You receive 15 health
+  5 tot   0 server   5 gfx   0 snd
+ 11 tot   0 server  11 gfx   0 snd
+  5 tot   0 server   5 gfx   0 snd
+ 11 tot   0 server  11 gfx   0 snd
+  5 tot   0 server   5 gfx   0 snd
+ 11 tot   0 server  11 gfx   0 snd
+  5 tot   0 server   5 gfx   0 snd
+ 11 tot   0 server  11 gfx   0 snd
+  5 tot   0 server   5 gfx   0 snd
+ 11 tot   0 server  11 gfx   0 snd
+  5 tot   0 server   5 gfx   0 snd
+ 11 tot   0 server  11 gfx   0 snd
+  5 tot   0 server   5 gfx   0 snd
+ 11 tot   0 server  11 gfx   0 snd
+  5 tot   0 server   5 gfx   0 snd
+ 11 tot   0 server  11 gfx   0 snd
+  5 tot   0 server   5 gfx   0 snd
+ 11 tot   0 server  11 gfx   0 snd
+  5 tot   0 server   5 gfx   0 snd
+ 11 tot   0 server  11 gfx   0 snd
+  5 tot   0 server   5 gfx   0 snd
+ 11 tot   0 server  11 gfx   0 snd
+You got the rockets
+  5 tot   0 server   5 gfx   0 snd
+ 11 tot   0 server  11 gfx   0 snd
+  4 tot   0 server   4 gfx   0 snd
+ 11 tot   0 server  11 gfx   0 snd
+  4 tot   0 server   4 gfx   0 snd
+ 11 tot   0 server  11 gfx   0 snd
+  4 tot   0 server   4 gfx   0 snd
+ 11 tot   0 server  11 gfx   0 snd
+  5 tot   0 server   5 gfx   0 snd
+ 11 tot   0 server  11 gfx   0 snd
+  4 tot   0 server   4 gfx   0 snd
+ 12 tot   0 server  12 gfx   0 snd
+  5 tot   0 server   5 gfx   0 snd
+ 11 tot   0 server  11 gfx   0 snd
+  5 tot   0 server   5 gfx   0 snd
+ 11 tot   0 server  11 gfx   0 snd
+  5 tot   0 server   5 gfx   0 snd
+ 11 tot   0 server  11 gfx   0 snd
+  5 tot   0 server   5 gfx   0 snd
+ 10 tot   0 server  10 gfx   0 snd
+  5 tot   0 server   5 gfx   0 snd
+ 11 tot   0 server  11 gfx   0 snd
+  5 tot   0 server   5 gfx   0 snd
+ 11 tot   0 server  11 gfx   0 snd
+  5 tot   0 server   5 gfx   0 snd
+ 11 tot   0 server  11 gfx   0 snd
+  5 tot   0 server   5 gfx   0 snd
+ 11 tot   0 server  11 gfx   0 snd
+  5 tot   0 server   5 gfx   0 snd
+ 11 tot   0 server  11 gfx   0 snd
+  5 tot   0 server   5 gfx   0 snd
+ 11 tot   0 server  11 gfx   0 snd
+  5 tot   0 server   5 gfx   0 snd
+ 11 tot   0 server  11 gfx   0 snd
+  5 tot   0 server   5 gfx   0 snd
+ 11 tot   0 server  11 gfx   0 snd
+  5 tot   0 server   5 gfx   0 snd
+ 11 tot   0 server  11 gfx   0 snd
+  5 tot   0 server   5 gfx   0 snd
+ 11 tot   0 server  11 gfx   0 snd
+  4 tot   0 server   4 gfx   0 snd
+ 11 tot   0 server  11 gfx   0 snd
+  5 tot   0 server   5 gfx   0 snd
+ 11 tot   0 server  11 gfx   0 snd
+  5 tot   0 server   5 gfx   0 snd
+ 10 tot   0 server  10 gfx   0 snd
+  5 tot   0 server   5 gfx   0 snd
+ 11 tot   0 server  11 gfx   0 snd
+  4 tot   0 server   4 gfx   0 snd
+ 12 tot   0 server  12 gfx   0 snd
+  3 tot   0 server   3 gfx   0 snd
+ 12 tot   0 server  12 gfx   0 snd
+  4 tot   0 server   4 gfx   0 snd
+ 12 tot   0 server  12 gfx   0 snd
+  3 tot   0 server   3 gfx   0 snd
+ 12 tot   0 server  12 gfx   0 snd
+  4 tot   0 server   4 gfx   0 snd
+ 11 tot   0 server  11 gfx   0 snd
+  4 tot   0 server   4 gfx   0 snd
+ 12 tot   0 server  12 gfx   0 snd
+  6 tot   0 server   6 gfx   0 snd
+ 10 tot   0 server  10 gfx   0 snd
+  4 tot   0 server   4 gfx   0 snd
+ 11 tot   0 server  11 gfx   0 snd
+  5 tot   0 server   5 gfx   0 snd
+ 11 tot   0 server  11 gfx   0 snd
+  5 tot   0 server   5 gfx   0 snd
+ 11 tot   0 server  11 gfx   0 snd
+  5 tot   0 server   5 gfx   0 snd
+ 10 tot   0 server  10 gfx   0 snd
+  5 tot   0 server   5 gfx   0 snd
+ 11 tot   0 server  11 gfx   0 snd
+  5 tot   0 server   5 gfx   0 snd
+ 11 tot   0 server  11 gfx   0 snd
+  5 tot   0 server   5 gfx   0 snd
+ 11 tot   0 server  11 gfx   0 snd
+  5 tot   0 server   5 gfx   0 snd
+ 11 tot   0 server  11 gfx   0 snd
+  5 tot   0 server   5 gfx   0 snd
+ 10 tot   0 server  10 gfx   0 snd
+  5 tot   0 server   5 gfx   0 snd
+ 11 tot   0 server  11 gfx   0 snd
+  5 tot   0 server   5 gfx   0 snd
+ 11 tot   0 server  11 gfx   0 snd
+  5 tot   0 server   5 gfx   0 snd
+ 10 tot   0 server  10 gfx   0 snd
+  5 tot   0 server   5 gfx   0 snd
+ 11 tot   0 server  11 gfx   0 snd
+  5 tot   0 server   5 gfx   0 snd
+ 11 tot   0 server  11 gfx   0 snd
+  4 tot   0 server   4 gfx   0 snd
+ 11 tot   0 server  11 gfx   0 snd
+  5 tot   0 server   5 gfx   0 snd
+ 11 tot   0 server  11 gfx   0 snd
+  5 tot   0 server   5 gfx   0 snd
+ 11 tot   0 server  11 gfx   0 snd
+  4 tot   0 server   4 gfx   0 snd
+ 11 tot   0 server  11 gfx   0 snd
+  4 tot   0 server   4 gfx   0 snd
+ 11 tot   0 server  11 gfx   0 snd
+  4 tot   0 server   4 gfx   0 snd
+ 11 tot   0 server  11 gfx   0 snd
+  5 tot   0 server   5 gfx   0 snd
+ 11 tot   0 server  11 gfx   0 snd
+  6 tot   0 server   6 gfx   0 snd
+ 10 tot   0 server  10 gfx   0 snd
+  5 tot   0 server   5 gfx   0 snd
+ 10 tot   0 server  10 gfx   0 snd
+  4 tot   0 server   4 gfx   0 snd
+ 11 tot   0 server  11 gfx   0 snd
+  4 tot   0 server   4 gfx   0 snd
+ 11 tot   0 server  11 gfx   0 snd
+  5 tot   0 server   5 gfx   0 snd
+ 11 tot   0 server  11 gfx   0 snd
+  5 tot   0 server   5 gfx   0 snd
+ 11 tot   0 server  11 gfx   0 snd
+  4 tot   0 server   4 gfx   0 snd
+ 11 tot   0 server  11 gfx   0 snd
+  5 tot   0 server   5 gfx   0 snd
+ 11 tot   0 server  11 gfx   0 snd
+  5 tot   0 server   5 gfx   0 snd
+ 11 tot   0 server  11 gfx   0 snd
+  5 tot   0 server   5 gfx   0 snd
+ 11 tot   0 server  11 gfx   0 snd
+  5 tot   0 server   5 gfx   0 snd
+ 11 tot   0 server  11 gfx   0 snd
+  4 tot   0 server   4 gfx   0 snd
+ 11 tot   0 server  11 gfx   0 snd
+  5 tot   0 server   5 gfx   0 snd
+ 11 tot   0 server  11 gfx   0 snd
+  4 tot   0 server   4 gfx   0 snd
+ 12 tot   0 server  12 gfx   0 snd
+  4 tot   0 server   4 gfx   0 snd
+ 11 tot   0 server  11 gfx   0 snd
+  5 tot   0 server   5 gfx   0 snd
+ 11 tot   0 server  11 gfx   0 snd
+  5 tot   0 server   5 gfx   0 snd
+ 11 tot   0 server  11 gfx   0 snd
+  5 tot   0 server   5 gfx   0 snd
+ 11 tot   0 server  11 gfx   0 snd
+  5 tot   0 server   5 gfx   0 snd
+ 11 tot   0 server  11 gfx   0 snd
+  4 tot   0 server   4 gfx   0 snd
+ 11 tot   0 server  11 gfx   0 snd
+  4 tot   0 server   4 gfx   0 snd
+ 11 tot   0 server  11 gfx   0 snd
+  5 tot   0 server   5 gfx   0 snd
+ 11 tot   0 server  11 gfx   0 snd
+  4 tot   0 server   4 gfx   0 snd
+ 11 tot   0 server  11 gfx   0 snd
+  4 tot   0 server   4 gfx   0 snd
+ 11 tot   0 server  11 gfx   0 snd
+  4 tot   0 server   4 gfx   0 snd
+You get 2 rockets  
+ 11 tot   0 server  11 gfx   0 snd
+  5 tot   0 server   5 gfx   0 snd
+ 11 tot   0 server  11 gfx   0 snd
+  5 tot   0 server   5 gfx   0 snd
+ 11 tot   0 server  11 gfx   0 snd
+  5 tot   0 server   5 gfx   0 snd
+ 11 tot   0 server  11 gfx   0 snd
+  5 tot   0 server   5 gfx   0 snd
+ 11 tot   0 server  11 gfx   0 snd
+  5 tot   0 server   5 gfx   0 snd
+ 11 tot   0 server  11 gfx   0 snd
+  5 tot   0 server   5 gfx   0 snd
+ 11 tot   0 server  11 gfx   0 snd
+  5 tot   0 server   5 gfx   0 snd
+ 11 tot   0 server  11 gfx   0 snd
+  4 tot   0 server   4 gfx   0 snd
+ 11 tot   0 server  11 gfx   0 snd
+  5 tot   0 server   5 gfx   0 snd
+ 11 tot   0 server  11 gfx   0 snd
+  4 tot   0 server   4 gfx   0 snd
+ 11 tot   0 server  11 gfx   0 snd
+  5 tot   0 server   5 gfx   0 snd
+ 11 tot   0 server  11 gfx   0 snd
+  5 tot   0 server   5 gfx   0 snd
+ 10 tot   0 server  10 gfx   0 snd
+  5 tot   0 server   5 gfx   0 snd
+ 11 tot   0 server  11 gfx   0 snd
+  5 tot   0 server   5 gfx   0 snd
+ 11 tot   0 server  11 gfx   0 snd
+  5 tot   0 server   5 gfx   0 snd
+You got the nails
+ 11 tot   0 server  11 gfx   0 snd
+  5 tot   0 server   5 gfx   0 snd
+ 11 tot   0 server  11 gfx   0 snd
+You got the nails
+  5 tot   0 server   5 gfx   0 snd
+ 11 tot   0 server  11 gfx   0 snd
+  5 tot   0 server   5 gfx   0 snd
+ 11 tot   0 server  11 gfx   0 snd
+  5 tot   0 server   5 gfx   0 snd
+ 11 tot   0 server  11 gfx   0 snd
+  5 tot   0 server   5 gfx   0 snd
+ 11 tot   0 server  11 gfx   0 snd
+  4 tot   0 server   4 gfx   0 snd
+ 11 tot   0 server  11 gfx   0 snd
+You receive 25 health
+  5 tot   0 server   5 gfx   0 snd
+ 11 tot   0 server  11 gfx   0 snd
+  5 tot   0 server   5 gfx   0 snd
+ 11 tot   0 server  11 gfx   0 snd
+  6 tot   0 server   6 gfx   0 snd
+ 10 tot   0 server  10 gfx   0 snd
+  5 tot   0 server   5 gfx   0 snd
+ 11 tot   0 server  11 gfx   0 snd
+  5 tot   0 server   5 gfx   0 snd
+ 11 tot   0 server  11 gfx   0 snd
+  5 tot   0 server   5 gfx   0 snd
+ 11 tot   0 server  11 gfx   0 snd
+  4 tot   0 server   4 gfx   0 snd
+ 11 tot   0 server  11 gfx   0 snd
+  4 tot   0 server   4 gfx   0 snd
+ 12 tot   0 server  12 gfx   0 snd
+  4 tot   0 server   4 gfx   0 snd
+ 11 tot   0 server  11 gfx   0 snd
+  5 tot   0 server   5 gfx   0 snd
+ 11 tot   0 server  11 gfx   0 snd
+  5 tot   0 server   5 gfx   0 snd
+ 11 tot   0 server  11 gfx   0 snd
+  5 tot   0 server   5 gfx   0 snd
+ 11 tot   0 server  11 gfx   0 snd
+  5 tot   0 server   5 gfx   0 snd
+ 10 tot   0 server  10 gfx   0 snd
+  5 tot   0 server   5 gfx   0 snd
+ 11 tot   0 server  11 gfx   0 snd
+  5 tot   0 server   5 gfx   0 snd
+ 11 tot   0 server  11 gfx   0 snd
+  5 tot   0 server   5 gfx   0 snd
+ 11 tot   0 server  11 gfx   0 snd
+  5 tot   0 server   5 gfx   0 snd
+ 11 tot   0 server  11 gfx   0 snd
+  4 tot   0 server   4 gfx   0 snd
+ 12 tot   0 server  12 gfx   0 snd
+  4 tot   0 server   4 gfx   0 snd
+ 12 tot   0 server  12 gfx   0 snd
+  4 tot   0 server   4 gfx   0 snd
+ 11 tot   0 server  11 gfx   0 snd
+  4 tot   0 server   4 gfx   0 snd
+ 11 tot   0 server  11 gfx   0 snd
+  5 tot   0 server   5 gfx   0 snd
+ 11 tot   0 server  11 gfx   0 snd
+  4 tot   0 server   4 gfx   0 snd
+ 11 tot   0 server  11 gfx   0 snd
+  5 tot   0 server   5 gfx   0 snd
+ 11 tot   0 server  11 gfx   0 snd
+  4 tot   0 server   4 gfx   0 snd
+ 12 tot   0 server  12 gfx   0 snd
+  5 tot   0 server   5 gfx   0 snd
+ 11 tot   0 server  11 gfx   0 snd
+  4 tot   0 server   4 gfx   0 snd
+ 11 tot   0 server  11 gfx   0 snd
+ 16 tot   0 server  16 gfx   0 snd
+  4 tot   0 server   4 gfx   0 snd
+ 11 tot   0 server  11 gfx   0 snd
+  4 tot   0 server   4 gfx   0 snd
+ 11 tot   0 server  11 gfx   0 snd
+  5 tot   0 server   5 gfx   0 snd
+ 11 tot   0 server  11 gfx   0 snd
+  4 tot   0 server   4 gfx   0 snd
+ 11 tot   0 server  11 gfx   0 snd
+  5 tot   0 server   5 gfx   0 snd
+ 11 tot   0 server  11 gfx   0 snd
+  5 tot   0 server   5 gfx   0 snd
+ 11 tot   0 server  11 gfx   0 snd
+  4 tot   0 server   4 gfx   0 snd
+ 11 tot   0 server  11 gfx   0 snd
+  5 tot   0 server   5 gfx   0 snd
+ 11 tot   0 server  11 gfx   0 snd
+  4 tot   0 server   4 gfx   0 snd
+ 11 tot   0 server  11 gfx   0 snd
+  5 tot   0 server   5 gfx   0 snd
+ 11 tot   0 server  11 gfx   0 snd
+  5 tot   0 server   5 gfx   0 snd
+ 11 tot   0 server  11 gfx   0 snd
+  4 tot   0 server   4 gfx   0 snd
+ 12 tot   0 server  12 gfx   0 snd
+  4 tot   0 server   4 gfx   0 snd
+ 11 tot   0 server  11 gfx   0 snd
+  5 tot   0 server   5 gfx   0 snd
+ 11 tot   0 server  11 gfx   0 snd
+  5 tot   0 server   5 gfx   0 snd
+ 10 tot   0 server  10 gfx   0 snd
+  5 tot   0 server   5 gfx   0 snd
+ 11 tot   0 server  11 gfx   0 snd
+  5 tot   0 server   5 gfx   0 snd
+ 11 tot   0 server  11 gfx   0 snd
+  5 tot   0 server   5 gfx   0 snd
+ 11 tot   0 server  11 gfx   0 snd
+  5 tot   0 server   5 gfx   0 snd
+ 11 tot   0 server  11 gfx   0 snd
+  5 tot   0 server   5 gfx   0 snd
+ 11 tot   0 server  11 gfx   0 snd
+  5 tot   0 server   5 gfx   0 snd
+ 11 tot   0 server  11 gfx   0 snd
+  5 tot   0 server   5 gfx   0 snd
+ 11 tot   0 server  11 gfx   0 snd
+  5 tot   0 server   5 gfx   0 snd
+ 11 tot   0 server  11 gfx   0 snd
+  4 tot   0 server   4 gfx   0 snd
+ 11 tot   0 server  11 gfx   0 snd
+  5 tot   0 server   5 gfx   0 snd
+ 11 tot   0 server  11 gfx   0 snd
+  5 tot   0 server   5 gfx   0 snd
+ 11 tot   0 server  11 gfx   0 snd
+  5 tot   0 server   5 gfx   0 snd
+ 11 tot   0 server  11 gfx   0 snd
+  5 tot   0 server   5 gfx   0 snd
+ 11 tot   0 server  11 gfx   0 snd
+  5 tot   0 server   5 gfx   0 snd
+ 11 tot   0 server  11 gfx   0 snd
+  5 tot   0 server   5 gfx   0 snd
+ 11 tot   0 server  11 gfx   0 snd
+  4 tot   0 server   4 gfx   0 snd
+ 11 tot   0 server  11 gfx   0 snd
+  5 tot   0 server   5 gfx   0 snd
+ 10 tot   0 server  10 gfx   0 snd
+  5 tot   0 server   5 gfx   0 snd
+ 10 tot   0 server  10 gfx   0 snd
+  6 tot   0 server   6 gfx   0 snd
+ 10 tot   0 server  10 gfx   0 snd
+  5 tot   0 server   5 gfx   0 snd
+ 11 tot   0 server  11 gfx   0 snd
+  6 tot   0 server   6 gfx   0 snd
+ 10 tot   0 server  10 gfx   0 snd
+  4 tot   0 server   4 gfx   0 snd
+ 11 tot   0 server  11 gfx   0 snd
+  5 tot   0 server   5 gfx   0 snd
+ 11 tot   0 server  11 gfx   0 snd
+  5 tot   0 server   5 gfx   0 snd
+ 11 tot   0 server  11 gfx   0 snd
+  5 tot   0 server   5 gfx   0 snd
+ 11 tot   0 server  11 gfx   0 snd
+  5 tot   0 server   5 gfx   0 snd
+ 11 tot   0 server  11 gfx   0 snd
+  5 tot   0 server   5 gfx   0 snd
+ 11 tot   0 server  11 gfx   0 snd
+  4 tot   0 server   4 gfx   0 snd
+ 11 tot   0 server  11 gfx   0 snd
+  5 tot   0 server   5 gfx   0 snd
+ 11 tot   0 server  11 gfx   0 snd
+  5 tot   0 server   5 gfx   0 snd
+ 11 tot   0 server  11 gfx   0 snd
+  5 tot   0 server   5 gfx   0 snd
+ 11 tot   0 server  11 gfx   0 snd
+  5 tot   0 server   5 gfx   0 snd
+ 11 tot   0 server  11 gfx   0 snd
+  5 tot   0 server   5 gfx   0 snd
+ 11 tot   0 server  11 gfx   0 snd
+  5 tot   0 server   5 gfx   0 snd
+ 11 tot   0 server  11 gfx   0 snd
+  5 tot   0 server   5 gfx   0 snd
+ 11 tot   0 server  11 gfx   0 snd
+  5 tot   0 server   5 gfx   0 snd
+ 11 tot   0 server  11 gfx   0 snd
+  5 tot   0 server   5 gfx   0 snd
+ 11 tot   0 server  11 gfx   0 snd
+  5 tot   0 server   5 gfx   0 snd
+ 11 tot   0 server  11 gfx   0 snd
+  4 tot   0 server   4 gfx   0 snd
+ 11 tot   0 server  11 gfx   0 snd
+  6 tot   0 server   6 gfx   0 snd
+ 10 tot   0 server  10 gfx   0 snd
+  5 tot   0 server   5 gfx   0 snd
+ 11 tot   0 server  11 gfx   0 snd
+  5 tot   0 server   5 gfx   0 snd
+ 10 tot   0 server  10 gfx   0 snd
+  4 tot   0 server   4 gfx   0 snd
+ 11 tot   0 server  11 gfx   0 snd
+  4 tot   0 server   4 gfx   0 snd
+ 11 tot   0 server  11 gfx   0 snd
+  5 tot   0 server   5 gfx   0 snd
+ 11 tot   0 server  11 gfx   0 snd
+  4 tot   0 server   4 gfx   0 snd
+ 12 tot   0 server  12 gfx   0 snd
+  5 tot   0 server   5 gfx   0 snd
+ 11 tot   0 server  11 gfx   0 snd
+  4 tot   0 server   4 gfx   0 snd
+ 11 tot   0 server  11 gfx   0 snd
+  4 tot   0 server   4 gfx   0 snd
+ 12 tot   0 server  12 gfx   0 snd
+  4 tot   0 server   4 gfx   0 snd
+ 11 tot   0 server  11 gfx   0 snd
+  5 tot   0 server   5 gfx   0 snd
+ 11 tot   0 server  11 gfx   0 snd
+  5 tot   0 server   5 gfx   0 snd
+ 11 tot   0 server  11 gfx   0 snd
+  4 tot   0 server   4 gfx   0 snd
+ 11 tot   0 server  11 gfx   0 snd
+  4 tot   0 server   4 gfx   0 snd
+ 11 tot   0 server  11 gfx   0 snd
+  5 tot   0 server   5 gfx   0 snd
+ 11 tot   0 server  11 gfx   0 snd
+  5 tot   0 server   5 gfx   0 snd
+ 10 tot   0 server  10 gfx   0 snd
+  5 tot   0 server   5 gfx   0 snd
+ 11 tot   0 server  11 gfx   0 snd
+  5 tot   0 server   5 gfx   0 snd
+ 10 tot   0 server  10 gfx   0 snd
+  5 tot   0 server   5 gfx   0 snd
+ 11 tot   0 server  11 gfx   0 snd
+  5 tot   0 server   5 gfx   0 snd
+ 11 tot   0 server  11 gfx   0 snd
+  4 tot   0 server   4 gfx   0 snd
+ 12 tot   0 server  12 gfx   0 snd
+  4 tot   0 server   4 gfx   0 snd
+ 11 tot   0 server  11 gfx   0 snd
+  4 tot   0 server   4 gfx   0 snd
+ 12 tot   0 server  12 gfx   0 snd
+  4 tot   0 server   4 gfx   0 snd
+ 12 tot   0 server  12 gfx   0 snd
+  4 tot   0 server   4 gfx   0 snd
+ 11 tot   0 server  11 gfx   0 snd
+  5 tot   0 server   5 gfx   0 snd
+ 11 tot   0 server  11 gfx   0 snd
+  5 tot   0 server   5 gfx   0 snd
+ 10 tot   0 server  10 gfx   0 snd
+  5 tot   0 server   5 gfx   0 snd
+ 10 tot   0 server  10 gfx   0 snd
+  4 tot   0 server   4 gfx   0 snd
+ 11 tot   0 server  11 gfx   0 snd
+  4 tot   0 server   4 gfx   0 snd
+ 11 tot   0 server  11 gfx   0 snd
+  5 tot   0 server   5 gfx   0 snd
+ 11 tot   0 server  11 gfx   0 snd
+  5 tot   0 server   5 gfx   0 snd
+ 11 tot   0 server  11 gfx   0 snd
+  5 tot   0 server   5 gfx   0 snd
+ 11 tot   0 server  11 gfx   0 snd
+  5 tot   0 server   5 gfx   0 snd
+ 11 tot   0 server  11 gfx   0 snd
+  5 tot   0 server   5 gfx   0 snd
+ 11 tot   0 server  11 gfx   0 snd
+  4 tot   0 server   4 gfx   0 snd
+ 12 tot   0 server  12 gfx   0 snd
+  5 tot   0 server   5 gfx   0 snd
+ 10 tot   0 server  10 gfx   0 snd
+  5 tot   0 server   5 gfx   0 snd
+ 11 tot   0 server  11 gfx   0 snd
+  4 tot   0 server   4 gfx   0 snd
+You got the gold key
+ 11 tot   0 server  11 gfx   0 snd
+  4 tot   0 server   4 gfx   0 snd
+ 11 tot   0 server  11 gfx   0 snd
+  5 tot   0 server   5 gfx   0 snd
+ 11 tot   0 server  11 gfx   0 snd
+  5 tot   0 server   5 gfx   0 snd
+ 11 tot   0 server  11 gfx   0 snd
+  5 tot   0 server   5 gfx   0 snd
+ 11 tot   0 server  11 gfx   0 snd
+  4 tot   0 server   4 gfx   0 snd
+ 11 tot   0 server  11 gfx   0 snd
+  4 tot   0 server   4 gfx   0 snd
+ 11 tot   0 server  11 gfx   0 snd
+  5 tot   0 server   5 gfx   0 snd
+ 11 tot   0 server  11 gfx   0 snd
+  5 tot   0 server   5 gfx   0 snd
+ 11 tot   0 server  11 gfx   0 snd
+  4 tot   0 server   4 gfx   0 snd
+ 11 tot   0 server  11 gfx   0 snd
+  5 tot   0 server   5 gfx   0 snd
+ 11 tot   0 server  11 gfx   0 snd
+  5 tot   0 server   5 gfx   0 snd
+ 11 tot   0 server  11 gfx   0 snd
+  5 tot   0 server   5 gfx   0 snd
+ 11 tot   0 server  11 gfx   0 snd
+  5 tot   0 server   5 gfx   0 snd
+ 11 tot   0 server  11 gfx   0 snd
+  5 tot   0 server   5 gfx   0 snd
+ 11 tot   0 server  11 gfx   0 snd
+  5 tot   0 server   5 gfx   0 snd
+ 11 tot   0 server  11 gfx   0 snd
+  5 tot   0 server   5 gfx   0 snd
+ 11 tot   0 server  11 gfx   0 snd
+  5 tot   0 server   5 gfx   0 snd
+ 11 tot   0 server  11 gfx   0 snd
+  5 tot   0 server   5 gfx   0 snd
+ 11 tot   0 server  11 gfx   0 snd
+  5 tot   0 server   5 gfx   0 snd
+ 11 tot   0 server  11 gfx   0 snd
+  5 tot   0 server   5 gfx   0 snd
+ 11 tot   0 server  11 gfx   0 snd
+  5 tot   0 server   5 gfx   0 snd
+ 11 tot   0 server  11 gfx   0 snd
+  5 tot   0 server   5 gfx   0 snd
+ 11 tot   0 server  11 gfx   0 snd
+  5 tot   0 server   5 gfx   0 snd
+ 11 tot   0 server  11 gfx   0 snd
+  4 tot   0 server   4 gfx   0 snd
+ 11 tot   0 server  11 gfx   0 snd
+  5 tot   0 server   5 gfx   0 snd
+ 11 tot   0 server  11 gfx   0 snd
+  5 tot   0 server   5 gfx   0 snd
+ 11 tot   0 server  11 gfx   0 snd
+  4 tot   0 server   4 gfx   0 snd
+ 11 tot   0 server  11 gfx   0 snd
+  5 tot   0 server   5 gfx   0 snd
+ 11 tot   0 server  11 gfx   0 snd
+  5 tot   0 server   5 gfx   0 snd
+PackFile: /var/folders/l2/_wjwcktn6qzgjkskxgd8hpn80000gn/T/quake-doc-capture-0olhljah/id1/pak0.pak : gfx/loading.lmp
+No demos listed with startdemos
+ 27 tot  27 server   0 gfx   0 snd
+970 frames   8.2 seconds 118.5 fps
+ 1.71 cpu seconds,  21% busy,  6.48 blocked
+  3 tot   3 server   0 gfx   0 snd
+Received signal 11, exiting...

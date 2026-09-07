@@ -14,7 +14,7 @@ Two features on that list, however, survive into Quake essentially unchanged, an
 
 > When our last hit, WOLFENSTEIN 3D was released the public responded with an almost immediate deluge of home-brewed utilities; map editors, sound editors, trainers, etc. All without any help on file formats or game layout from Id Software. DOOM will be release as an OPEN GAME. We will provide file formats and technical notes for anyone who wants them.
 
-That is a 1993 statement of an architectural policy that Quake pushes much further, from published file formats to a shipped bytecode virtual machine with the game logic compiled into a replaceable `progs.dat`. The [QuakeC VM](frame:the-quakec-vm) is the direct descendant of this paragraph; the planned QuakeC chapter will trace that line.
+That is a 1993 statement of an architectural policy that Quake pushes much further, from published file formats to a shipped bytecode virtual machine with the game logic compiled into a replaceable `progs.dat`. The [QuakeC VM](frame:the-quakec-vm) reads as a descendant of this policy. {inferred} The planned QuakeC chapter will trace that line.
 
 ## A binary tree in two dimensions
 
@@ -24,7 +24,7 @@ That constrains the geometry directly. Because the splitters are vertical, the t
 
 > The way the rendering proceded from walls to floors to sprites could be collapsed into a single front-to-back walk of the bsp tree to collect information, then draw all the contents of a subsector on the way back up the tree. It requires treating floors and ceilings as polygons, rather than just the gaps between walls, and it requires clipping sprite billboards into subsector fragments, but it would be The Right Thing.
 
-Quake removes that constraint at the root of the representation. Its splitting planes carry a full normal vector, not an implied vertical:
+Quake removes that constraint at the root of the representation. Its splitting planes carry a full normal vector, not an implied vertical: {code}
 
 ```c
 // WinQuake/model.h:59-66

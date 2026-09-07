@@ -1,0 +1,27 @@
+{
+  "commit": "7a74a7c6d901e39f907b39bec94819476bb7b845",
+  "baseline": "3ef8a7a9e53e226c831467f1b200bc77239e2e0d",
+  "captured_at": "2026-09-07T21:08:19.369649+00:00",
+  "machine": "Apple M2, macOS 26.6.2",
+  "renderer": "GLQuake Cocoa / Apple OpenGL, multipass lightmaps",
+  "command": "WinQuake/build/macos/release/glquake -basedir <export> -window -width 640 -height 480 -nomtex +exec timings.cfg",
+  "samples": 969,
+  "means_ms": {
+    "total": 7.853457172342622,
+    "server": 0.047471620227038186,
+    "gfx": 7.805985552115583,
+    "snd": 0.0
+  },
+  "demo_summary": "970 frames   8.2 seconds 118.5 fps",
+  "log": "timings.log",
+  "notes": [
+    "First native macOS GL revision; not an executable of documentation baseline 3ef8a7a.",
+    "host.c, gl_rmain.c, gl_rsurf.c and gl_screen.c match the documentation baseline.",
+    "Windowed 640\u00d7480, -nomtex, gl_texsort 1; volume 0; default display synchronization.",
+    "Means of integer millisecond host_speeds rows before the completed demo summary; first stale-timestamp row excluded.",
+    "The server bucket is the remainder between frames, including non-graphics client work, scheduling and printing; demo playback runs no local server.",
+    "gfx measures SCR_UpdateScreen including presentation; snd measures S_Update and CD audio. These are wall times, not CPU-only costs.",
+    "Integer truncation makes short stages read zero; zero is below measurement resolution, not free work.",
+    "One instrumented run on modern hardware; console logging and scheduling affect timings. Not a historical performance claim."
+  ]
+}
