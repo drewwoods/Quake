@@ -115,6 +115,10 @@ h1 .h1-sub { display: block; font-weight: 600; color: var(--muted); font-size: 0
   border: 1px solid var(--rule); border-radius: 2px; padding: 5px 9px;
   margin-left: auto; white-space: nowrap;
 }
+/* Colour theme picker. "System" removes data-theme, so the page follows
+   prefers-color-scheme again; the other two pin it. Shares the .modeswitch
+   look, but keeps overflow visible so the focus ring is not clipped. */
+.themeswitch { align-self: center; }
 .layout {
   max-width: 1380px; margin: 0 auto; padding: 0 32px 96px;
   display: grid; grid-template-columns: 264px minmax(0, 1fr); gap: 0 52px;
@@ -206,14 +210,15 @@ figure.pipeline {
   font-family: var(--f-display); font-weight: 700; font-size: 19px;
   letter-spacing: -0.01em; margin: 0;
 }
-.modeswitch { display: flex; gap: 0; margin-left: auto; border: 1px solid var(--rule); border-radius: 2px; overflow: hidden; }
-.modeswitch button {
+.modeswitch, .themeswitch { display: flex; gap: 0; border: 1px solid var(--rule); border-radius: 2px; }
+.modeswitch { margin-left: auto; overflow: hidden; }
+.modeswitch button, .themeswitch button {
   font-family: var(--f-mono); font-size: 11px; letter-spacing: 0.08em; text-transform: uppercase;
   padding: 7px 13px; border: 0; border-left: 1px solid var(--rule);
   background: var(--surface); color: var(--muted); cursor: pointer;
 }
-.modeswitch button:first-child { border-left: 0; }
-.modeswitch button[aria-pressed="true"] { background: var(--ink); color: var(--bg-grain); font-weight: 600; }
+.modeswitch button:first-child, .themeswitch button:first-child { border-left: 0; }
+.modeswitch button[aria-pressed="true"], .themeswitch button[aria-pressed="true"] { background: var(--ink); color: var(--bg-grain); font-weight: 600; }
 .foldall-btn {
   font-family: var(--f-mono); font-size: 11px; letter-spacing: 0.08em; text-transform: uppercase;
   padding: 7px 13px; border: 1px solid var(--rule); border-radius: 2px;
@@ -462,6 +467,29 @@ ul.reading li:first-child { border-top: 1px solid var(--rule-soft); }
   text-transform: uppercase; color: var(--muted);
 }
 .era a { color: var(--sim); }
+
+/* A .plan entry was read by typing `finger johnc@idsoftware.com`, so render it
+   as that session: command line, file date, monospace body. Class ".era" is
+   also used for labelled asides ("Pentium FDIV bug."), which must keep the
+   plain treatment above — base.js tags only real .plan quotes .era-plan. */
+.era-plan {
+  padding: 0; border-left: 0; border: 1px solid var(--code-rule); border-radius: 3px;
+  background: var(--code-bg); color: var(--code-fg);
+  font-family: var(--f-mono); font-size: 12.5px; line-height: 1.62;
+}
+.era-plan .finger-bar {
+  display: flex; flex-wrap: wrap; gap: 3px 14px; justify-content: space-between;
+  padding: 8px 14px; background: var(--code-bar);
+  border-bottom: 1px solid var(--code-rule);
+  font-size: 11.5px; color: var(--code-dim);
+}
+.era-plan .finger-cmd::before { content: "$ "; color: var(--code-kw); }
+.era-plan .finger-meta { font-size: 10px; letter-spacing: 0.12em; text-transform: uppercase; }
+.era-plan p { margin: 12px 14px; }
+.era-plan p > strong:first-child { display: none; }   /* the bar already says .plan */
+.era-plan a { color: var(--code-typ); }
+.era-plan code { background: none; border: 0; padding: 0; color: var(--code-num); }
+
 .concept .era { max-width: 78ch; margin: 16px 0 0; }
 .concept { margin: 28px 0 34px; padding: 22px 0; border-top: 1px solid var(--rule); border-bottom: 1px solid var(--rule); }
 .concept h3 { font-size: 21px; max-width: 40ch; margin: 0 0 20px; }
@@ -524,4 +552,36 @@ main .flow-cards { list-style: none; padding: 0; margin: 0; max-width: none; }
   * { animation-duration: 0.01ms !important; scroll-behavior: auto !important; }
 }
 html { scroll-behavior: smooth; }
-@media print { .rail, .modeswitch { display: none; } }
+@media print {
+  /* Ink on paper. Browsers drop backgrounds by default, which would leave the
+     terminal palette's light text invisible; the attribute selectors are here
+     to outrank :root[data-theme=...]. */
+  :root, :root[data-theme="dark"], :root[data-theme="light"] {
+    color-scheme: light;
+    --bg: #fff; --bg-grain: #fff; --surface: #fff; --surface-2: #f2f2f2;
+    --ink: #111; --ink-2: #333; --muted: #555; --rule: #bbb; --rule-soft: #ddd;
+    --sim-bg: #fff; --cl-bg: #fff; --mark: #eee;
+    --code-bg: #fff; --code-bar: #fff; --code-fg: #111; --code-dim: #444;
+    --code-com: #555; --code-kw: #222; --code-str: #333; --code-num: #333;
+    --code-pp: #333; --code-typ: #333; --code-rule: #bbb;
+  }
+  .rail, .rail-toggle, .modeswitch, .themeswitch, .foldall-btn { display: none; }
+  .layout { display: block; max-width: none; padding: 0; }
+  main { padding-top: 0; }
+  /* Paper has no disclosure triangles: every fold prints open. base.js opens
+     the <details>; these rules cover figure folds and a no-JS print. */
+  figure.code.collapsed > .code-scroll { display: block; }
+  figure.code > .code-bar .code-fold-toggle { display: none; }
+  details:not([open]) > *:not(summary) { display: block; }
+  pre code { white-space: pre-wrap; }
+  .svg-scroll, .code-scroll, .table-scroll { overflow: visible; }
+  svg.pipe, .explain-svg { min-width: 0; }
+  /* A printed link is useless without its target. a.ref already prints its
+     file:line, so only the prose links need the URL spelled out. */
+  main a[href^="http"]:not(.ref)::after {
+    content: " <" attr(href) ">"; font-family: var(--f-mono);
+    font-size: 0.8em; color: var(--muted); word-break: break-all;
+  }
+  h3, h4 { break-after: avoid; }
+  figure.code, .calltree, .era { break-inside: avoid; }
+}

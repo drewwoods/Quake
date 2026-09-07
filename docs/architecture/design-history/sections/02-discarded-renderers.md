@@ -54,6 +54,8 @@ Abrash lists the alternatives that were prototyped "in overnight or weekend-long
 
 The portal approach is the one to keep in view: the shipped PVS preserves its connectivity insight, but precomputes visibility per leaf instead of clipping portals at runtime.
 
+::: diagram discarded-renderers
+
 ## The breakthrough
 
 Carmack next tried extracting visibility directly from the world BSP tree, reasoning that the beam tree was a second-order structure holding information the world tree already contained implicitly. A week of that produced, as a side effect, a perfect zero-overdraw visibility algorithm for *two-dimensional* DOOM trees — and, in three dimensions, mounting complexity and persistent glitches. Abrash's account of the weekend that followed is the most-quoted passage in the chapter:

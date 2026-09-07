@@ -203,6 +203,8 @@ byte *Mod_LeafPVS (mleaf_t *leaf, model_t *model)
 
 The RLE scheme buys enormous savings for typical Quake levels: PVS rows are naturally sparse (most leaves see only a small local neighborhood), and long zero runs from architecturally-separated rooms compress to two bytes each. This was a deliberate memory/CPU trade for the era — `vis.exe`'s offline flood-fill visibility computation is expensive, but it lets the runtime skip drawing (or even touching) the vast majority of a level's geometry every frame before the renderer reaches per-pixel work. Carmack arrived at this precomputed 3D PVS after testing and discarding runtime visibility approaches (beam trees, subdivided ray-casting, draw-buffers, and runtime portal clipping), as detailed by Michael Abrash in [*Black Book* Chapter 64](../../../historical/abrash_black_book/chapter-64.md) and Carmack's [DOOM engine retrospective](../../../historical/doom_1993/carmack_doom_retrospective.txt). The software renderer does maintain a depth buffer for later entity and particle drawing.
 
+::: diagram pvs-explorer
+
 ## R_MarkLeaves, visframe, and r_novis
 
 `R_MarkLeaves` walks the decompressed PVS bitset for the leaf the camera currently occupies and stamps a monotonically increasing `r_visframecount` (`WinQuake/r_main.c:89`) onto every node on the path from each visible leaf up to the root:

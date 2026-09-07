@@ -1,0 +1,115 @@
+<figure class="concept" aria-labelledby="discarded-renderers-title">
+  <h3 id="discarded-renderers-title">One scene, four ways of asking what is visible</h3>
+  <div class="svg-scroll">
+    <svg id="dr-svg" class="explain-svg" viewBox="0 0 656 524" role="img" aria-labelledby="dr-title dr-desc">
+      <title id="dr-title">The same two-room scene under four visible-surface schemes</title>
+      <desc id="dr-desc">A top-down scene repeated in four panels: two rooms of four wall polygons each, joined by a doorway in the shared wall, with a viewpoint in the left room facing the doorway. Panel 1, painter’s algorithm: a ninety-degree frustum from the viewpoint covers both rooms, and the far room’s top and bottom walls are marked as hidden but drawn anyway. Panel 2, beam tree: two shaded wedges from the viewpoint to the upper and lower parts of the dividing wall are marked solid, while the wedge through the doorway to the far wall stays empty, so the tree never closes and every polygon is still tested. Panel 3, portals: the frustum is shown as a faint outline, the doorway is marked as a portal, and only the narrow wedge clipped through it remains, which is what gets drawn. Panel 4, potentially visible set: dashed lines split the scene into four leaves: the dividing-wall plane, plus two further splits, one in each room, that leave a narrow strip along the far room's top wall. Only the wall split follows a polygon plane; the others are drawn for the illustration. All four are tinted as members of the set precomputed for the viewpoint’s leaf, and that top strip, L4, is additionally outlined because it lies entirely above the doorway sightline drawn in panels 2 and 3: it is in the set, but hidden from this exact point.</desc>
+      <style>
+        #dr-svg .dr-panel { fill: var(--surface); stroke: var(--rule); }
+        #dr-svg .dr-lit { fill: var(--cl); fill-opacity: .16; stroke: var(--cl); stroke-width: 1.5; stroke-dasharray: 4 3; }
+        #dr-svg .dr-tint { fill: var(--cl); fill-opacity: .14; stroke: none; }
+        #dr-svg .dr-beam { fill: var(--muted); fill-opacity: .22; stroke: none; }
+        #dr-svg .dr-ghost { fill: none; stroke: var(--muted); stroke-width: 1; stroke-dasharray: 3 4; }
+        #dr-svg .dr-warn { fill: none; stroke: var(--sim); stroke-width: 4; }
+        #dr-svg .dr-warn-tint { fill: var(--sim); fill-opacity: .18; stroke: none; }
+        #dr-svg .dr-warn-edge { fill: none; stroke: var(--sim); stroke-width: 1.5; stroke-dasharray: 4 3; }
+        #dr-svg .dr-portal { fill: none; stroke: var(--sim); stroke-width: 5; stroke-dasharray: 5 3; }
+        #dr-svg .dr-leafline { fill: none; stroke: var(--muted); stroke-width: 1; stroke-dasharray: 3 4; }
+        #dr-svg .dr-lbl { font: 11px var(--f-mono); fill: var(--ink-2); }
+        #dr-svg .dr-cl { fill: var(--cl); }
+        #dr-svg .dr-sim { fill: var(--sim); }
+        #dr-svg .dr-mut { fill: var(--muted); }
+        #dr-svg .dr-note { font: 11.5px var(--f-mono); fill: var(--muted); }
+      </style>
+      <!-- The shared scene: 8 wall polygons, a doorway gap at x=135, viewpoint at (35,75)
+           facing +x. Drawn with presentation attributes so <use> clones keep them. -->
+      <defs>
+        <g id="dr-scene">
+          <path d="M0 0H135M135 0H280M0 150H135M135 150H280M0 0V150M280 0V150M135 0V58M135 92V150"
+                fill="none" stroke="var(--muted)" stroke-width="4" stroke-linecap="square"/>
+          <circle cx="35" cy="75" r="4.5" fill="var(--cl)"/>
+          <path d="M43 75L55 70V80Z" fill="var(--cl)"/>
+        </g>
+      </defs>
+
+      <!-- 1 · painter's: the whole frustum is drawn, occluded polygons included -->
+      <g transform="translate(8,8)">
+        <rect x="0" y="0" width="310" height="244" class="dr-panel"/>
+        <text x="14" y="21" class="svg-heading">1 · Painter’s algorithm</text>
+        <g transform="translate(14,32)">
+          <path d="M35 75L110 0H280V150H110Z" class="dr-lit"/>
+          <use href="#dr-scene"/>
+          <path d="M135 0H280M135 150H280" class="dr-warn"/>
+          <text x="4" y="102" class="dr-lbl">viewpoint</text>
+          <text x="176" y="26" class="dr-lbl dr-cl">frustum</text>
+          <text x="176" y="134" class="dr-lbl dr-sim">drawn anyway</text>
+        </g>
+        <text x="14" y="204" class="dr-note">Everything in the frustum is drawn,</text>
+        <text x="14" y="219" class="dr-note">hidden or not. Overdraw up to ~10x;</text>
+        <text x="14" y="234" class="dr-note">best and worst case diverge.</text>
+      </g>
+
+      <!-- 2 · beam tree: wedges mark screen area solid; the doorway wedge stays empty -->
+      <g transform="translate(338,8)">
+        <rect x="0" y="0" width="310" height="244" class="dr-panel"/>
+        <text x="14" y="21" class="svg-heading">2 · Beam tree</text>
+        <g transform="translate(14,32)">
+          <path d="M35 75L135 0H280V33Z" class="dr-beam"/>
+          <path d="M35 75L135 150H280V117Z" class="dr-beam"/>
+          <path d="M35 75L280 33V117Z" class="dr-lit"/>
+          <use href="#dr-scene"/>
+          <text x="185" y="18" class="dr-lbl">solid</text>
+          <text x="185" y="144" class="dr-lbl">solid</text>
+          <text x="150" y="79" class="dr-lbl dr-cl">still empty</text>
+        </g>
+        <text x="14" y="204" class="dr-note">Wedges from the eye fill the screen</text>
+        <text x="14" y="219" class="dr-note">as solid. A long sightline never closes</text>
+        <text x="14" y="234" class="dr-note">the tree, so every polygon is tested.</text>
+      </g>
+
+      <!-- 3 · portals: the frustum is clipped to the doorway, recursively -->
+      <g transform="translate(8,272)">
+        <rect x="0" y="0" width="310" height="244" class="dr-panel"/>
+        <text x="14" y="21" class="svg-heading">3 · Portals</text>
+        <g transform="translate(14,32)">
+          <path d="M35 75L110 0H280V150H110Z" class="dr-ghost"/>
+          <path d="M35 75L280 33V117Z" class="dr-lit"/>
+          <use href="#dr-scene"/>
+          <path d="M135 58V92" class="dr-portal"/>
+          <text x="150" y="18" class="dr-lbl dr-mut">frustum</text>
+          <text x="88" y="50" class="dr-lbl dr-sim">portal</text>
+          <text x="152" y="79" class="dr-lbl dr-cl">visible after clip</text>
+        </g>
+        <text x="14" y="204" class="dr-note">Clip what is behind the portal to its</text>
+        <text x="14" y="219" class="dr-note">limits, recursively. Only visible parts</text>
+        <text x="14" y="234" class="dr-note">are drawn — but clipping costs a lot.</text>
+      </g>
+
+      <!-- 4 · PVS: leaves looked up, not computed; L4 is the over-report -->
+      <g transform="translate(338,272)">
+        <rect x="0" y="0" width="310" height="244" class="dr-panel"/>
+        <text x="14" y="21" class="svg-heading">4 · PVS (shipped)</text>
+        <g transform="translate(14,32)">
+          <rect x="0" y="0" width="280" height="150" class="dr-tint"/>
+          <rect x="135" y="0" width="145" height="32" class="dr-warn-tint"/>
+          <!-- Boundaries on polygon planes: the dividing wall (x=135, visible only
+               across the doorway gap) and one split in each room. L4 is the strip
+               above the doorway sightline of panels 2 and 3, so it is genuinely
+               hidden from this point while still reachable from elsewhere in L1. -->
+          <path d="M70 0V150M135 0V150M135 32H280" class="dr-leafline"/>
+          <use href="#dr-scene"/>
+          <rect x="135" y="0" width="145" height="32" class="dr-warn-edge"/>
+          <text x="26" y="18" class="dr-lbl">L1</text>
+          <text x="96" y="18" class="dr-lbl">L2</text>
+          <text x="166" y="60" class="dr-lbl">L3</text>
+          <text x="166" y="23" class="dr-lbl dr-sim">L4</text>
+          <text x="66" y="140" class="dr-lbl dr-cl">PVS(L1) = L1 L2 L3 L4</text>
+        </g>
+        <text x="14" y="204" class="dr-note">Visible leaves precomputed per leaf;</text>
+        <text x="14" y="219" class="dr-note">no runtime search. It over-reports —</text>
+        <text x="14" y="234" class="dr-note">L4 is in the set but hidden from here.</text>
+      </g>
+    </svg>
+  </div>
+  <figcaption><b>A schematic, not a measurement.</b> One scene — two rooms, a doorway, eight wall polygons, one viewpoint — under four schemes. The <b>painter’s algorithm</b> draws every polygon in the frustum; the defect is not only the overdraw but the gap between best and worst case. The <b>beam tree</b> projects wedges from the viewpoint and stops early once they fill the screen, but a sightline through the doorway to the far wall never closes the tree, so every polygon is tested anyway. <b>Portals</b> clip recursively through the doorway and draw only what is visible, paying in clipping every frame. The <b>PVS</b> that shipped answers per leaf, so there is no runtime search — and it over-reports by construction, because it records what is visible from anywhere in a leaf rather than from this point: L4, the strip along the far room’s top wall, sits outside the doorway sightline of panels 2 and 3, yet the set still contains it. Angles, leaf sizes and polygon counts are illustrative; the leaf boundaries follow polygon planes, as a BSP’s do. Source: <a href="../../historical/abrash_black_book/chapter-64.md">Abrash ch. 64</a>, sections “The Beam Tree”, “3-D Engine du Jour” and “Breakthrough!”; WinQuake/r_main.c:493-519.</figcaption>
+</figure>

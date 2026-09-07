@@ -10,12 +10,26 @@
 {{BASE_CSS}}
 </style>
 
+<script>
+/* Apply the stored theme before the first paint, so a dark-theme reader never
+   sees a flash of the light palette. The picker itself is wired in base.js. */
+try {
+  var t = localStorage.getItem("lof-theme");
+  if (t === "light" || t === "dark") document.documentElement.setAttribute("data-theme", t);
+} catch (e) {}
+</script>
+
 <header class="masthead">
   <div class="masthead-in">
     <h1>Quake: Life of a Frame
       <span class="h1-sub">One pass through <code>_Host_Frame</code>, from key event to painted pixel</span>
     </h1>
     <div class="stamp">id Software · WinQuake · 1996</div>
+    <div class="themeswitch" role="group" aria-label="Colour theme">
+      <button type="button" data-theme="light" aria-pressed="false">Light</button>
+      <button type="button" data-theme="dark" aria-pressed="false">Dark</button>
+      <button type="button" data-theme="system" aria-pressed="true">System</button>
+    </div>
   </div>
 </header>
 

@@ -66,6 +66,14 @@
   function savePref(key, val) {
     try { localStorage.setItem(key, val ? "1" : "0"); } catch (e) {}
   }
+  /* Same storage, non-boolean values. localStorage throws outright in some
+     privacy modes, so every access is guarded. */
+  function loadRaw(key) {
+    try { return localStorage.getItem(key); } catch (e) { return null; }
+  }
+  function saveRaw(key, val) {
+    try { localStorage.setItem(key, val); } catch (e) {}
+  }
 
   var codeFigs = [].slice.call(document.querySelectorAll("figure.code"));
   var globalFoldDefault = loadPref(FOLD_ALL_KEY, true);
@@ -187,6 +195,147 @@
     var open = rail.classList.toggle("open");
     railToggle.setAttribute("aria-expanded", String(open));
   });
+
+  /* ---------------------------------------------------- theme */
+  /* Three states: pinned light, pinned dark, or no data-theme at all, which
+     hands the choice back to prefers-color-scheme. The inline script in the
+     page head applies the stored value before first paint. */
+  var THEME_KEY = "lof-theme";
+  var themeBtns = [].slice.call(document.querySelectorAll(".themeswitch button"));
+
+  function applyTheme(mode) {
+    if (mode === "light" || mode === "dark") document.documentElement.setAttribute("data-theme", mode);
+    else document.documentElement.removeAttribute("data-theme");
+    themeBtns.forEach(function (b) {
+      b.setAttribute("aria-pressed", String(b.dataset.theme === mode));
+    });
+  }
+
+  if (themeBtns.length) {
+    var storedTheme = loadRaw(THEME_KEY);
+    applyTheme(storedTheme === "light" || storedTheme === "dark" ? storedTheme : "system");
+    themeBtns.forEach(function (b) {
+      b.addEventListener("click", function () {
+        applyTheme(b.dataset.theme);
+        saveRaw(THEME_KEY, b.dataset.theme);
+      });
+    });
+  }
+
+  /* ---------------------------------------------------- print */
+  /* Paper has no disclosure triangles, so open every fold for the print and
+     put it back afterwards. The stylesheet handles the figure.code folds. */
+  var reopened = [];
+  window.addEventListener("beforeprint", function () {
+    [].slice.call(document.querySelectorAll("details")).forEach(function (d) {
+      if (!d.open) { d.open = true; reopened.push(d); }
+    });
+  });
+  window.addEventListener("afterprint", function () {
+    reopened.forEach(function (d) { d.open = false; });
+    reopened = [];
+  });
+
+  /* ---------------------------------------------------- .plan chrome */
+  /* Class "era" covers two kinds of block: real .plan entries and labelled
+     asides ("Pentium FDIV bug."). Only the first should look like a finger
+     session, and the builder emits no class to tell them apart, so tag them
+     from the ".plan." label here. Handle and date come from the archive link:
+     .../plans/carmack/by_day/johnc_plan_19960315.txt reads as
+     `finger johnc@idsoftware.com`, 1996-03-15. Handles are only claimed for
+     authors whose address is on record; the rest get a bare .plan header. */
+  var PLAN_HANDLE = { carmack: "johnc", john_romero: "romero" };
+
+  [].slice.call(document.querySelectorAll("blockquote.era")).forEach(function (bq) {
+    var first = bq.querySelector("p");
+    var label = first && first.firstElementChild;
+    if (!label || label.tagName !== "STRONG") return;
+    if (label.textContent.replace(/\s+/g, "").toLowerCase().indexOf(".plan") !== 0) return;
+
+    var link = bq.querySelector('a[href*="/plans/"]');
+    var href = link ? link.getAttribute("href") : "";
+    var who = href.match(/\/plans\/([^\/]+)\//);
+    var day = href.match(/(\d{4})-?(\d{2})-?(\d{2})\.txt$/);
+    var handle = who ? PLAN_HANDLE[who[1]] : null;
+
+    var bar = document.createElement("div");
+    bar.className = "finger-bar";
+    var cmd = document.createElement("span");
+    cmd.className = "finger-cmd";
+    /* No archive link, so no attributable handle: `finger @host` is the real
+       command for "whoever is on this machine". Do not guess an author. */
+    cmd.textContent = handle ? "finger " + handle + "@idsoftware.com" : "finger @idsoftware.com";
+    var meta = document.createElement("span");
+    meta.className = "finger-meta";
+    meta.textContent = day ? ".plan · " + day[1] + "-" + day[2] + "-" + day[3] : ".plan";
+    bar.appendChild(cmd);
+    bar.appendChild(meta);
+    bq.insertBefore(bar, bq.firstChild);
+    bq.classList.add("era-plan");
+  });
+
+  /* ---------------------------------------------------- timeline rail */
+  /* Built from the existing <dl class="timeline"> rather than duplicating it:
+     one dot per entry, the detail shown on hover, focus or click. The list
+     itself stays in the document at every width, moved behind a disclosure so
+     it does not repeat the rail twice over. Without JS the page keeps the
+     plain list, which is the whole content.
+
+       ●───────●───────●───────●     <- rail, one dot per <dt>
+     Jan 1993  Mar 1994  ...
+     [ detail of the selected entry ]  <- the matching <dd> */
+  var tl = document.querySelector("dl.timeline");
+  var tlRows = tl ? [].slice.call(tl.children).filter(function (el) { return el.tagName === "DIV"; }) : [];
+
+  if (tlRows.length) {
+    var fig = document.createElement("div");
+    fig.className = "tl";
+    var track = document.createElement("ol");
+    track.className = "tl-track";
+    track.setAttribute("aria-label", "Timeline markers; select one to read its entry");
+    var detail = document.createElement("div");
+    detail.className = "tl-detail";
+    detail.setAttribute("aria-live", "polite");
+    var dots = [];
+
+    function showStop(i) {
+      detail.innerHTML = tlRows[i].querySelector("dd").innerHTML;
+      dots.forEach(function (d, j) {
+        d.setAttribute("aria-pressed", String(i === j));
+      });
+    }
+
+    tlRows.forEach(function (row, i) {
+      var li = document.createElement("li");
+      li.className = "tl-stop";
+      var dot = document.createElement("button");
+      dot.type = "button";
+      dot.className = "tl-dot";
+      dot.setAttribute("aria-pressed", "false");
+      dot.innerHTML = '<span class="tl-mark" aria-hidden="true"></span><span class="tl-year"></span>';
+      dot.querySelector(".tl-year").textContent = row.querySelector("dt").textContent;
+      dot.addEventListener("click", function () { showStop(i); });
+      dot.addEventListener("focus", function () { showStop(i); });
+      dot.addEventListener("mouseenter", function () { showStop(i); });
+      dots.push(dot);
+      li.appendChild(dot);
+      track.appendChild(li);
+    });
+
+    fig.appendChild(track);
+    fig.appendChild(detail);
+
+    var det = document.createElement("details");
+    det.className = "tl-list";
+    var sum = document.createElement("summary");
+    sum.textContent = "All " + tlRows.length + " entries as a list";
+    det.appendChild(sum);
+    tl.parentNode.insertBefore(fig, tl);
+    tl.parentNode.insertBefore(det, tl);
+    det.appendChild(tl);
+
+    showStop(0);
+  }
 
   /* ---------------------------------------------------- diagram */
   var pipe = document.getElementById("pipe");
