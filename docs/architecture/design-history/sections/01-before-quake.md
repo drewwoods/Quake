@@ -13,6 +13,7 @@ The list is worth reading twice, because what it omits is the actual subject of 
 Two features on that list, however, survive into Quake essentially unchanged, and it is worth naming them now because later chapters depend on them. The first is **light diminishing and light sourcing** — the observation that lighting is what makes an environment feel like a place, and therefore that lighting is worth spending the frame budget on. Quake's answer is far more ambitious and is covered in the planned chapter on surface caching, but the commitment is already visible here. The second is the section headed **"An Open Game"**:
 
 > When our last hit, WOLFENSTEIN 3D was released the public responded with an almost immediate deluge of home-brewed utilities; map editors, sound editors, trainers, etc. All without any help on file formats or game layout from Id Software. DOOM will be release as an OPEN GAME. We will provide file formats and technical notes for anyone who wants them.
+> — [id Software, DOOM press release, 1 January 1993](../../../historical/doom_1993/doom_press_release_1993.txt)
 
 That is a 1993 statement of an architectural policy that Quake pushes much further, from published file formats to a shipped bytecode virtual machine with the game logic compiled into a replaceable `progs.dat`. The [QuakeC VM](frame:the-quakec-vm) reads as a descendant of this policy. {inferred} The planned QuakeC chapter will trace that line.
 
@@ -23,6 +24,7 @@ DOOM's central data structure was a BSP tree, and Carmack's use of it is the rea
 That constrains the geometry directly. Because the splitters are vertical, the tree divides a two-dimensional floor plan; vertical walls are represented by the map's linedefs, while horizontal floors and ceilings remain sector properties that the renderer fills in between walls. Carmack described exactly this structure as the thing he would change, in the notes accompanying the DOOM source release on 23 December 1997 ([`carmack_doom_retrospective.txt`](../../../historical/doom_1993/carmack_doom_retrospective.txt)):
 
 > The way the rendering proceded from walls to floors to sprites could be collapsed into a single front-to-back walk of the bsp tree to collect information, then draw all the contents of a subsector on the way back up the tree. It requires treating floors and ceilings as polygons, rather than just the gaps between walls, and it requires clipping sprite billboards into subsector fragments, but it would be The Right Thing.
+> — [John Carmack, DOOM source release notes, 23 December 1997](../../../historical/doom_1993/carmack_doom_retrospective.txt)
 
 Quake removes that constraint at the root of the representation. Its splitting planes carry a full normal vector, not an implied vertical: {code}
 
@@ -45,12 +47,14 @@ The key difference is that `normal` is a `vec3_t`. Polygons can sit at any angle
 The dimensional change is the obvious difference. The more consequential one is what the tree gets *used* for, and here the best source is Carmack assessing his own code four years later:
 
 > The movement and line of sight checking against the lines is one of the bigger misses that I look back on. It is messy code that had some failure cases, and there was a vastly simpler (and faster) solution sitting in front of my face. I used the BSP tree for rendering things, but I didn't realize at the time that it could also be used for environment testing.
+> — [John Carmack, DOOM source release notes, 23 December 1997](../../../historical/doom_1993/carmack_doom_retrospective.txt)
 
 In DOOM, the BSP tree served the renderer. Movement and hitscan traversed the linedefs via the blockmap; line of sight walked the BSP. Quake derives both kinds of query from the same compiled map geometry. Rendering walks the render BSP; collision walks one of the pre-expanded clip hulls, reusing the map's planes. Life of a Frame covers the mechanism in detail: [`SV_RecursiveHullCheck`](frame:sv-recursivehullcheck-the-trace) is the descent, and [contents types](frame:contents-types-collision-hulls-vs-render-nodes) explain how the engine keeps render nodes and collision hulls separate.
 
 Carmack's retrospective continues straight into the price of doing it that way:
 
 > Sweeping volumes for movement gets a bit tougher, and touches on many of the challenges faced in quake / quake2 with edge bevels on polyhedrons.
+> — [John Carmack, DOOM source release notes, 23 December 1997](../../../historical/doom_1993/carmack_doom_retrospective.txt)
 
 This is the origin of one of Quake's most distinctive and least intuitive structures. Sweeping a player-sized box through a 3-D tree is genuinely hard; reducing that box to a *point* moving through a tree whose solid volumes have been pre-expanded by the box's dimensions is easy, and reuses the descent unchanged. So `qbsp` compiles not one tree but several, and each model carries all of them:
 
@@ -70,12 +74,13 @@ The third use of the tree has no direct DOOM counterpart. Because a leaf is a vo
 Quake was public long before it was real. John Romero's `.plan` of 18 March 1994 announces it by name, with a subtitle, a comparison, and a start date ([`john_romero/1994-03-18.txt`](../../../historical/plans/john_romero/1994-03-18.txt)):
 
 > **.plan.** The next game is going to blow DOOM all to hell. DOOM totally sucks in comparison to our next game, QUAKE: The Fight for Justice! QUAKE is going to be a bigger step over DOOM than DOOM was over Wolf3D (ya know -- DOOM = pong). We won't start developing QUAKE until Fall'94, due to Jaguar DOOM (Comlynxed!), commercial DOOM (COMPUSA, Babbage's, etc.) and maybe a DOOM level pack.
+> — [John Romero, .plan, 18 March 1994](../../../historical/plans/john_romero/1994-03-18.txt)
 
 Two things are worth extracting. The first is the ambition, stated as a ratio rather than a feature: the step from DOOM to Quake was to be at least as large as the step from Wolfenstein to DOOM. Wolfenstein's walls were axis-aligned and eight feet thick; DOOM's could be at any angle and any thickness. The announcement does not say what the next leap would be; the engine that shipped made it a full third dimension. {inferred} The planned chapters on discarded renderers, surface caching, and one-processor design describe the cost.
 
-The second is the schedule. Quake is announced in March 1994, development is not to begin until autumn, and the game shipped in June 1996. Abrash did not join id until March 1995 ([*Black Book*, ch. 64](../../../historical/abrash_black_book/chapter-64.md)), by which point "John already had an engine prototyped and a plan in mind" — a plan that [the year of discarded renderers](#sec-2) examines, and that almost entirely failed to survive contact with the problem. The title *The Fight for Justice* did not survive either. What was shipped shares an ambition with the announcement and very little else, which is a useful calibration on how much of Quake's design was intended in advance versus discovered under deadline.
+The second is the schedule. Quake is announced in March 1994, development is not to begin until autumn, and the game shipped in June 1996. Abrash did not join id until March 1995 ([*Black Book*, ch. 64](../../../historical/abrash_black_book/chapter-64.md)), by which point "John already had an engine prototyped and a plan in mind" ([Abrash, ch. 64](../../../historical/abrash_black_book/chapter-64.md)) — a plan that [the year of discarded renderers](#sec-2) examines, and that almost entirely failed to survive contact with the problem. The title *The Fight for Justice* did not survive either. What was shipped shares an ambition with the announcement and very little else, which is a useful calibration on how much of Quake's design was intended in advance versus discovered under deadline.
 
-The same `.plan` records the development environment in passing — "To get the entire world running NEXTSTEP for development" — and NeXTSTEP is why the source contains a `NeXT` build path and why the tools were written the way they were.
+The same `.plan` records the development environment in passing — "To get the entire world running NEXTSTEP for development" ([Romero, .plan, 18 March 1994](../../../historical/plans/john_romero/1994-03-18.txt)) — and NeXTSTEP is why the source contains a `NeXT` build path and why the tools were written the way they were.
 
 ## What Quake had to close
 
@@ -91,7 +96,7 @@ Reading the two announcements against each other gives a concrete list of what c
 | ~3,000 polygons per level | ~10,000 polygons per level | Overdraw becomes the dominant cost (ch. 2) |
 | 35 Hz fixed timebase | [Variable frame time, 20 Hz server tick](frame:host-filtertime-what-host-frametime-actually-means) | Interpolation on the client |
 
-The polygon counts are Abrash's: "a good-sized Quake level contains on the order of 10,000 polygons, about three times as many polygons as a comparable DOOM level" ([ch. 64](../../../historical/abrash_black_book/chapter-64.md)). The DOOM timebase is Carmack's own aside in the source release notes, where he lists "there are some issues with DOOM's 35 hz timebase" among the obstacles to a hardware-accelerated port. Quake lets the host use a measured delta while a dedicated server targets `sys_ticrate`; a listen server still runs one server tick inside each accepted host frame. Remote clients therefore need to [interpolate entity positions](frame:entity-interpolation-entity-t-cl-mtime-cl-relinkentities) between received states.
+The polygon counts are Abrash's: "a good-sized Quake level contains on the order of 10,000 polygons, about three times as many polygons as a comparable DOOM level" ([ch. 64](../../../historical/abrash_black_book/chapter-64.md)). The DOOM timebase is Carmack's own aside in the source release notes, where he lists "there are some issues with DOOM's 35 hz timebase" ([Carmack's DOOM retrospective](../../../historical/doom_1993/carmack_doom_retrospective.txt)) among the obstacles to a hardware-accelerated port. Quake lets the host use a measured delta while a dedicated server targets `sys_ticrate`; a listen server still runs one server tick inside each accepted host frame. Remote clients therefore need to [interpolate entity positions](frame:entity-interpolation-entity-t-cl-mtime-cl-relinkentities) between received states.
 
 One caveat on the evidence in this chapter. The retrospective quoted above was written in December 1997 — after Quake and Quake II. It is reliable testimony about how Carmack understood DOOM's limits *in hindsight*, and it lines up well with what Quake actually does, but it is not evidence of what he intended in 1994. The contemporaneous record of that period is thin: the March 1994 `.plan` is the announcement, and there is no public design document between it and Abrash's arrival a year later. Where this guide describes intent before March 1995, it is inference from the shipped code, and says so.
 
