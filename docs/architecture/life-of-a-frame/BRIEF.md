@@ -36,6 +36,28 @@ for those links.
 The original research brief below describes the detailed reference layer, not
 the expected difficulty of the first reading path.
 
+## Checking citations
+
+External links rot. `build.py` deliberately does not touch the network, so
+citations are checked separately:
+
+    python3 docs/architecture/check-links.py                  # all guides
+    python3 docs/architecture/check-links.py design-history   # one guide
+    python3 docs/architecture/check-links.py --slow 2         # gentler on old hosts
+
+It reports every cited URL's status and, for failures, the closest Wayback
+snapshot, so a dead citation can be repaired rather than dropped. It exits
+non-zero if anything failed. A 403 from a host known to block scripted requests
+is reported but not treated as a failure.
+
+When citing a host with no institutional backing — an old community site, a
+personal page — pin it alongside the live URL:
+
+    https://example.org/spec.htm (archived: https://web.archive.org/web/<ts>/https://example.org/spec.htm)
+
+Durable hosts (GitHub, Wikipedia, YouTube, active projects) are left unpinned;
+annotating everything costs more readability than it buys.
+
 ## Original research brief
 
 Repo: /Users/drew/src/Quake-worktree (id Software Quake 1 source, GPL release). Engine code is in WinQuake/ (software + GL renderer, server, client, progs VM). QW/ is QuakeWorld — ignore unless told.

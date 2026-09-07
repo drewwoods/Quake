@@ -106,6 +106,28 @@ The generated `quake-design-history.html` is checked in. Register each new
 chapter in the `files` list in `build.py`, and move it off the `todo` roadmap
 in `template.html`.
 
+## Checking citations
+
+External links rot. `build.py` deliberately does not touch the network, so
+citations are checked separately:
+
+    python3 docs/architecture/check-links.py                  # all guides
+    python3 docs/architecture/check-links.py design-history   # one guide
+    python3 docs/architecture/check-links.py --slow 2         # gentler on old hosts
+
+It reports every cited URL's status and, for failures, the closest Wayback
+snapshot, so a dead citation can be repaired rather than dropped. It exits
+non-zero if anything failed. A 403 from a host known to block scripted requests
+is reported but not treated as a failure.
+
+When citing a host with no institutional backing — an old community site, a
+personal page — pin it alongside the live URL:
+
+    https://example.org/spec.htm (archived: https://web.archive.org/web/<ts>/https://example.org/spec.htm)
+
+Durable hosts (GitHub, Wikipedia, YouTube, active projects) are left unpinned;
+annotating everything costs more readability than it buys.
+
 ## Planned chapters
 
 1. **Before Quake: what DOOM could not do** — the 1993 feature list as a
