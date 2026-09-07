@@ -181,15 +181,17 @@ collapse them into one motive. Say that the sources emphasise different halves.
   and "the risc architecture allows a lot of room for optimization."
   `../../historical/plans/carmack/by_day/johnc_plan_19961213.txt`
 - Carmack `.plan` 23 Feb 1997 — the unification plan that became Quake 2's
-  renderer: `.../johnc_plan_19970223.txt`
+  renderer: `../../historical/plans/carmack/by_day/johnc_plan_19970223.txt`
 - Carmack `.plan` 2 Apr 1997 — "A verite module will come later." It slipped.
-  `.../johnc_plan_19970402.txt`
+  `../../historical/plans/carmack/by_day/johnc_plan_19970402.txt`
 - Carmack `.plan` 12 May 1997 — the closing quote:
   "every codepath that gets added holds back future innovation... Just having
   software and gl is a lot of work, and I have allready commited to verite
-  support." `.../johnc_plan_19970512.txt`
+  support." `../../historical/plans/carmack/by_day/johnc_plan_19970512.txt`
 - Carmack `.plan` 12 Feb 1998 and 13 Mar 1998 — the Vérité V2100/V2200 assessed
-  through an OpenGL ICD, i.e. the native-port era already over.
+  through an OpenGL ICD, i.e. the native-port era already over:
+  `../../historical/plans/carmack/by_day/johnc_plan_19980212.txt`,
+  `../../historical/plans/carmack/by_day/johnc_plan_19980313.txt`
 - Brian Hook `.plan` 14 Dec 1997 — measured V2200 numbers, fill-limited:
   `../../historical/plans/brian_hook/1997-12-15.txt`
 - Fabien Sanglard, "The story of the Rendition Vérité 1000",

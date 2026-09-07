@@ -85,9 +85,9 @@ Reading the two announcements against each other gives a concrete list of what c
 | Camera fixed to the horizon | [Free pitch, roll and view offsets](frame:view-setup-bob-punchangle-and-color-shifts-view-c) | No screen-space shortcuts; perspective texturing (ch. 4) |
 | Sprites for monsters and players | [Interpolated triangle models](frame:alias-models-r-drawaliasmodel-and-gl-mesh-c-strips-fans) | Per-frame vertex transform and lighting |
 | Light per sector, per band | [Per-surface lightmaps](frame:lightmaps-and-light-styles-r-light-c) | Offline light compile; surface caching to afford it (ch. 3) |
-| BSP used for rendering only | Same tree for render, collision, and network | Expanded hulls; PVS as a bandwidth policy (ch. 5) |
+| BSP used for rendering only | Same compiled map geometry for render, collision, and network | Expanded hulls; PVS as a bandwidth policy (ch. 5) |
 | ~3,000 polygons per level | ~10,000 polygons per level | Overdraw becomes the dominant cost (ch. 2) |
-| 35 Hz fixed timebase | [Variable frame time, 20 Hz server tick](frame:host-filtertime-what-host-frametime-actually-means) | Interpolation on the client (ch. 8) |
+| 35 Hz fixed timebase | [Variable frame time, 20 Hz server tick](frame:host-filtertime-what-host-frametime-actually-means) | Interpolation on the client |
 
 The polygon counts are Abrash's: "a good-sized Quake level contains on the order of 10,000 polygons, about three times as many polygons as a comparable DOOM level" ([ch. 64](../../../historical/abrash_quake_1995/chapter-64.md)). The DOOM timebase is Carmack's own aside in the source release notes, where he lists "there are some issues with DOOM's 35 hz timebase" among the obstacles to a hardware-accelerated port. Quake lets the host use a measured delta while a dedicated server targets `sys_ticrate`; a listen server still runs one server tick inside each accepted host frame. Remote clients therefore need to [interpolate entity positions](frame:entity-interpolation-entity-t-cl-mtime-cl-relinkentities) between received states.
 

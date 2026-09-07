@@ -1,8 +1,8 @@
 # The Year of Discarded Renderers
 
-Between March 1995 and the middle of 1996, Quake's visible-surface determination was rebuilt from scratch repeatedly. A beam tree was written, tuned, and abandoned. At least five other approaches were prototyped or seriously argued and dropped. The design that shipped — precompute, for every leaf in the map, the set of leaves potentially visible from it, then at runtime draw only those — was not on the original plan and arrived roughly a year in. This chapter follows that sequence, because the shape of the surviving code is unintelligible without it: the potentially visible set looks like an obvious idea in hindsight, and reading it as an obvious idea gets its cost model exactly backwards.
+Between March 1995 and the middle of 1996, Quake's visible-surface determination was rebuilt from scratch repeatedly. A beam tree was written, tuned, and abandoned. At least five other approaches were prototyped or seriously argued and dropped. The design that shipped — precompute, for every leaf in the map, the set of leaves potentially visible from it, then at runtime draw only those — was not on the original plan and was in place roughly a year before release. This chapter follows that sequence, because the shape of the surviving code is unintelligible without it: the potentially visible set looks like an obvious idea in hindsight, and reading it as an obvious idea gets its cost model exactly backwards.
 
-> **First pass.** Quake's problem was never "how do I draw a polygon fast." It was overdraw: in a ten-thousand-polygon level most of what is inside the view frustum is hidden behind something else, and drawing it anyway is wasted work that scales with level complexity. Every discarded approach here is an attempt to find the visible set at runtime. The one that shipped gave up and moved the work offline. Next: what that decision made affordable.
+> **First pass.** Quake's problem was never "how do I draw a polygon fast." It was overdraw: in a ten-thousand-polygon level most of what is inside the view frustum is hidden behind something else, and drawing it anyway is wasted work that scales with level complexity. The discarded approaches tried to make world visibility tractable at runtime. The one that shipped moved that work offline; runtime rendering still resolved pixel visibility. Next: what that decision made affordable.
 
 ## The problem, stated precisely
 
@@ -10,11 +10,11 @@ Abrash defines the target in [chapter 64, "Quake's Visible-Surface Determination
 
 > The process of VSD would ideally work as follows: First, you would cull all polygons that are completely outside the view frustum (view pyramid), and would clip away the irrelevant portions of any polygons that are partially outside. Then, you would draw only those pixels of each polygon that are actually visible from the current viewpoint [...] Finally, in a perfect world, the tests to figure out what parts of which polygons are visible would be free, and the processing time would be the same for all possible viewpoints, giving the game a smooth visual flow.
 
-Two of those three clauses were already solved. Frustum culling is cheap against a BSP, because each *node* bounds a convex subspace, so rejecting a node rejects every polygon beneath it at once. Correct draw order is free, because BSP leaves can be walked front-to-back or back-to-front by construction. What remained was the middle clause and, critically, the last one.
+Two parts were tractable. A BSP makes coarse frustum culling cheap, because each *node* bounds a convex subspace, so rejecting one node rejects every polygon beneath it. It also supplies a front-to-back or back-to-front traversal. The hard part was the middle clause and, critically, the last one.
 
 The last clause is the one that does the damage. A painter's-algorithm renderer draws every polygon in the frustum, hidden or not; Abrash estimates worst-case overdraw in a Quake level "10 times or more," meaning each pixel written ten times on average. The problem is not only that this is slow. It is that best case and worst case diverge, so the frame rate swings as the player turns. A design that is fast in a corridor and unplayable in an atrium has not solved the problem.
 
-> **.plan.** In terms of graphics, Quake is to DOOM as DOOM was to its predecessor, Wolfenstein 3-D. [...] Already, a good-sized Quake level contains on the order of 10,000 polygons, about three times as many polygons as a comparable DOOM level. — Abrash, [ch. 64](../../../historical/abrash_quake_1995/chapter-64.md)
+> **Abrash, ch. 64.** In terms of graphics, Quake is to DOOM as DOOM was to its predecessor, Wolfenstein 3-D. [...] Already, a good-sized Quake level contains on the order of 10,000 polygons, about three times as many polygons as a comparable DOOM level. [Local copy](../../../historical/abrash_quake_1995/chapter-64.md)
 
 ## The prototype, and how long it lasted
 
@@ -46,13 +46,13 @@ Abrash lists the alternatives that were prototyped "in overnight or weekend-long
 
 **Vertex-free surfaces.** Store the world as planes only, and extract polygons from plane intersections just before drawing. Clipping becomes fast and the dataset shrinks considerably, since a plane is far more compact than a polygon. Rejected because extracting polygons from planes is expensive at exactly the wrong moment. Note that the shipped format keeps the compact-plane idea in a weaker form — planes are shared and deduplicated in the [on-disk BSP](frame:on-disk-bsp-format) — without paying the extraction cost.
 
-**The draw-buffer.** A one-bit-per-pixel z-buffer recording only whether a pixel has been written. This eliminates overdraw, at the cost of a test in the inner loop, extra writes, cache misses, and, in Abrash's summary, "considerable complexity." The variations considered are a good illustration of how far the search went: test the buffer a byte at a time and skip fully-occluded bytes, or branch from each byte into one of 256 unrolled loops for drawing 0–8 pixels, using the spare cycles to run the perspective divide in parallel.
+**The draw-buffer.** An occlusion bitmap with one bit per pixel, recording only whether that pixel has been written. This eliminates overdraw, at the cost of a test in the inner loop, extra writes, cache misses, and, in Abrash's summary, "considerable complexity." The variations considered are a good illustration of how far the search went: test the buffer a byte at a time and skip fully-occluded bytes, or branch from each byte into one of 256 unrolled loops for drawing 0–8 pixels, with the hope of overlapping the perspective divide with pixel processing.
 
 **Span-based drawing.** Rasterize polygons into spans, clip each new span against a global span list, keep only the nearest at each pixel. Front-to-back walking means little sorting is needed — if there is overlap, the span already in the list is nearer. No overdraw, but every polygon still has to be turned into spans, and the span arithmetic is substantial. This one did not die: it is the ancestor of the [edge list and span sorting](frame:software-renderer-edge-based-visible-surface-determination) that shipped, and the section below returns to it.
 
 **Portals.** Track the holes in surfaces, since line-of-sight only extends through them. Draw front-to-back; on reaching a portal, clip the polygons and portals behind it to its limits, recursively, until nothing visible remains. This draws only the visible parts of visible polygons — the ideal — but pays for it in a great deal of portal clipping.
 
-The portal approach is the one to keep in view, because the shipped design is a precomputed version of it.
+The portal approach is the one to keep in view: the shipped PVS preserves its connectivity insight, but precomputes visibility per leaf instead of clipping portals at runtime.
 
 ## The breakthrough
 
@@ -60,7 +60,7 @@ Carmack next tried extracting visibility directly from the world BSP tree, reaso
 
 > When I came in on Monday, John had the look of a man who had broken through to the other side—and also the look of a man who hadn't had much sleep. [...] At 3:30 Monday morning, as he lay in bed, thinking about portals, he thought of precalculating and storing in each leaf a list of all leaves visible from that leaf, and then at runtime just drawing the visible leaves back-to-front for whatever leaf the viewpoint happens to be in, ignoring all other leaves entirely.
 
-The move is to stop computing visibility and start looking it up. Every runtime approach above was an attempt to make the visibility calculation cheaper; this one deletes it. Abrash draws the general lesson through a colleague's aphorism — "almost all programming can be viewed as an exercise in caching" — and calls the reframing the inspired part, rather than the algorithm.
+The move was to stop computing world visibility at runtime and start looking it up. The discarded approaches tried to make that calculation cheaper; the PVS removes it from the frame loop. Abrash draws the general lesson through a colleague's aphorism — "almost all programming can be viewed as an exercise in caching" — and calls the reframing the inspired part, rather than the algorithm.
 
 One correction the chapter itself supplies, and which this guide should not sand off: Carmack did not experience it as a eureka. Abrash reports him saying "precalculating the PVS was a logical evolution of the approaches he had been considering, that there was no moment when he said 'Eureka!'" The dramatic version is Abrash's framing of a colleague's work; the participant's version is that it fell out of a week of thinking about portals. Both are in the same paragraph, and the disagreement is itself informative about how such designs actually arrive.
 
@@ -68,14 +68,14 @@ Nor was the underlying idea unprecedented. Abrash's own reference list for the c
 
 ## Making it fit
 
-A first implementation was several megabytes — unusable when the whole game had to run in 8 MB. Four changes brought it down to roughly 20 KB for a good-sized level:
+Abrash reports that the first raw, uncompressed PVS was several megabytes. Four changes brought it down to roughly 20 KB for a good-sized level:
 
 1. Store the set as a bit vector, one bit per leaf, rather than a list.
 2. Compress it with run-length encoding of zero bytes, which works extremely well because the rows are sparse. Life of a Frame covers [the decompressor](frame:mod-leafpvs-mod-decompressvis-rle-decompression).
 3. Change the BSP splitter heuristic to produce fewer leaves. Abrash: "choosing as the next splitter the polygon that splits the fewest other polygons appears to be the best heuristic."
 4. Seal the outside of levels, so the compiler can discard exterior surfaces that can never be seen.
 
-The fourth is the origin of a rule every Quake mapper has met: a level with a hole in it fails to compile, because the visibility computation has no bounded outside. That constraint is not arbitrary strictness — it is what makes the surface count, and therefore the leaf count, and therefore the size of the visibility data, tractable. The format reserves a megabyte for it (`MAX_MAP_VISIBILITY` at `WinQuake/bspfile.h:44`) against real usage of about a fiftieth of that.
+The fourth explains a rule every Quake mapper has met: a leak prevents the normal sealed-world BSP/PVS build from producing valid visibility data. That constraint is not arbitrary strictness — it is what makes the surface count, and therefore the leaf count, and therefore the size of the visibility data, tractable. The format allows up to a megabyte for it (`MAX_MAP_VISIBILITY` at `WinQuake/bspfile.h:44`), while the cited good-sized level used about a fiftieth of that.
 
 ## What it bought, and what it cost
 
@@ -93,7 +93,7 @@ The clearest evidence that this was a structural decision rather than a renderin
 
 > **.plan.** `PVS for net update` — [15 March 1996, backlog](../../../historical/plans/carmack/by_day/johnc_plan_19960315.txt); then `* changed network update to client PVS specific` — [23 April 1996, done](../../../historical/plans/carmack/by_day/johnc_plan_19960423.txt).
 
-That is the moment visibility became a bandwidth policy: the server stopped telling each client about entities the client could not possibly see. The mechanism is [`SV_FatPVS`](frame:how-the-server-also-uses-pvs-sv-fatpvs), and chapter 5 argues that dialup, not elegance, is what forced it. The same worklogs show a fix for a "monster sighting PVS problem" on [11 March](../../../historical/plans/carmack/by_day/johnc_plan_19960311.txt) — gameplay-visible behaviour now depending on the compiled visibility data — and, on [6 April](../../../historical/plans/carmack/by_day/johnc_plan_19960406.txt), Carmack probing for further uses:
+That is the moment visibility became a bandwidth policy: the server stopped telling each client about entities the client could not possibly see. The mechanism is [`SV_FatPVS`](frame:how-the-server-also-uses-pvs-sv-fatpvs), and the planned shipping-constraints chapter will examine how dialup shaped it. The same worklogs show a fix for a "monster sighting PVS problem" on [11 March](../../../historical/plans/carmack/by_day/johnc_plan_19960311.txt) — gameplay-visible behaviour now depending on the compiled visibility data — and, on [6 April](../../../historical/plans/carmack/by_day/johnc_plan_19960406.txt), Carmack probing for further uses:
 
 > **.plan.** `use PVS to speed line of sight checks? Is that any faster than doing the line check, because it involves two point checks?` — [Carmack, 6 April 1996](../../../historical/plans/carmack/by_day/johnc_plan_19960406.txt)
 
@@ -105,9 +105,9 @@ The PVS answers "which leaves might be visible." It does not answer "which pixel
 
 That is where span-based drawing, rejected on its own above, returns. Abrash describes the shipped renderer at the end of the chapter as the PVS "together with a still-in-development sorted-edge rasterizer that completely eliminates overdraw." The two halves are complementary: the PVS discards most of the world for free, and the edge list resolves what is left exactly. Neither would have been sufficient alone, and the PVS's tolerance for imprecision is affordable precisely because a zero-overdraw rasterizer sits behind it.
 
-Quake also ends up with a z-buffer after all — not for the world, but filled by it, so that [entities, particles and sprites](frame:alias-models-sprites-particles-and-the-entity-list) can be sorted into the scene without the edge list. The rejected draw-buffer idea survives in a narrowed form, applied only where its costs are affordable.
+Quake still uses a depth buffer for [entities, particles and sprites](frame:alias-models-sprites-particles-and-the-entity-list). The world writes depth as it is rasterized, so dynamic geometry can be tested per pixel without making the world depend on a general z-buffer. The rejected draw-buffer idea survives in this narrower form, where its cost is affordable.
 
-The mechanism of both is Life of a Frame's subject, not this guide's. What belongs here is the shape of the decision: two mechanisms with different cost models, deliberately combined so that neither has to be perfect.
+The implementation details belong in Life of a Frame. The design decision is the cost split: the PVS discards most of the world cheaply, while the edge list and depth buffer resolve what remains at runtime.
 
 ## Further reading
 
