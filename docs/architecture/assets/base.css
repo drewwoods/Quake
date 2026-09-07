@@ -34,6 +34,7 @@
   --f-display: "Archivo", "Helvetica Neue", Arial, sans-serif;
   --f-body:    "Source Serif 4", Georgia, "Times New Roman", serif;
   --f-mono:    "IBM Plex Mono", ui-monospace, "SFMono-Regular", Menlo, monospace;
+  --f-quake:   "DpQuake", var(--f-display);
 }
 @media (prefers-color-scheme: dark) {
   :root:not([data-theme="light"]) {
@@ -109,6 +110,14 @@ h1 {
   letter-spacing: -0.022em; margin: 0; text-wrap: balance;
 }
 h1 .h1-sub { display: block; font-weight: 600; color: var(--muted); font-size: 0.44em; letter-spacing: 0.01em; margin-top: 8px; }
+/* Stylized Quake brand prefix in masthead titles */
+.quake-wordmark {
+  font-family: var(--f-quake);
+  font-weight: normal;
+  letter-spacing: 0.04em;
+  font-size: 0.96em;
+  margin-right: 2px;
+}
 .stamp {
   font-family: var(--f-mono); font-size: 11px; letter-spacing: 0.09em;
   text-transform: uppercase; color: var(--muted);

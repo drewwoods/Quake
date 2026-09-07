@@ -18,6 +18,7 @@ Plus Quake-specific transforms:
   * {code}/{quoted}/{inferred} -> inline evidence labels (outside code spans)
 """
 
+import base64
 import html
 import json
 import os
@@ -571,7 +572,23 @@ def build(doc):
     # markdown fragments below, CSS and JS must not go through link_refs().
     for placeholder, asset in (("{{BASE_CSS}}", "base.css"), ("{{BASE_JS}}", "base.js")):
         with open(os.path.join(ASSETS, asset), encoding="utf-8") as f:
-            template = template.replace(placeholder, f.read().rstrip("\n"))
+            content = f.read().rstrip("\n")
+        if placeholder == "{{BASE_CSS}}":
+            font_path = os.path.join(ASSETS, "dpquake.ttf")
+            if os.path.exists(font_path):
+                with open(font_path, "rb") as ff:
+                    b64 = base64.b64encode(ff.read()).decode("ascii")
+                # Inline DpQuake font to allow rendering over file:// without CORS blocks.
+                font_css = (
+                    '@font-face {\n'
+                    '  font-family: "DpQuake";\n'
+                    '  src: url("data:font/truetype;charset=utf-8;base64,%s") format("truetype");\n'
+                    '  font-weight: normal;\n'
+                    '  font-style: normal;\n'
+                    '}\n' % b64
+                )
+                content = font_css + content
+        template = template.replace(placeholder, content)
 
     sections = []
     for idx, (fn, kicker) in enumerate(doc.files, 1):
