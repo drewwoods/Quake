@@ -409,6 +409,6 @@ main / WinMain                                  sys_win.c:692, sys_linux.c:354, 
 
 - Fabien Sanglard, "Quake Source Code Review" — the standard modern walkthrough of `Host_Frame` and the client/server split: https://fabiensanglard.net/quakeSource/index.php
 - Michael Abrash, *Graphics Programming Black Book*, chapters 59–70 (the Quake chapters) — the renderer half of the frame, and the performance culture that produced this loop: https://www.jagregory.com/abrash-black-book/
-- Olivier Montanuy et al., "Unofficial Quake Specs" — network protocol and progs interfaces: https://www.gamers.org/dEngine/quake/spec/quake-spec34/
-- QuakeC reference (the `frametime` global and `StartFrame`): https://www.gamers.org/dEngine/quake/spec/quake-spec34/qc-menu.htm
+- Olivier Montanuy et al., "Unofficial Quake Specs" — network protocol and progs interfaces: https://www.gamers.org/dEngine/quake/spec/quake-spec34/ (archived: https://web.archive.org/web/20251206223630/https://www.gamers.org/dEngine/quake/spec/quake-spec34/)
+- QuakeC reference (the `frametime` global and `StartFrame`): https://www.gamers.org/dEngine/quake/spec/quake-spec34/qc-menu.htm (archived: https://web.archive.org/web/20251124162531/https://www.gamers.org/dEngine/quake/spec/quake-spec34/qc-menu.htm)
 - John Carmack .plan archive — [2 Aug 1996](../../../historical/plans/carmack/by_day/johnc_plan_19960802.txt): 20 Hz dedicated tick, dialup bandwidth, and ~100 ms of latency even in single player from a 15 Hz game loop. Year dump: [1996 .plan archive](../../../historical/plans/carmack/by_year/johnc_plan_1996.txt).

@@ -837,10 +837,10 @@ PF_setorigin -> SV_LinkEdict                           pr_cmds.c:120
 ## Further reading
 
 - Fabien Sanglard, "Quake Source Code Review" — the clearest external treatment of the three clipping hulls and why the BSP is expanded at compile time: https://fabiensanglard.net/quakeSource/index.php
-- Olivier Montanuy et al., "Unofficial Quake Specs" — the BSP file format, the clipnode lump, and the per-model `headnode[]` array that selects hulls: https://www.gamers.org/dEngine/quake/spec/quake-spec34/
-- Quake BSP format specifics (nodes, clipnodes, planes, contents values): https://www.gamers.org/dEngine/quake/spec/quake-spec34/qkspec_4.htm
+- Olivier Montanuy et al., "Unofficial Quake Specs" — the BSP file format, the clipnode lump, and the per-model `headnode[]` array that selects hulls: https://www.gamers.org/dEngine/quake/spec/quake-spec34/ (archived: https://web.archive.org/web/20251206223630/https://www.gamers.org/dEngine/quake/spec/quake-spec34/)
+- Quake BSP format specifics (nodes, clipnodes, planes, contents values): https://www.gamers.org/dEngine/quake/spec/quake-spec34/qkspec_4.htm (archived: https://web.archive.org/web/20250222033358/https://www.gamers.org/dEngine/quake/spec/quake-spec34/qkspec_4.htm)
 - Michael Abrash, *Graphics Programming Black Book*, ch. 59–64 — BSP construction and traversal; the same tree the collision hulls are derived from: https://www.jagregory.com/abrash-black-book/
-- QuakeC reference — `traceline`, `walkmove`, `movetogoal`, `droptofloor`, and the `trace_*` globals: https://www.gamers.org/dEngine/quake/spec/quake-spec34/qc-menu.htm
+- QuakeC reference — `traceline`, `walkmove`, `movetogoal`, `droptofloor`, and the `trace_*` globals: https://www.gamers.org/dEngine/quake/spec/quake-spec34/qc-menu.htm (archived: https://web.archive.org/web/20251124162531/https://www.gamers.org/dEngine/quake/spec/quake-spec34/qc-menu.htm)
 - John Carmack .plan archive — contemporaneous notes on collision, stuck players, and hull limitations: https://github.com/ESWAT/john-carmack-plan-archive
 - Matthew Earl (Matt's Ramblings), "Uncovering Quake's unseen collision hulls" (2025) — the expanded hulls visualised against the render geometry: https://www.youtube.com/watch?v=3KjMjHJ3WQg
 - Matthew Earl (Matt's Ramblings), "BSP Trees: The Magic Behind Collision Detection in Quake" (2023) — the trace as a tree descent: https://www.youtube.com/watch?v=wLHXn8IlAiA

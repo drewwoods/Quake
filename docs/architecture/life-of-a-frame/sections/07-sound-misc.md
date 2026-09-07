@@ -436,5 +436,5 @@ Mod_Extradata (model.c:64) -> Cache_Check (zone.c:849) -> Mod_LoadModel on miss
 
 - Fabien Sanglard, "Quake Source Code Review": https://fabiensanglard.net/quakeSource/index.php — covers the Zone/Hunk/Cache memory model and the sound mixer in more depth than fits here.
 - Michael Abrash, Graphics Programming Black Book: https://www.jagregory.com/abrash-black-book/ — background on the era's memory-constrained, fixed-budget allocation strategies that motivated Quake's custom allocators.
-- Olivier Montanuy et al., "Unofficial Quake Specs": https://www.gamers.org/dEngine/quake/spec/quake-spec34/ — documents the `svc_sound` network message format and field masks referenced above.
+- Olivier Montanuy et al., "Unofficial Quake Specs": https://www.gamers.org/dEngine/quake/spec/quake-spec34/ (archived: https://web.archive.org/web/20251206223630/https://www.gamers.org/dEngine/quake/spec/quake-spec34/) — documents the `svc_sound` network message format and field masks referenced above.
 - Carmack .plan archives: https://github.com/ESWAT/john-carmack-plan-archive — period commentary on engine architecture decisions (unverified for specific sound/memory-allocator commentary; browse for era context).

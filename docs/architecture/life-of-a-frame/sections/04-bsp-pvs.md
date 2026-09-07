@@ -540,8 +540,8 @@ Collision (server physics, world.c)
 - Michael Abrash, *Graphics Programming Black Book*, chapters on Quake's engine (BSP, PVS, and 3-D clipping): local archive at `docs/historical/abrash_black_book/` ([Chapter 64: Quake's 3-D Engine](../../../historical/abrash_black_book/chapter-64.md), [Chapter 65: 3-D Clipping](../../../historical/abrash_black_book/chapter-65.md)); also online at https://www.jagregory.com/abrash-black-book/
 - John Carmack, [DOOM Engine Retrospective (1997)](../../../historical/doom_1993/carmack_doom_retrospective.txt) — reflections on 2D vs. 3D BSPs, line-of-sight testing, and collision hulls.
 - Fabien Sanglard, "Quake Source Code Review": https://fabiensanglard.net/quakeSource/index.php
-- Olivier Montanuy et al., "Unofficial Quake Specs": https://www.gamers.org/dEngine/quake/spec/quake-spec34/
-- Quake BSP file format spec: https://www.gamers.org/dEngine/quake/spec/quake-spec34/qkspec_4.htm
+- Olivier Montanuy et al., "Unofficial Quake Specs": https://www.gamers.org/dEngine/quake/spec/quake-spec34/ (archived: https://web.archive.org/web/20251206223630/https://www.gamers.org/dEngine/quake/spec/quake-spec34/)
+- Quake BSP file format spec: https://www.gamers.org/dEngine/quake/spec/quake-spec34/qkspec_4.htm (archived: https://web.archive.org/web/20250222033358/https://www.gamers.org/dEngine/quake/spec/quake-spec34/qkspec_4.htm)
 - John Carmack .plan archive (design rationale from the original author, contemporaneous with Quake's development): local archive at `docs/historical/plans/carmack/` ([1996 .plan archive](../../../historical/plans/carmack/by_year/johnc_plan_1996.txt))
 - Matthew Earl (Matt's Ramblings), "Quake's PVS: A hidden gem of rendering optimization" — the portal graph and the leaf-to-leaf visibility bitmap, animated: https://www.youtube.com/watch?v=IfCRHSIg6zo
 - ericw-tools — the maintained qbsp/vis/light toolchain the mapping community uses today; the practical counterpart to the compile-time costs described here: https://github.com/ericwa/ericw-tools (docs: https://ericw-tools.readthedocs.io/)

@@ -753,7 +753,7 @@ PR_ExecuteProgram                               pr_exec.c:361
 ## Further reading
 
 - Fabien Sanglard, "Quake Source Code Review" — the server and progs VM chapters: https://fabiensanglard.net/quakeSource/index.php
-- Olivier Montanuy et al., "Unofficial Quake Specs" — the `progs.dat` file format, entity field tables, and network protocol message list: https://www.gamers.org/dEngine/quake/spec/quake-spec34/
-- QuakeC reference (builtin numbers, `entvars_t` field semantics, `$frame`/`OP_STATE` conventions): https://www.gamers.org/dEngine/quake/spec/quake-spec34/qc-menu.htm
+- Olivier Montanuy et al., "Unofficial Quake Specs" — the `progs.dat` file format, entity field tables, and network protocol message list: https://www.gamers.org/dEngine/quake/spec/quake-spec34/ (archived: https://web.archive.org/web/20251206223630/https://www.gamers.org/dEngine/quake/spec/quake-spec34/)
+- QuakeC reference (builtin numbers, `entvars_t` field semantics, `$frame`/`OP_STATE` conventions): https://www.gamers.org/dEngine/quake/spec/quake-spec34/qc-menu.htm (archived: https://web.archive.org/web/20251124162531/https://www.gamers.org/dEngine/quake/spec/quake-spec34/qc-menu.htm)
 - Michael Abrash, *Graphics Programming Black Book*, ch. 64 ("Quake's Visible-Surface Determination") and ch. 70 — the PVS and BSP machinery that `SV_FatPVS` reuses: https://www.jagregory.com/abrash-black-book/
 - John Carmack .plan archive — contemporaneous notes on QuakeC, progs performance, and the move to QuakeWorld's client-side prediction: https://github.com/ESWAT/john-carmack-plan-archive

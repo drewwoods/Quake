@@ -892,5 +892,5 @@ _Host_Frame (host.c:633)
 ## Further reading
 
 - Fabien Sanglard, "Quake Source Code Review" — network and client architecture chapters: https://fabiensanglard.net/quakeSource/index.php
-- Olivier Montanuy et al., "Unofficial Quake Specs" — protocol opcode/bit-level reference for `svc_*`/`clc_*` and the `U_*` update bitmask: https://www.gamers.org/dEngine/quake/spec/quake-spec34/
+- Olivier Montanuy et al., "Unofficial Quake Specs" — protocol opcode/bit-level reference for `svc_*`/`clc_*` and the `U_*` update bitmask: https://www.gamers.org/dEngine/quake/spec/quake-spec34/ (archived: https://web.archive.org/web/20251206223630/https://www.gamers.org/dEngine/quake/spec/quake-spec34/)
 - John Carmack .plan archive (1996) — [10 Aug 1996](../../../historical/plans/carmack/by_day/johnc_plan_19960810.txt): NetQuake keeps displayed time between the last two server packets on purpose; QuakeWorld instead predicts from the newest packet. Year dump: [1996 .plan archive](../../../historical/plans/carmack/by_year/johnc_plan_1996.txt).
