@@ -367,6 +367,26 @@ a.xref::after {
   text-decoration: none; display: inline-block;
 }
 a.xref:hover { text-decoration-style: solid; }
+/* What a cross-doc link leads to, shown before following it. CSS-only so the
+   keyboard path comes free with :focus-visible; ::after already carries the
+   arrow, so the panel hangs off ::before, taken out of flow. */
+a.xref[data-preview] { position: relative; }
+a.xref[data-preview]:hover::before,
+a.xref[data-preview]:focus-visible::before {
+  content: attr(data-preview);
+  position: absolute; left: 0; top: calc(100% + 7px); z-index: 40;
+  width: max-content; max-width: min(42ch, 78vw);
+  padding: 9px 12px; border: 1px solid var(--rule); border-radius: 3px;
+  background: var(--surface); color: var(--ink-2);
+  font: 400 13.5px/1.45 var(--f-body); text-decoration: none;
+  white-space: normal; text-align: left;
+  box-shadow: 0 6px 18px rgba(0, 0, 0, 0.16);
+}
+/* Near the right edge the panel would overflow the column; anchor it right. */
+a.xref[data-preview]:nth-last-child(-n+2):hover::before,
+a.xref[data-preview]:nth-last-child(-n+2):focus-visible::before { left: auto; right: 0; }
+@media (max-width: 520px) { a.xref[data-preview]::before { display: none !important; } }
+@media print { a.xref[data-preview]::before { display: none !important; } }
 main p a[href^="http"]:not(.ref), main li a[href^="http"]:not(.ref) {
   color: var(--cl); text-decoration: underline; text-underline-offset: 2px;
   text-decoration-thickness: 1px; word-break: break-word;
@@ -624,6 +644,18 @@ html { scroll-behavior: smooth; }
   figure.code, .calltree, .era { break-inside: avoid; }
 }
 .bucket-note { color: var(--muted); font-size: 0.85em; }
+
+/* Rail mini map: one bar per pipeline stage, the current chapter's lit. */
+.minimap { position: sticky; bottom: 0; margin: 22px 0 0; padding: 14px 0 10px;
+  border-top: 1px solid var(--rule); background: var(--bg); }
+.minimap-head { margin-bottom: 8px; font: 500 10px var(--f-mono); letter-spacing: 0.14em;
+  text-transform: uppercase; color: var(--muted); }
+.mm-bar { margin: 0 0 3px; padding: 3px 7px; border-left: 2px solid var(--rule-soft);
+  background: var(--surface); color: var(--muted);
+  font: 400 10.5px/1.35 var(--f-mono); white-space: nowrap;
+  overflow: hidden; text-overflow: ellipsis; }
+.mm-bar.on { border-left-color: var(--sim); background: var(--sim-bg); color: var(--ink-2); }
+@media print { .minimap { display: none; } }
 /* Evidence stays readable as paired images without scripting or in print. */
 .stage.k-cl .measured-bar rect { fill: var(--rule); stroke: none; }
 .stage.k-cl .measured-bar rect:last-child { fill: var(--cl); }
@@ -933,7 +965,7 @@ try {
             oldtime += time;
 
         Host_Frame (time);</code></pre></div></figure><p>On the interactive path, <code>time</code> is the actual elapsed delta: <code>oldtime += time</code> and <code>oldtime = newtime</code> are equivalent in either branch. On the dedicated path, <code>time</code> has already been replaced with <code>sys_ticrate.value</code>; with a positive ticrate the large-delta branch cannot run, so <code>oldtime</code> advances by one tic. That platform loop can retain a backlog after a hitch. Keep this platform behavior separate from <code>Host_FilterTime</code>, which gates calls and chooses the timestep used by the host.</p><p>The DOS loop (<code><a class="ref" target="_blank" rel="noopener" href="https://github.com/id-Software/Quake/blob/master/WinQuake/sys_dos.c#L937-L950">WinQuake/sys_dos.c:937-950</a></code>) is the most primitive of the three: just a <code>continue</code> when a dedicated server has not reached its tic. Nothing in the loop sleeps or yields, so it polls the clock continuously. <code>Sys_FloatTime</code> there (<code><a class="ref" target="_blank" rel="noopener" href="https://github.com/id-Software/Quake/blob/master/WinQuake/sys_dos.c#L689-L745">WinQuake/sys_dos.c:689-745</a></code>) reads the 8253 PIT counter at port 0x40 and the BIOS tick count at real-mode address <code>0x46c</code>, reconstructing a ~1.193 MHz timebase and defending against the two clocks disagreeing across a latch. It also carries a <code>sametimecount</code> hack that manufactures forward progress if the clock appears frozen for 100,000 consecutive calls.</p></section><section class="sub"><h3 id="host-frame-and-the-profiling-wrapper" data-h="Host_Frame and the profiling wrapper" class="h-2"><a class="anchor" href="#host-frame-and-the-profiling-wrapper" aria-label="Link to this heading">#</a><code>Host_Frame</code> and the profiling wrapper</h3><p><code>Host_Frame</code> (<code><a class="ref" target="_blank" rel="noopener" href="https://github.com/id-Software/Quake/blob/master/WinQuake/host.c#L729-L770">WinQuake/host.c:729-770</a></code>) is a thin shell. If the <code>serverprofile</code> cvar is zero it simply forwards to <code>_Host_Frame</code>; otherwise it brackets the call with <code>Sys_FloatTime()</code> and prints a rolling average of milliseconds-per-frame and active client count every 1000 frames. All the real work is in <code>_Host_Frame</code>.</p><p>The first statement in <code>_Host_Frame</code> is not work but a landing pad:</p><figure class="code" data-fold-id="c3"><div class="code-bar"><span class="code-fold-toggle" aria-hidden="true"></span><span class="code-lang">C</span><span class="code-ref"><a class="ref" target="_blank" rel="noopener" href="https://github.com/id-Software/Quake/blob/master/WinQuake/host.c#L729-L770">WinQuake/host.c:729-770</a></span></div><div class="code-scroll"><pre><code class="lang-c">	if (setjmp (host_abortserver) )
-		return;			// something bad happened, or the server disconnected</code></pre></div></figure><p><code><a class="ref" target="_blank" rel="noopener" href="https://github.com/id-Software/Quake/blob/master/WinQuake/host.c#L640-L641">WinQuake/host.c:640-641</a></code>. <code>Host_Error</code> (<code><a class="ref" target="_blank" rel="noopener" href="https://github.com/id-Software/Quake/blob/master/WinQuake/host.c#L121">WinQuake/host.c:121</a></code>) and <code>Host_EndGame</code> (<code><a class="ref" target="_blank" rel="noopener" href="https://github.com/id-Software/Quake/blob/master/WinQuake/host.c#L90">WinQuake/host.c:90</a></code>) can abandon an interactive frame through <code>longjmp</code>, after shutdown/disconnection work. The stack does not unwind through cleanup handlers, and a dedicated server exits on these errors. <code>Host_ClearMemory</code> (<code><a class="ref" target="_blank" rel="noopener" href="https://github.com/id-Software/Quake/blob/master/WinQuake/host.c#L477">WinQuake/host.c:477</a></code>) later reclaims level allocations when preparing a new game or connection; returning to the frame loop is not by itself memory cleanup.</p><p>Then <code>rand ()</code> is called once per attempted frame, before <code>Host_FilterTime</code> (<code><a class="ref" target="_blank" rel="noopener" href="https://github.com/id-Software/Quake/blob/master/WinQuake/host.c#L643-L644">WinQuake/host.c:643-644</a></code>), with the comment &quot;keep the random time dependent.&quot; Rejected frames advance the PRNG too, so otherwise identical runs can diverge when their platform loops call <code>Host_Frame</code> at different rates.</p></section><section class="sub"><h3 id="host-filtertime-what-host-frametime-actually-means" data-h="Host_FilterTime: what host_frametime actually means" class="h-2"><a class="anchor" href="#host-filtertime-what-host-frametime-actually-means" aria-label="Link to this heading">#</a><code>Host_FilterTime</code>: what <code>host_frametime</code> actually means</h3><p>Everything downstream reads one global, <code>host_frametime</code> (<code><a class="ref" target="_blank" rel="noopener" href="https://github.com/id-Software/Quake/blob/master/WinQuake/host.c#L40">WinQuake/host.c:40</a></code>). It is produced here, and it is the single most consequential function in the engine&#x27;s timing model. DOOM ran on a fixed 35 Hz timebase; decoupling render rate from simulation rate is one of the deliberate breaks catalogued in <a class="xref" href="../design-history/quake-design-history.html#what-quake-had-to-close">what Quake had to close</a>.</p><p><code><a class="ref" target="_blank" rel="noopener" href="https://github.com/id-Software/Quake/blob/master/WinQuake/host.c#L501-L522">WinQuake/host.c:501-522</a></code>:</p><figure class="code" data-fold-id="c4"><div class="code-bar"><span class="code-fold-toggle" aria-hidden="true"></span><span class="code-lang">C</span><span class="code-ref"><a class="ref" target="_blank" rel="noopener" href="https://github.com/id-Software/Quake/blob/master/WinQuake/host.c#L501-L522">WinQuake/host.c:501-522</a></span></div><div class="code-scroll"><pre><code class="lang-c">qboolean Host_FilterTime (float time)
+		return;			// something bad happened, or the server disconnected</code></pre></div></figure><p><code><a class="ref" target="_blank" rel="noopener" href="https://github.com/id-Software/Quake/blob/master/WinQuake/host.c#L640-L641">WinQuake/host.c:640-641</a></code>. <code>Host_Error</code> (<code><a class="ref" target="_blank" rel="noopener" href="https://github.com/id-Software/Quake/blob/master/WinQuake/host.c#L121">WinQuake/host.c:121</a></code>) and <code>Host_EndGame</code> (<code><a class="ref" target="_blank" rel="noopener" href="https://github.com/id-Software/Quake/blob/master/WinQuake/host.c#L90">WinQuake/host.c:90</a></code>) can abandon an interactive frame through <code>longjmp</code>, after shutdown/disconnection work. The stack does not unwind through cleanup handlers, and a dedicated server exits on these errors. <code>Host_ClearMemory</code> (<code><a class="ref" target="_blank" rel="noopener" href="https://github.com/id-Software/Quake/blob/master/WinQuake/host.c#L477">WinQuake/host.c:477</a></code>) later reclaims level allocations when preparing a new game or connection; returning to the frame loop is not by itself memory cleanup.</p><p>Then <code>rand ()</code> is called once per attempted frame, before <code>Host_FilterTime</code> (<code><a class="ref" target="_blank" rel="noopener" href="https://github.com/id-Software/Quake/blob/master/WinQuake/host.c#L643-L644">WinQuake/host.c:643-644</a></code>), with the comment &quot;keep the random time dependent.&quot; Rejected frames advance the PRNG too, so otherwise identical runs can diverge when their platform loops call <code>Host_Frame</code> at different rates.</p></section><section class="sub"><h3 id="host-filtertime-what-host-frametime-actually-means" data-h="Host_FilterTime: what host_frametime actually means" class="h-2"><a class="anchor" href="#host-filtertime-what-host-frametime-actually-means" aria-label="Link to this heading">#</a><code>Host_FilterTime</code>: what <code>host_frametime</code> actually means</h3><p>Everything downstream reads one global, <code>host_frametime</code> (<code><a class="ref" target="_blank" rel="noopener" href="https://github.com/id-Software/Quake/blob/master/WinQuake/host.c#L40">WinQuake/host.c:40</a></code>). It is produced here, and it is the single most consequential function in the engine&#x27;s timing model. DOOM ran on a fixed 35 Hz timebase; decoupling render rate from simulation rate is one of the deliberate breaks catalogued in <a class="xref" data-preview="Before Quake: What DOOM Could Not Do › What Quake had to close" href="../design-history/quake-design-history.html#what-quake-had-to-close">what Quake had to close</a>.</p><p><code><a class="ref" target="_blank" rel="noopener" href="https://github.com/id-Software/Quake/blob/master/WinQuake/host.c#L501-L522">WinQuake/host.c:501-522</a></code>:</p><figure class="code" data-fold-id="c4"><div class="code-bar"><span class="code-fold-toggle" aria-hidden="true"></span><span class="code-lang">C</span><span class="code-ref"><a class="ref" target="_blank" rel="noopener" href="https://github.com/id-Software/Quake/blob/master/WinQuake/host.c#L501-L522">WinQuake/host.c:501-522</a></span></div><div class="code-scroll"><pre><code class="lang-c">qboolean Host_FilterTime (float time)
 {
 	realtime += time;
 
@@ -1233,7 +1265,7 @@ try {
 	ent-&gt;v.velocity[0] = oldvel[0];
 	ent-&gt;v. velocity[1] = oldvel[1];
 	ent-&gt;v. velocity[2] = 0;
-	clip = SV_FlyMove (ent, host_frametime, &amp;steptrace);</code></pre></div></figure><p>(<code><a class="ref" target="_blank" rel="noopener" href="https://github.com/id-Software/Quake/blob/master/WinQuake/sv_phys.c#L999-L1013">WinQuake/sv_phys.c:999-1013</a></code>.) There are two main slide attempts, with further attempts possible inside <code>SV_TryUnstick</code>; the stepped result is discarded if the downward trace doesn&#x27;t land on floor (<code><a class="ref" target="_blank" rel="noopener" href="https://github.com/id-Software/Quake/blob/master/WinQuake/sv_phys.c#L1041-L1048">WinQuake/sv_phys.c:1041-1048</a></code>), reverting to the saved no-step result. The comment there is a good example of the empirical, bug-driven character of this code: &quot;if the push down didn&#x27;t end up on good ground, use the move without the step up. This happens near wall / slope combinations, and can cause the player to hop up higher on a slope too steep to climb.&quot;</p><p>There is even a sub-heuristic for float precision: if stepping up moved the player less than 1/32 of a unit, <code>SV_TryUnstick</code> (<code><a class="ref" target="_blank" rel="noopener" href="https://github.com/id-Software/Quake/blob/master/WinQuake/sv_phys.c#L901">WinQuake/sv_phys.c:901</a></code>) nudges the player in eight compass directions looking for one that frees them (<code><a class="ref" target="_blank" rel="noopener" href="https://github.com/id-Software/Quake/blob/master/WinQuake/sv_phys.c#L1017-L1024">WinQuake/sv_phys.c:1017-1024</a></code>). The header comment on <code>SV_TryUnstick</code> names the cause outright — &quot;float precision at some angle joins in the BSP hull&quot; (<code><a class="ref" target="_blank" rel="noopener" href="https://github.com/id-Software/Quake/blob/master/WinQuake/sv_phys.c#L894">WinQuake/sv_phys.c:894</a></code>).</p></section><section class="sub"><h3 id="the-quakec-vm" data-h="The QuakeC VM" class="h-2"><a class="anchor" href="#the-quakec-vm" aria-label="Link to this heading">#</a>The QuakeC VM</h3><p>Quake&#x27;s game logic is not C. It is compiled QuakeC, shipped as <code>progs.dat</code>, loaded by <code>PR_LoadProgs</code> (<code><a class="ref" target="_blank" rel="noopener" href="https://github.com/id-Software/Quake/blob/master/WinQuake/pr_edict.c#L985">WinQuake/pr_edict.c:985</a></code>) and interpreted by <code>PR_ExecuteProgram</code> (<code><a class="ref" target="_blank" rel="noopener" href="https://github.com/id-Software/Quake/blob/master/WinQuake/pr_exec.c#L361">WinQuake/pr_exec.c:361</a></code>). This is the design decision that made Quake moddable and is directly responsible for Team Fortress, Threewave CTF, and the entire mod culture that followed. id had committed to shipping an &quot;open game&quot; as early as the <a class="xref" href="../design-history/quake-design-history.html#the-1993-feature-list-read-as-a-ceiling">1993 DOOM announcement</a>.</p></section><section class="sub"><h4 id="the-image" data-h="The image" class="h-3"><a class="anchor" href="#the-image" aria-label="Link to this heading">#</a>The image</h4><p><code>progs.dat</code> is six lumps plus a header (<code><a class="ref" target="_blank" rel="noopener" href="https://github.com/id-Software/Quake/blob/master/WinQuake/pr_edict.c#L1010-L1021">WinQuake/pr_edict.c:1010-1021</a></code>):</p><figure class="code" data-fold-id="c19"><div class="code-bar"><span class="code-fold-toggle" aria-hidden="true"></span><span class="code-lang">C</span><span class="code-ref"><a class="ref" target="_blank" rel="noopener" href="https://github.com/id-Software/Quake/blob/master/WinQuake/pr_edict.c#L1010-L1021">WinQuake/pr_edict.c:1010-1021</a></span></div><div class="code-scroll"><pre><code class="lang-c">	pr_functions = (dfunction_t *)((byte *)progs + progs-&gt;ofs_functions);
+	clip = SV_FlyMove (ent, host_frametime, &amp;steptrace);</code></pre></div></figure><p>(<code><a class="ref" target="_blank" rel="noopener" href="https://github.com/id-Software/Quake/blob/master/WinQuake/sv_phys.c#L999-L1013">WinQuake/sv_phys.c:999-1013</a></code>.) There are two main slide attempts, with further attempts possible inside <code>SV_TryUnstick</code>; the stepped result is discarded if the downward trace doesn&#x27;t land on floor (<code><a class="ref" target="_blank" rel="noopener" href="https://github.com/id-Software/Quake/blob/master/WinQuake/sv_phys.c#L1041-L1048">WinQuake/sv_phys.c:1041-1048</a></code>), reverting to the saved no-step result. The comment there is a good example of the empirical, bug-driven character of this code: &quot;if the push down didn&#x27;t end up on good ground, use the move without the step up. This happens near wall / slope combinations, and can cause the player to hop up higher on a slope too steep to climb.&quot;</p><p>There is even a sub-heuristic for float precision: if stepping up moved the player less than 1/32 of a unit, <code>SV_TryUnstick</code> (<code><a class="ref" target="_blank" rel="noopener" href="https://github.com/id-Software/Quake/blob/master/WinQuake/sv_phys.c#L901">WinQuake/sv_phys.c:901</a></code>) nudges the player in eight compass directions looking for one that frees them (<code><a class="ref" target="_blank" rel="noopener" href="https://github.com/id-Software/Quake/blob/master/WinQuake/sv_phys.c#L1017-L1024">WinQuake/sv_phys.c:1017-1024</a></code>). The header comment on <code>SV_TryUnstick</code> names the cause outright — &quot;float precision at some angle joins in the BSP hull&quot; (<code><a class="ref" target="_blank" rel="noopener" href="https://github.com/id-Software/Quake/blob/master/WinQuake/sv_phys.c#L894">WinQuake/sv_phys.c:894</a></code>).</p></section><section class="sub"><h3 id="the-quakec-vm" data-h="The QuakeC VM" class="h-2"><a class="anchor" href="#the-quakec-vm" aria-label="Link to this heading">#</a>The QuakeC VM</h3><p>Quake&#x27;s game logic is not C. It is compiled QuakeC, shipped as <code>progs.dat</code>, loaded by <code>PR_LoadProgs</code> (<code><a class="ref" target="_blank" rel="noopener" href="https://github.com/id-Software/Quake/blob/master/WinQuake/pr_edict.c#L985">WinQuake/pr_edict.c:985</a></code>) and interpreted by <code>PR_ExecuteProgram</code> (<code><a class="ref" target="_blank" rel="noopener" href="https://github.com/id-Software/Quake/blob/master/WinQuake/pr_exec.c#L361">WinQuake/pr_exec.c:361</a></code>). This is the design decision that made Quake moddable and is directly responsible for Team Fortress, Threewave CTF, and the entire mod culture that followed. id had committed to shipping an &quot;open game&quot; as early as the <a class="xref" data-preview="Before Quake: What DOOM Could Not Do › The 1993 feature list, read as a ceiling" href="../design-history/quake-design-history.html#the-1993-feature-list-read-as-a-ceiling">1993 DOOM announcement</a>.</p></section><section class="sub"><h4 id="the-image" data-h="The image" class="h-3"><a class="anchor" href="#the-image" aria-label="Link to this heading">#</a>The image</h4><p><code>progs.dat</code> is six lumps plus a header (<code><a class="ref" target="_blank" rel="noopener" href="https://github.com/id-Software/Quake/blob/master/WinQuake/pr_edict.c#L1010-L1021">WinQuake/pr_edict.c:1010-1021</a></code>):</p><figure class="code" data-fold-id="c19"><div class="code-bar"><span class="code-fold-toggle" aria-hidden="true"></span><span class="code-lang">C</span><span class="code-ref"><a class="ref" target="_blank" rel="noopener" href="https://github.com/id-Software/Quake/blob/master/WinQuake/pr_edict.c#L1010-L1021">WinQuake/pr_edict.c:1010-1021</a></span></div><div class="code-scroll"><pre><code class="lang-c">	pr_functions = (dfunction_t *)((byte *)progs + progs-&gt;ofs_functions);
 	pr_strings = (char *)progs + progs-&gt;ofs_strings;
 	pr_globaldefs = (ddef_t *)((byte *)progs + progs-&gt;ofs_globaldefs);
 	pr_fielddefs = (ddef_t *)((byte *)progs + progs-&gt;ofs_fielddefs);
@@ -1480,7 +1512,7 @@ try {
 	vec3_t	endpos;			// final position
 	plane_t	plane;			// surface normal at impact
 	edict_t	*ent;			// entity the surface is on
-} trace_t;</code></pre></div></figure><p>The distinction between <code>allsolid</code> and <code>startsolid</code> is load-bearing and easy to get backwards. <code>startsolid</code> means the trace <em>began</em> inside a solid — the mover is embedded — but it may still have found open space along the way. <code>allsolid</code> means it never left solid at all. The header comment on <code>SV_Move</code> (<code><a class="ref" target="_blank" rel="noopener" href="https://github.com/id-Software/Quake/blob/master/WinQuake/world.h#L72-L75">WinQuake/world.h:72-75</a></code>) states the resulting policy explicitly: &quot;if the starting point is in a solid, it will be allowed to move out to an open area.&quot; That is a deliberate, forgiving choice — a player who ends up stuck (through a telefrag, a moving platform, or float error at a hull seam) can escape rather than being frozen forever. <code>SV_FlyMove</code> turns <code>allsolid</code> into &quot;kill velocity, return 3&quot; (<code><a class="ref" target="_blank" rel="noopener" href="https://github.com/id-Software/Quake/blob/master/WinQuake/sv_phys.c#L262-L266">WinQuake/sv_phys.c:262-266</a></code>), but tolerates <code>startsolid</code> silently.</p><p><code>inopen</code> / <code>inwater</code> record the content types the trace passed through; the QuakeC <code>traceline</code> builtin exposes them via <code>trace_inopen</code> / <code>trace_inwater</code> to distinguish a shot that crossed a water surface. <code>fraction</code> is parametric along the move, so callers can determine how much of the requested path was completed; the hit plane is then used to clip velocity.</p></section><section class="sub"><h3 id="the-three-hulls" data-h="The three hulls" class="h-2"><a class="anchor" href="#the-three-hulls" aria-label="Link to this heading">#</a>The three hulls</h3><p>This is the central idea, and it is worth being precise about what &quot;hull&quot; means. Carmack later named the absence of exactly this as one of DOOM&#x27;s bigger misses; <a class="xref" href="../design-history/quake-design-history.html#the-bsp-that-only-drew">why the hulls are pre-expanded at compile time</a> is covered in the design history. A <code>hull_t</code> (<code><a class="ref" target="_blank" rel="noopener" href="https://github.com/id-Software/Quake/blob/master/WinQuake/model.h#L169-L177">WinQuake/model.h:169-177</a></code>) is a self-contained BSP:</p><figure class="code" data-fold-id="c29"><div class="code-bar"><span class="code-fold-toggle" aria-hidden="true"></span><span class="code-lang">C</span><span class="code-ref"><a class="ref" target="_blank" rel="noopener" href="https://github.com/id-Software/Quake/blob/master/WinQuake/model.h#L169-L177">WinQuake/model.h:169-177</a></span></div><div class="code-scroll"><pre><code class="lang-c">typedef struct
+} trace_t;</code></pre></div></figure><p>The distinction between <code>allsolid</code> and <code>startsolid</code> is load-bearing and easy to get backwards. <code>startsolid</code> means the trace <em>began</em> inside a solid — the mover is embedded — but it may still have found open space along the way. <code>allsolid</code> means it never left solid at all. The header comment on <code>SV_Move</code> (<code><a class="ref" target="_blank" rel="noopener" href="https://github.com/id-Software/Quake/blob/master/WinQuake/world.h#L72-L75">WinQuake/world.h:72-75</a></code>) states the resulting policy explicitly: &quot;if the starting point is in a solid, it will be allowed to move out to an open area.&quot; That is a deliberate, forgiving choice — a player who ends up stuck (through a telefrag, a moving platform, or float error at a hull seam) can escape rather than being frozen forever. <code>SV_FlyMove</code> turns <code>allsolid</code> into &quot;kill velocity, return 3&quot; (<code><a class="ref" target="_blank" rel="noopener" href="https://github.com/id-Software/Quake/blob/master/WinQuake/sv_phys.c#L262-L266">WinQuake/sv_phys.c:262-266</a></code>), but tolerates <code>startsolid</code> silently.</p><p><code>inopen</code> / <code>inwater</code> record the content types the trace passed through; the QuakeC <code>traceline</code> builtin exposes them via <code>trace_inopen</code> / <code>trace_inwater</code> to distinguish a shot that crossed a water surface. <code>fraction</code> is parametric along the move, so callers can determine how much of the requested path was completed; the hit plane is then used to clip velocity.</p></section><section class="sub"><h3 id="the-three-hulls" data-h="The three hulls" class="h-2"><a class="anchor" href="#the-three-hulls" aria-label="Link to this heading">#</a>The three hulls</h3><p>This is the central idea, and it is worth being precise about what &quot;hull&quot; means. Carmack later named the absence of exactly this as one of DOOM&#x27;s bigger misses; <a class="xref" data-preview="Before Quake: What DOOM Could Not Do › The BSP that only drew" href="../design-history/quake-design-history.html#the-bsp-that-only-drew">why the hulls are pre-expanded at compile time</a> is covered in the design history. A <code>hull_t</code> (<code><a class="ref" target="_blank" rel="noopener" href="https://github.com/id-Software/Quake/blob/master/WinQuake/model.h#L169-L177">WinQuake/model.h:169-177</a></code>) is a self-contained BSP:</p><figure class="code" data-fold-id="c29"><div class="code-bar"><span class="code-fold-toggle" aria-hidden="true"></span><span class="code-lang">C</span><span class="code-ref"><a class="ref" target="_blank" rel="noopener" href="https://github.com/id-Software/Quake/blob/master/WinQuake/model.h#L169-L177">WinQuake/model.h:169-177</a></span></div><div class="code-scroll"><pre><code class="lang-c">typedef struct
 {
 	dclipnode_t	*clipnodes;
 	mplane_t	*planes;
@@ -1928,7 +1960,7 @@ try {
   </div>
   <figcaption>Collision and visibility are <b>different queries over data from the same map</b>. A leaf is a region at the end of a BSP tree walk, not necessarily a whole room. PVS means “could be visible from this region,” so it can include something behind a wall at your exact viewpoint. Source: <a class="ref" target="_blank" rel="noopener" href="https://github.com/id-Software/Quake/blob/master/WinQuake/model.c#L84-L160">WinQuake/model.c:84-160</a>, <a class="ref" target="_blank" rel="noopener" href="https://github.com/id-Software/Quake/blob/master/WinQuake/r_main.c#L491-L519">WinQuake/r_main.c:491-519</a>, <a class="ref" target="_blank" rel="noopener" href="https://github.com/id-Software/Quake/blob/master/WinQuake/sv_main.c#L367-L462">WinQuake/sv_main.c:367-462</a>, <a class="ref" target="_blank" rel="noopener" href="https://github.com/id-Software/Quake/blob/master/WinQuake/world.c#L923-L961">WinQuake/world.c:923-961</a>.</figcaption>
 </figure>
-<section class="sub"><h3 id="where-it-sits-in-the-frame-4" data-h="Where it sits in the frame" class="h-2"><a class="anchor" href="#where-it-sits-in-the-frame-4" aria-label="Link to this heading">#</a>Where it sits in the frame</h3><p>On the client, <code>SCR_UpdateScreen</code> (<code><a class="ref" target="_blank" rel="noopener" href="https://github.com/id-Software/Quake/blob/master/WinQuake/screen.c#L808">WinQuake/screen.c:808</a></code>) calls <code>V_RenderView</code> (<code><a class="ref" target="_blank" rel="noopener" href="https://github.com/id-Software/Quake/blob/master/WinQuake/screen.c#L893">WinQuake/screen.c:893</a></code> invocation, defined <code><a class="ref" target="_blank" rel="noopener" href="https://github.com/id-Software/Quake/blob/master/WinQuake/view.c#L995">WinQuake/view.c:995</a></code>). <code>V_RenderView</code> calls <code>R_PushDlights</code> (<code><a class="ref" target="_blank" rel="noopener" href="https://github.com/id-Software/Quake/blob/master/WinQuake/view.c#L1018">WinQuake/view.c:1018</a></code>, defined <code><a class="ref" target="_blank" rel="noopener" href="https://github.com/id-Software/Quake/blob/master/WinQuake/r_light.c#L115">WinQuake/r_light.c:115</a></code>) to re-mark which surfaces are touched by dynamic lights this frame, then calls <code>R_RenderView</code>. In the GL renderer that leads into <code>R_RenderScene</code> (<code><a class="ref" target="_blank" rel="noopener" href="https://github.com/id-Software/Quake/blob/master/WinQuake/gl_rmain.c#L949">WinQuake/gl_rmain.c:949</a></code>), which calls <code>R_MarkLeaves</code> (<code><a class="ref" target="_blank" rel="noopener" href="https://github.com/id-Software/Quake/blob/master/WinQuake/gl_rmain.c#L957">WinQuake/gl_rmain.c:957</a></code>) — the PVS walk that flags which BSP nodes are potentially visible from the player&#x27;s current leaf — immediately before <code>R_DrawWorld</code> walks the tree and emits surfaces. The software renderer&#x27;s equivalent path is <code>R_RenderView_</code> (<code><a class="ref" target="_blank" rel="noopener" href="https://github.com/id-Software/Quake/blob/master/WinQuake/r_main.c#L953">WinQuake/r_main.c:953</a></code>) calling <code>R_MarkLeaves</code> at <code><a class="ref" target="_blank" rel="noopener" href="https://github.com/id-Software/Quake/blob/master/WinQuake/r_main.c#L967">WinQuake/r_main.c:967</a></code>.</p><p>On the server side, PVS is consulted once per client per frame inside <code>SV_WriteEntitiesToClient</code> (<code><a class="ref" target="_blank" rel="noopener" href="https://github.com/id-Software/Quake/blob/master/WinQuake/sv_main.c#L427">WinQuake/sv_main.c:427</a></code>), called from the server&#x27;s per-client network update pass during <code>SV_SendClientMessages</code> / <code>Host_ServerFrame</code>. This is a separate PVS computation (<code>SV_FatPVS</code>) from the client&#x27;s rendering PVS (<code>Mod_LeafPVS</code>/<code>R_MarkLeaves</code>) even though both ultimately call the same <code>Mod_DecompressVis</code>.</p><blockquote class="era"><p><strong>.plan.</strong> “changed network update to client PVS specific” — <a href="../../historical/plans/carmack/by_day/johnc_plan_19960423.txt">Carmack, 23 Apr 1996</a>. The archive captures the architectural hinge: PVS stopped being only a renderer accelerator and became a per-client bandwidth policy.</p></blockquote></section><section class="sub"><h3 id="on-disk-bsp-format" data-h="On-disk BSP format" class="h-2"><a class="anchor" href="#on-disk-bsp-format" aria-label="Link to this heading">#</a>On-disk BSP format</h3><p>The format is three-dimensional throughout, which is the break from DOOM&#x27;s plan-view tree; see <a class="xref" href="../design-history/quake-design-history.html#a-binary-tree-in-two-dimensions">a binary tree in two dimensions</a>.</p><p>The map file begins with a <code>dheader_t</code> (<code><a class="ref" target="_blank" rel="noopener" href="https://github.com/id-Software/Quake/blob/master/WinQuake/bspfile.h#L82-L95">WinQuake/bspfile.h:82-95</a></code>) containing a version and 15 <code>lump_t</code> <code>{fileofs, filelen}</code> directory entries (<code><a class="ref" target="_blank" rel="noopener" href="https://github.com/id-Software/Quake/blob/master/WinQuake/bspfile.h#L59-L80">WinQuake/bspfile.h:59-80</a></code>), version-locked to <code>BSPVERSION</code> 29 (<code><a class="ref" target="_blank" rel="noopener" href="https://github.com/id-Software/Quake/blob/master/WinQuake/bspfile.h#L56">WinQuake/bspfile.h:56</a></code>). Each lump is addressed by byte offset. <code>Mod_LoadModel</code> reads the file into a temporary buffer; the lump loaders then copy or convert its contents into hunk allocations.</p><p>The key on-disk structures:</p><ul><li><code>dplane_t</code> (<code><a class="ref" target="_blank" rel="noopener" href="https://github.com/id-Software/Quake/blob/master/WinQuake/bspfile.h#L128-L133">WinQuake/bspfile.h:128-133</a></code>): a normal + distance + <code>type</code> (whether the plane is axis-aligned, used to fast-path dot products).</li><li><code>dnode_t</code> (<code><a class="ref" target="_blank" rel="noopener" href="https://github.com/id-Software/Quake/blob/master/WinQuake/bspfile.h#L155-L163">WinQuake/bspfile.h:155-163</a></code>): a render-tree node — <code>planenum</code>, two <code>children[]</code> (a non-negative index is another node, negative is <code>-(leaf+1)</code>), a 16-bit bounding box for frustum culling, and <code>firstface</code>/<code>numfaces</code> into the face list. Note <code>children</code> are <code>short</code> — capped at <code>MAX_MAP_NODES</code> 32767 (<code><a class="ref" target="_blank" rel="noopener" href="https://github.com/id-Software/Quake/blob/master/WinQuake/bspfile.h#L32">WinQuake/bspfile.h:32</a></code>) specifically because negative shorts double as leaf indices.</li><li><code>dclipnode_t</code> (<code><a class="ref" target="_blank" rel="noopener" href="https://github.com/id-Software/Quake/blob/master/WinQuake/bspfile.h#L165-L169">WinQuake/bspfile.h:165-169</a></code>): the <em>collision</em> tree node — just <code>planenum</code> and two <code>children[]</code>, where negative values are literal <code>CONTENTS_*</code> constants, not leaf indices. This is a much thinner structure than <code>dnode_t</code> because clipping only needs to answer &quot;solid or not,&quot; not &quot;which surfaces are here.&quot;</li><li><code>dleaf_t</code> (<code><a class="ref" target="_blank" rel="noopener" href="https://github.com/id-Software/Quake/blob/master/WinQuake/bspfile.h#L213-L225">WinQuake/bspfile.h:213-225</a></code>): <code>contents</code> (a <code>CONTENTS_*</code> enum, always negative — <code><a class="ref" target="_blank" rel="noopener" href="https://github.com/id-Software/Quake/blob/master/WinQuake/bspfile.h#L137-L151">WinQuake/bspfile.h:137-151</a></code>), <code>visofs</code> (byte offset into the RLE-compressed visibility lump, or -1), a 16-bit bbox, a marksurface range, and four <code>ambient_level</code> bytes used for ambient sound.</li><li><code>dface_t</code> (<code><a class="ref" target="_blank" rel="noopener" href="https://github.com/id-Software/Quake/blob/master/WinQuake/bspfile.h#L188-L200">WinQuake/bspfile.h:188-200</a></code>): <code>planenum</code>/<code>side</code>, an edge range (<code>firstedge</code>/<code>numedges</code> into the surfedges indirection list), <code>texinfo</code>, up to <code>MAXLIGHTMAPS</code> (4) light <code>styles</code> bytes, and <code>lightofs</code> — offset into the lighting lump where this face&#x27;s lightmap samples begin.</li><li>The visibility lump (<code>LUMP_VISIBILITY</code>, <code><a class="ref" target="_blank" rel="noopener" href="https://github.com/id-Software/Quake/blob/master/WinQuake/bspfile.h#L68">WinQuake/bspfile.h:68</a></code>) is one big RLE-compressed bit matrix — see below.</li></ul><p><code>CONTENTS_EMPTY</code>/<code>CONTENTS_SOLID</code>/<code>CONTENTS_WATER</code>/<code>CONTENTS_SLIME</code>/<code>CONTENTS_LAVA</code>/<code>CONTENTS_SKY</code>, plus the internal-only <code>CONTENTS_ORIGIN</code>/<code>CONTENTS_CLIP</code>/<code>CONTENTS_CURRENT_*</code> (<code><a class="ref" target="_blank" rel="noopener" href="https://github.com/id-Software/Quake/blob/master/WinQuake/bspfile.h#L137-L151">WinQuake/bspfile.h:137-151</a></code>) are all small negative ints — negative so a single <code>int</code> field can double as either &quot;this is a leaf with this content type&quot; (when found as a node&#x27;s <code>children[]</code> entry) or &quot;this is a real node index&quot; (when non-negative), with no separate tag needed. Leaf 0 is special-cased as <em>the</em> generic solid leaf, shared by every solid volume in the map and explicitly excluded from the vis leaf count (<code><a class="ref" target="_blank" rel="noopener" href="https://github.com/id-Software/Quake/blob/master/WinQuake/bspfile.h#L211-L212">WinQuake/bspfile.h:211-212</a></code>, and <code>dmodel_t.visleafs</code>, <code><a class="ref" target="_blank" rel="noopener" href="https://github.com/id-Software/Quake/blob/master/WinQuake/bspfile.h#L87">WinQuake/bspfile.h:87</a></code>).</p></section><section class="sub"><h3 id="loading-in-model-c-from-disk-lumps-to-the-mnode-t-mleaf-t-graph" data-h="Loading in model.c: from disk lumps to the mnode_t/mleaf_t graph" class="h-2"><a class="anchor" href="#loading-in-model-c-from-disk-lumps-to-the-mnode-t-mleaf-t-graph" aria-label="Link to this heading">#</a>Loading in model.c: from disk lumps to the mnode_t/mleaf_t graph</h3><p><code>Mod_LoadBrushModel</code> (<code><a class="ref" target="_blank" rel="noopener" href="https://github.com/id-Software/Quake/blob/master/WinQuake/model.c#L1143-L1220">WinQuake/model.c:1143-1220</a></code>) is the top-level entry, called from <code>Mod_LoadModel</code> when a <code>.bsp</code> is first referenced. It byte-swaps the header for endianness (<code><a class="ref" target="_blank" rel="noopener" href="https://github.com/id-Software/Quake/blob/master/WinQuake/model.c#L1160-L1161">WinQuake/model.c:1160-1161</a></code>, a legacy of the original SGI/Mac ports), then loads every lump in a fixed order into hunk memory:</p><figure class="code" data-fold-id="c48"><div class="code-bar"><span class="code-fold-toggle" aria-hidden="true"></span><span class="code-lang">C</span><span class="code-ref"><a class="ref" target="_blank" rel="noopener" href="https://github.com/id-Software/Quake/blob/master/WinQuake/model.c#L1163-L1179">WinQuake/model.c:1163-1179</a></span></div><div class="code-scroll"><pre><code class="lang-c">// load into heap
+<section class="sub"><h3 id="where-it-sits-in-the-frame-4" data-h="Where it sits in the frame" class="h-2"><a class="anchor" href="#where-it-sits-in-the-frame-4" aria-label="Link to this heading">#</a>Where it sits in the frame</h3><p>On the client, <code>SCR_UpdateScreen</code> (<code><a class="ref" target="_blank" rel="noopener" href="https://github.com/id-Software/Quake/blob/master/WinQuake/screen.c#L808">WinQuake/screen.c:808</a></code>) calls <code>V_RenderView</code> (<code><a class="ref" target="_blank" rel="noopener" href="https://github.com/id-Software/Quake/blob/master/WinQuake/screen.c#L893">WinQuake/screen.c:893</a></code> invocation, defined <code><a class="ref" target="_blank" rel="noopener" href="https://github.com/id-Software/Quake/blob/master/WinQuake/view.c#L995">WinQuake/view.c:995</a></code>). <code>V_RenderView</code> calls <code>R_PushDlights</code> (<code><a class="ref" target="_blank" rel="noopener" href="https://github.com/id-Software/Quake/blob/master/WinQuake/view.c#L1018">WinQuake/view.c:1018</a></code>, defined <code><a class="ref" target="_blank" rel="noopener" href="https://github.com/id-Software/Quake/blob/master/WinQuake/r_light.c#L115">WinQuake/r_light.c:115</a></code>) to re-mark which surfaces are touched by dynamic lights this frame, then calls <code>R_RenderView</code>. In the GL renderer that leads into <code>R_RenderScene</code> (<code><a class="ref" target="_blank" rel="noopener" href="https://github.com/id-Software/Quake/blob/master/WinQuake/gl_rmain.c#L949">WinQuake/gl_rmain.c:949</a></code>), which calls <code>R_MarkLeaves</code> (<code><a class="ref" target="_blank" rel="noopener" href="https://github.com/id-Software/Quake/blob/master/WinQuake/gl_rmain.c#L957">WinQuake/gl_rmain.c:957</a></code>) — the PVS walk that flags which BSP nodes are potentially visible from the player&#x27;s current leaf — immediately before <code>R_DrawWorld</code> walks the tree and emits surfaces. The software renderer&#x27;s equivalent path is <code>R_RenderView_</code> (<code><a class="ref" target="_blank" rel="noopener" href="https://github.com/id-Software/Quake/blob/master/WinQuake/r_main.c#L953">WinQuake/r_main.c:953</a></code>) calling <code>R_MarkLeaves</code> at <code><a class="ref" target="_blank" rel="noopener" href="https://github.com/id-Software/Quake/blob/master/WinQuake/r_main.c#L967">WinQuake/r_main.c:967</a></code>.</p><p>On the server side, PVS is consulted once per client per frame inside <code>SV_WriteEntitiesToClient</code> (<code><a class="ref" target="_blank" rel="noopener" href="https://github.com/id-Software/Quake/blob/master/WinQuake/sv_main.c#L427">WinQuake/sv_main.c:427</a></code>), called from the server&#x27;s per-client network update pass during <code>SV_SendClientMessages</code> / <code>Host_ServerFrame</code>. This is a separate PVS computation (<code>SV_FatPVS</code>) from the client&#x27;s rendering PVS (<code>Mod_LeafPVS</code>/<code>R_MarkLeaves</code>) even though both ultimately call the same <code>Mod_DecompressVis</code>.</p><blockquote class="era"><p><strong>.plan.</strong> “changed network update to client PVS specific” — <a href="../../historical/plans/carmack/by_day/johnc_plan_19960423.txt">Carmack, 23 Apr 1996</a>. The archive captures the architectural hinge: PVS stopped being only a renderer accelerator and became a per-client bandwidth policy.</p></blockquote></section><section class="sub"><h3 id="on-disk-bsp-format" data-h="On-disk BSP format" class="h-2"><a class="anchor" href="#on-disk-bsp-format" aria-label="Link to this heading">#</a>On-disk BSP format</h3><p>The format is three-dimensional throughout, which is the break from DOOM&#x27;s plan-view tree; see <a class="xref" data-preview="Before Quake: What DOOM Could Not Do › A binary tree in two dimensions" href="../design-history/quake-design-history.html#a-binary-tree-in-two-dimensions">a binary tree in two dimensions</a>.</p><p>The map file begins with a <code>dheader_t</code> (<code><a class="ref" target="_blank" rel="noopener" href="https://github.com/id-Software/Quake/blob/master/WinQuake/bspfile.h#L82-L95">WinQuake/bspfile.h:82-95</a></code>) containing a version and 15 <code>lump_t</code> <code>{fileofs, filelen}</code> directory entries (<code><a class="ref" target="_blank" rel="noopener" href="https://github.com/id-Software/Quake/blob/master/WinQuake/bspfile.h#L59-L80">WinQuake/bspfile.h:59-80</a></code>), version-locked to <code>BSPVERSION</code> 29 (<code><a class="ref" target="_blank" rel="noopener" href="https://github.com/id-Software/Quake/blob/master/WinQuake/bspfile.h#L56">WinQuake/bspfile.h:56</a></code>). Each lump is addressed by byte offset. <code>Mod_LoadModel</code> reads the file into a temporary buffer; the lump loaders then copy or convert its contents into hunk allocations.</p><p>The key on-disk structures:</p><ul><li><code>dplane_t</code> (<code><a class="ref" target="_blank" rel="noopener" href="https://github.com/id-Software/Quake/blob/master/WinQuake/bspfile.h#L128-L133">WinQuake/bspfile.h:128-133</a></code>): a normal + distance + <code>type</code> (whether the plane is axis-aligned, used to fast-path dot products).</li><li><code>dnode_t</code> (<code><a class="ref" target="_blank" rel="noopener" href="https://github.com/id-Software/Quake/blob/master/WinQuake/bspfile.h#L155-L163">WinQuake/bspfile.h:155-163</a></code>): a render-tree node — <code>planenum</code>, two <code>children[]</code> (a non-negative index is another node, negative is <code>-(leaf+1)</code>), a 16-bit bounding box for frustum culling, and <code>firstface</code>/<code>numfaces</code> into the face list. Note <code>children</code> are <code>short</code> — capped at <code>MAX_MAP_NODES</code> 32767 (<code><a class="ref" target="_blank" rel="noopener" href="https://github.com/id-Software/Quake/blob/master/WinQuake/bspfile.h#L32">WinQuake/bspfile.h:32</a></code>) specifically because negative shorts double as leaf indices.</li><li><code>dclipnode_t</code> (<code><a class="ref" target="_blank" rel="noopener" href="https://github.com/id-Software/Quake/blob/master/WinQuake/bspfile.h#L165-L169">WinQuake/bspfile.h:165-169</a></code>): the <em>collision</em> tree node — just <code>planenum</code> and two <code>children[]</code>, where negative values are literal <code>CONTENTS_*</code> constants, not leaf indices. This is a much thinner structure than <code>dnode_t</code> because clipping only needs to answer &quot;solid or not,&quot; not &quot;which surfaces are here.&quot;</li><li><code>dleaf_t</code> (<code><a class="ref" target="_blank" rel="noopener" href="https://github.com/id-Software/Quake/blob/master/WinQuake/bspfile.h#L213-L225">WinQuake/bspfile.h:213-225</a></code>): <code>contents</code> (a <code>CONTENTS_*</code> enum, always negative — <code><a class="ref" target="_blank" rel="noopener" href="https://github.com/id-Software/Quake/blob/master/WinQuake/bspfile.h#L137-L151">WinQuake/bspfile.h:137-151</a></code>), <code>visofs</code> (byte offset into the RLE-compressed visibility lump, or -1), a 16-bit bbox, a marksurface range, and four <code>ambient_level</code> bytes used for ambient sound.</li><li><code>dface_t</code> (<code><a class="ref" target="_blank" rel="noopener" href="https://github.com/id-Software/Quake/blob/master/WinQuake/bspfile.h#L188-L200">WinQuake/bspfile.h:188-200</a></code>): <code>planenum</code>/<code>side</code>, an edge range (<code>firstedge</code>/<code>numedges</code> into the surfedges indirection list), <code>texinfo</code>, up to <code>MAXLIGHTMAPS</code> (4) light <code>styles</code> bytes, and <code>lightofs</code> — offset into the lighting lump where this face&#x27;s lightmap samples begin.</li><li>The visibility lump (<code>LUMP_VISIBILITY</code>, <code><a class="ref" target="_blank" rel="noopener" href="https://github.com/id-Software/Quake/blob/master/WinQuake/bspfile.h#L68">WinQuake/bspfile.h:68</a></code>) is one big RLE-compressed bit matrix — see below.</li></ul><p><code>CONTENTS_EMPTY</code>/<code>CONTENTS_SOLID</code>/<code>CONTENTS_WATER</code>/<code>CONTENTS_SLIME</code>/<code>CONTENTS_LAVA</code>/<code>CONTENTS_SKY</code>, plus the internal-only <code>CONTENTS_ORIGIN</code>/<code>CONTENTS_CLIP</code>/<code>CONTENTS_CURRENT_*</code> (<code><a class="ref" target="_blank" rel="noopener" href="https://github.com/id-Software/Quake/blob/master/WinQuake/bspfile.h#L137-L151">WinQuake/bspfile.h:137-151</a></code>) are all small negative ints — negative so a single <code>int</code> field can double as either &quot;this is a leaf with this content type&quot; (when found as a node&#x27;s <code>children[]</code> entry) or &quot;this is a real node index&quot; (when non-negative), with no separate tag needed. Leaf 0 is special-cased as <em>the</em> generic solid leaf, shared by every solid volume in the map and explicitly excluded from the vis leaf count (<code><a class="ref" target="_blank" rel="noopener" href="https://github.com/id-Software/Quake/blob/master/WinQuake/bspfile.h#L211-L212">WinQuake/bspfile.h:211-212</a></code>, and <code>dmodel_t.visleafs</code>, <code><a class="ref" target="_blank" rel="noopener" href="https://github.com/id-Software/Quake/blob/master/WinQuake/bspfile.h#L87">WinQuake/bspfile.h:87</a></code>).</p></section><section class="sub"><h3 id="loading-in-model-c-from-disk-lumps-to-the-mnode-t-mleaf-t-graph" data-h="Loading in model.c: from disk lumps to the mnode_t/mleaf_t graph" class="h-2"><a class="anchor" href="#loading-in-model-c-from-disk-lumps-to-the-mnode-t-mleaf-t-graph" aria-label="Link to this heading">#</a>Loading in model.c: from disk lumps to the mnode_t/mleaf_t graph</h3><p><code>Mod_LoadBrushModel</code> (<code><a class="ref" target="_blank" rel="noopener" href="https://github.com/id-Software/Quake/blob/master/WinQuake/model.c#L1143-L1220">WinQuake/model.c:1143-1220</a></code>) is the top-level entry, called from <code>Mod_LoadModel</code> when a <code>.bsp</code> is first referenced. It byte-swaps the header for endianness (<code><a class="ref" target="_blank" rel="noopener" href="https://github.com/id-Software/Quake/blob/master/WinQuake/model.c#L1160-L1161">WinQuake/model.c:1160-1161</a></code>, a legacy of the original SGI/Mac ports), then loads every lump in a fixed order into hunk memory:</p><figure class="code" data-fold-id="c48"><div class="code-bar"><span class="code-fold-toggle" aria-hidden="true"></span><span class="code-lang">C</span><span class="code-ref"><a class="ref" target="_blank" rel="noopener" href="https://github.com/id-Software/Quake/blob/master/WinQuake/model.c#L1163-L1179">WinQuake/model.c:1163-1179</a></span></div><div class="code-scroll"><pre><code class="lang-c">// load into heap
 	
 	Mod_LoadVertexes (&amp;header-&gt;lumps[LUMP_VERTEXES]);
 	Mod_LoadEdges (&amp;header-&gt;lumps[LUMP_EDGES]);
@@ -2662,7 +2694,201 @@ SetVisibilityByPassages ();
 			if (d &gt;= 0)
 				clipflags &amp;= ~(1&lt;&lt;i);	// node is entirely on screen
 		}
-	}</code></pre></div></details><p>This accept/reject-corner trick (picking the two box corners most/least aligned with a plane&#x27;s normal via the precomputed <code>pfrustum_indexes</code> sign table) is exactly the frustum test Abrash walks through in the Black Book — no square roots, no per-vertex transform, just sign-driven corner selection. Notably, the <em>software</em> renderer has no <code>R_CullBox</code>-style generic helper — the corner logic is inlined directly in <code>R_RecursiveWorldNode</code> for speed, whereas the GL renderer (below) factors the equivalent test into a reusable <code>BoxOnPlaneSide</code>-based function.</p><p>Leaf nodes push their marked surfaces (<code>SURF_...</code> flagged <code>msurface_t</code>s, <code><a class="ref" target="_blank" rel="noopener" href="https://github.com/id-Software/Quake/blob/master/WinQuake/model.h#L102">WinQuake/model.h:102</a></code>) into visibility for the frame; interior nodes pick a side via the splitting plane and, for solid, front-facing surfaces, call <code>R_RenderFace</code> (<code><a class="ref" target="_blank" rel="noopener" href="https://github.com/id-Software/Quake/blob/master/WinQuake/r_draw.c#L386">WinQuake/r_draw.c:386</a></code>), which walks the surface&#x27;s edge loop and hands each edge to the global edge-insertion machinery (<code>R_ClipEdge</code>/<code>R_EmitCachedEdge</code> in <code>r_draw.c</code>; edge results land in <code>newedges[]</code>/<code>removeedges[]</code> scan-line buckets declared at <code><a class="ref" target="_blank" rel="noopener" href="https://github.com/id-Software/Quake/blob/master/WinQuake/r_edge.c#L44-L45">WinQuake/r_edge.c:44-45</a></code>). Each surface polygon becomes a doubly-linked list of <code>edge_t</code> (<code><a class="ref" target="_blank" rel="noopener" href="https://github.com/id-Software/Quake/blob/master/WinQuake/r_shared.h#L144-L153">WinQuake/r_shared.h:144-153</a></code>) sorted by screen-space <code>u</code>, one bucket per scanline where the edge starts/ends — the classic &quot;global edge table&quot; from software-rasterizer literature, here specialized so a single sweep never has to re-sort more than the edges newly entering or leaving that row.</p><p><code>R_ScanEdges</code> (<code><a class="ref" target="_blank" rel="noopener" href="https://github.com/id-Software/Quake/blob/master/WinQuake/r_edge.c#L663">WinQuake/r_edge.c:663</a></code>) is the sweep itself: for each scanline it inserts newly-active edges into a horizontally-sorted active edge list, and for every edge crossing decides whether a surface is entering (<code>R_LeadingEdgeBackwards</code>) or leaving (<code>R_TrailingEdge</code>) the active set — maintaining a <em>surface</em> stack (not just an edge stack) ordered by a <code>key</code> field that encodes BSP traversal order:</p><details class="code fold"><summary><span class="fold-label">Excerpt</span> <a class="ref" target="_blank" rel="noopener" href="https://github.com/id-Software/Quake/blob/master/WinQuake/r_edge.c#L663-L706">WinQuake/r_edge.c:663-706</a></summary><div class="code-bar"><span class="code-fold-toggle" aria-hidden="true"></span><span class="code-lang">C</span><span class="code-ref"><a class="ref" target="_blank" rel="noopener" href="https://github.com/id-Software/Quake/blob/master/WinQuake/r_edge.c#L663-L706">WinQuake/r_edge.c:663-706</a></span></div><div class="code-scroll"><pre><code class="lang-c">void R_ScanEdges (void)
+	}</code></pre></div></details><p>This accept/reject-corner trick (picking the two box corners most/least aligned with a plane&#x27;s normal via the precomputed <code>pfrustum_indexes</code> sign table) is exactly the frustum test Abrash walks through in the Black Book — no square roots, no per-vertex transform, just sign-driven corner selection. Notably, the <em>software</em> renderer has no <code>R_CullBox</code>-style generic helper — the corner logic is inlined directly in <code>R_RecursiveWorldNode</code> for speed, whereas the GL renderer (below) factors the equivalent test into a reusable <code>BoxOnPlaneSide</code>-based function.</p><p>Leaf nodes push their marked surfaces (<code>SURF_...</code> flagged <code>msurface_t</code>s, <code><a class="ref" target="_blank" rel="noopener" href="https://github.com/id-Software/Quake/blob/master/WinQuake/model.h#L102">WinQuake/model.h:102</a></code>) into visibility for the frame; interior nodes pick a side via the splitting plane and, for solid, front-facing surfaces, call <code>R_RenderFace</code> (<code><a class="ref" target="_blank" rel="noopener" href="https://github.com/id-Software/Quake/blob/master/WinQuake/r_draw.c#L386">WinQuake/r_draw.c:386</a></code>), which walks the surface&#x27;s edge loop and hands each edge to the global edge-insertion machinery (<code>R_ClipEdge</code>/<code>R_EmitCachedEdge</code> in <code>r_draw.c</code>; edge results land in <code>newedges[]</code>/<code>removeedges[]</code> scan-line buckets declared at <code><a class="ref" target="_blank" rel="noopener" href="https://github.com/id-Software/Quake/blob/master/WinQuake/r_edge.c#L44-L45">WinQuake/r_edge.c:44-45</a></code>). Each surface polygon becomes a doubly-linked list of <code>edge_t</code> (<code><a class="ref" target="_blank" rel="noopener" href="https://github.com/id-Software/Quake/blob/master/WinQuake/r_shared.h#L144-L153">WinQuake/r_shared.h:144-153</a></code>) sorted by screen-space <code>u</code>, one bucket per scanline where the edge starts/ends — the classic &quot;global edge table&quot; from software-rasterizer literature, here specialized so a single sweep never has to re-sort more than the edges newly entering or leaving that row.</p><figure class="concept" id="scanline" aria-labelledby="scanline-title">
+  <h3 id="scanline-title">Sweeping one scanline through the edge list</h3>
+  <style>
+    #scanline .sl-controls { display: flex; flex-wrap: wrap; align-items: center; gap: 8px 12px; margin-bottom: 12px; }
+    #scanline .sl-controls button { cursor: pointer; padding: 5px 11px; border-radius: 3px;
+      border: 1px solid var(--rule); background: var(--surface); color: var(--ink-2);
+      font: 500 11px var(--f-mono); letter-spacing: .06em; text-transform: uppercase; }
+    #scanline .sl-controls button:hover:not(:disabled) { border-color: var(--sim); color: var(--ink); }
+    #scanline .sl-controls button:disabled { opacity: .45; cursor: default; }
+    #scanline .sl-y { font: 500 11px var(--f-mono); color: var(--muted); }
+    #scanline .sl-cols { display: grid; grid-template-columns: minmax(0, 3fr) minmax(0, 2fr); gap: 18px; align-items: start; }
+    @media (max-width: 720px) { #scanline .sl-cols { grid-template-columns: 1fr; } }
+    #scanline svg { width: 100%; height: auto; display: block; }
+    #scanline .sl-poly-a { fill: var(--cl); fill-opacity: .20; stroke: var(--cl); stroke-width: 1.5; }
+    #scanline .sl-poly-b { fill: var(--sim); fill-opacity: .18; stroke: var(--sim); stroke-width: 1.5; }
+    #scanline .sl-poly-c { fill: var(--host); fill-opacity: .18; stroke: var(--host); stroke-width: 1.5; }
+    #scanline .sl-rule { stroke: var(--rule); stroke-width: 1; }
+    #scanline .sl-beam { stroke: var(--ink); stroke-width: 1.5; stroke-dasharray: 5 3; }
+    #scanline .sl-x { fill: var(--ink); }
+    #scanline .sl-span { stroke-width: 6; stroke-linecap: butt; }
+    #scanline .sl-lbl { font: 10.5px var(--f-mono); fill: var(--muted); }
+    #scanline table { width: 100%; border-collapse: collapse; font-size: 13.5px; }
+    #scanline th, #scanline td { padding: 4px 6px; text-align: left; border-bottom: 1px solid var(--rule-soft); }
+    #scanline th { font: 500 10.5px var(--f-mono); letter-spacing: .1em; text-transform: uppercase; color: var(--muted); }
+    #scanline td.sl-key { font-family: var(--f-mono); }
+    #scanline .sl-status { min-height: 3.2em; margin: 12px 0 0; padding: 10px 14px; font-size: 15px;
+      color: var(--ink-2); background: var(--surface); border: 1px solid var(--rule-soft); }
+  </style>
+
+  <div class="sl-controls">
+    <button type="button" id="sl-prev">◀ Previous scanline</button>
+    <button type="button" id="sl-next">Next scanline ▶</button>
+    <span class="sl-y" id="sl-y"></span>
+  </div>
+
+  <div class="sl-cols">
+    <div>
+      <svg id="sl-svg" viewBox="0 0 320 210" role="img" aria-labelledby="sl-t sl-d">
+        <title id="sl-t">Three overlapping polygons crossed by one horizontal scanline</title>
+        <desc id="sl-d">Three convex polygons at different depths overlap on screen. A dashed
+          horizontal line marks the scanline being swept. Where the line crosses a polygon edge,
+          a mark shows the crossing. Beneath the line, thick segments show the spans that survive:
+          at every pixel only the nearest polygon is drawn, so an overlapped span is cut rather
+          than painted over.</desc>
+        <rect x="0.5" y="0.5" width="319" height="209" fill="var(--surface)" class="sl-rule"/>
+        <polygon class="sl-poly-a" points="30,30 190,20 210,120 55,145"/>
+        <polygon class="sl-poly-b" points="120,60 290,45 275,160 140,150"/>
+        <polygon class="sl-poly-c" points="70,95 235,110 220,195 60,185"/>
+        <g id="sl-marks"></g>
+        <line id="sl-beam" class="sl-beam" x1="8" x2="312" y1="0" y2="0"/>
+        <g id="sl-spans"></g>
+      </svg>
+    </div>
+    <div>
+      <table>
+        <caption class="sl-lbl" style="text-align:left;padding-bottom:6px">Active edge list at this scanline</caption>
+        <thead><tr><th scope="col">x</th><th scope="col">Edge</th><th scope="col">Effect</th></tr></thead>
+        <tbody id="sl-rows"></tbody>
+      </table>
+    </div>
+  </div>
+
+  <p class="sl-status" id="sl-status" role="status"></p>
+
+  <figcaption><b>A simplified simulation, not the shipped code.</b> Three convex polygons at
+    fixed depths stand in for a scene; the real renderer builds this list from projected BSP
+    surfaces and sorts by a key encoding traversal order. What is faithful is the shape of the
+    work: edges enter and leave an active list ordered by <i>x</i>, each crossing pushes or pops
+    a surface, and the nearest surface on the stack owns the span until the next crossing. That
+    is why overdraw is eliminated rather than merely reduced — a covered span is never emitted,
+    so it is never drawn. Depths here are constant per polygon, which the real span sort does not
+    assume.</figcaption>
+</figure>
+
+<script>
+(function () {
+  "use strict";
+  var root = document.getElementById("scanline");
+  if (!root) return;
+
+  /* Three polygons, each at a constant depth. Lower depth wins a pixel. */
+  var POLYS = [
+    { id: "A", depth: 2, cls: "sl-poly-a", pts: [[30,30],[190,20],[210,120],[55,145]] },
+    { id: "B", depth: 3, cls: "sl-poly-b", pts: [[120,60],[290,45],[275,160],[140,150]] },
+    { id: "C", depth: 1, cls: "sl-poly-c", pts: [[70,95],[235,110],[220,195],[60,185]] }
+  ];
+  var COLOR = { A: "var(--cl)", B: "var(--sim)", C: "var(--host)" };
+  var TOP = 20, BOTTOM = 195, STEP = 12.5;
+
+  var beam = document.getElementById("sl-beam");
+  var marks = document.getElementById("sl-marks");
+  var spansG = document.getElementById("sl-spans");
+  var rows = document.getElementById("sl-rows");
+  var status = document.getElementById("sl-status");
+  var label = document.getElementById("sl-y");
+  var prev = document.getElementById("sl-prev");
+  var next = document.getElementById("sl-next");
+
+  var y = TOP + STEP;
+
+  /* Where this scanline crosses each polygon: convex, so at most two crossings. */
+  function crossings(poly, yy) {
+    var xs = [], p = poly.pts, n = p.length, i, a, b, t;
+    for (i = 0; i < n; i++) {
+      a = p[i]; b = p[(i + 1) % n];
+      if ((a[1] <= yy && b[1] > yy) || (b[1] <= yy && a[1] > yy)) {
+        t = (yy - a[1]) / (b[1] - a[1]);
+        xs.push(a[0] + t * (b[0] - a[0]));
+      }
+    }
+    return xs.sort(function (m, n2) { return m - n2; });
+  }
+
+  function svg(tag, attrs) {
+    var e = document.createElementNS("http://www.w3.org/2000/svg", tag);
+    for (var k in attrs) if (attrs.hasOwnProperty(k)) e.setAttribute(k, attrs[k]);
+    return e;
+  }
+
+  function draw() {
+    beam.setAttribute("y1", y);
+    beam.setAttribute("y2", y);
+    marks.textContent = "";
+    spansG.textContent = "";
+    rows.textContent = "";
+
+    /* Build the events: each crossing enters or leaves a surface. */
+    var events = [];
+    POLYS.forEach(function (poly) {
+      var xs = crossings(poly, y);
+      if (xs.length < 2) return;
+      events.push({ x: xs[0], poly: poly, enter: true });
+      events.push({ x: xs[1], poly: poly, enter: false });
+    });
+    events.sort(function (a, b) { return a.x - b.x; });
+
+    events.forEach(function (e) {
+      marks.appendChild(svg("circle", { cx: e.x.toFixed(1), cy: y, r: 2.5,
+        fill: e.enter ? COLOR[e.poly.id] : "var(--bg)",
+        stroke: COLOR[e.poly.id], "stroke-width": 1.5 }));
+      var tr = document.createElement("tr");
+      tr.innerHTML = '<td class="sl-key">' + Math.round(e.x) + '</td><td>' + e.poly.id
+        + '</td><td>' + (e.enter ? "enters" : "leaves") + '</td>';
+      rows.appendChild(tr);
+    });
+
+    /* Walk left to right keeping a stack; the nearest surface owns each span. */
+    var active = [], segs = [], i, top, from;
+    for (i = 0; i < events.length; i++) {
+      top = null;
+      active.forEach(function (p) { if (!top || p.depth < top.depth) top = p; });
+      if (top && i > 0) {
+        from = events[i - 1].x;
+        if (events[i].x - from > 0.5) {
+          /* A span runs until the *nearest* surface changes, not on every
+             crossing: an edge that enters behind the current top changes the
+             stack without ending the span. R_ScanEdges emits on the same rule. */
+          var last = segs[segs.length - 1];
+          if (last && last.poly === top && Math.abs(last.x2 - from) < 0.5) last.x2 = events[i].x;
+          else segs.push({ x1: from, x2: events[i].x, poly: top });
+        }
+      }
+      if (events[i].enter) active.push(events[i].poly);
+      else active.splice(active.indexOf(events[i].poly), 1);
+    }
+
+    segs.forEach(function (s) {
+      /* A backing stroke first: the spans sit over the polygon fills and would
+         otherwise be hard to pick out from the surface they belong to. */
+      spansG.appendChild(svg("line", { x1: s.x1.toFixed(1), x2: s.x2.toFixed(1),
+        y1: y + 8, y2: y + 8, stroke: "var(--bg)", "stroke-width": 10,
+        "stroke-linecap": "butt" }));
+      spansG.appendChild(svg("line", { class: "sl-span", x1: s.x1.toFixed(1),
+        x2: s.x2.toFixed(1), y1: y + 8, y2: y + 8, stroke: COLOR[s.poly.id] }));
+    });
+
+    label.textContent = "y = " + Math.round(y);
+    prev.disabled = y - STEP < TOP;
+    next.disabled = y + STEP > BOTTOM;
+
+    var names = segs.map(function (s) { return s.poly.id; }).join(", ");
+    status.textContent = events.length === 0
+      ? "Scanline " + Math.round(y) + " crosses no polygon: nothing is emitted for this row."
+      : "Scanline " + Math.round(y) + " has " + events.length + " edge crossings and emits "
+        + segs.length + " span" + (segs.length === 1 ? "" : "s")
+        + (segs.length ? " (" + names + ")." : ".")
+        + " Every pixel in the row belongs to exactly one surface, so nothing is drawn twice.";
+  }
+
+  prev.addEventListener("click", function () { y = Math.max(TOP + STEP, y - STEP); draw(); });
+  next.addEventListener("click", function () { y = Math.min(BOTTOM, y + STEP); draw(); });
+  draw();
+})();
+</script>
+<p><code>R_ScanEdges</code> (<code><a class="ref" target="_blank" rel="noopener" href="https://github.com/id-Software/Quake/blob/master/WinQuake/r_edge.c#L663">WinQuake/r_edge.c:663</a></code>) is the sweep itself: for each scanline it inserts newly-active edges into a horizontally-sorted active edge list, and for every edge crossing decides whether a surface is entering (<code>R_LeadingEdgeBackwards</code>) or leaving (<code>R_TrailingEdge</code>) the active set — maintaining a <em>surface</em> stack (not just an edge stack) ordered by a <code>key</code> field that encodes BSP traversal order:</p><details class="code fold"><summary><span class="fold-label">Excerpt</span> <a class="ref" target="_blank" rel="noopener" href="https://github.com/id-Software/Quake/blob/master/WinQuake/r_edge.c#L663-L706">WinQuake/r_edge.c:663-706</a></summary><div class="code-bar"><span class="code-fold-toggle" aria-hidden="true"></span><span class="code-lang">C</span><span class="code-ref"><a class="ref" target="_blank" rel="noopener" href="https://github.com/id-Software/Quake/blob/master/WinQuake/r_edge.c#L663-L706">WinQuake/r_edge.c:663-706</a></span></div><div class="code-scroll"><pre><code class="lang-c">void R_ScanEdges (void)
 {
 	int		iv, bottom;
 	byte	basespans[MAXSPANS*sizeof(espan_t)+CACHE_SIZE];
@@ -3434,7 +3660,150 @@ void MSG_WriteAngle (sizebuf_t *sb, float f)
 		
 		cl.last_received_message = realtime;
 		CL_ParseServerMessage ();
-	} while (ret &amp;&amp; cls.state == ca_connected);</code></pre></div></figure><p><code>CL_GetMessage</code> (<code><a class="ref" target="_blank" rel="noopener" href="https://github.com/id-Software/Quake/blob/master/WinQuake/cl_demo.c#L90">WinQuake/cl_demo.c:90</a></code>) is the actual call site — it wraps <code>NET_GetMessage</code> and transparently interposes demo record/playback (see below).</p><p><code>CL_ParseServerMessage</code> (<code><a class="ref" target="_blank" rel="noopener" href="https://github.com/id-Software/Quake/blob/master/WinQuake/cl_parse.c#L720-L772">WinQuake/cl_parse.c:720-772</a>+</code>) is a byte-code interpreter over the message: it reads one opcode byte at a time and either dispatches to <code>CL_ParseUpdate</code> for a &quot;fast update&quot; (top bit set — the packed per-entity delta path) or into a big <code>switch</code> over <code>svc_*</code> opcodes for everything else:</p><figure class="code" data-fold-id="c96"><div class="code-bar"><span class="code-fold-toggle" aria-hidden="true"></span><span class="code-lang">C</span><span class="code-ref"><a class="ref" target="_blank" rel="noopener" href="https://github.com/id-Software/Quake/blob/master/WinQuake/cl_parse.c#L743-L758">WinQuake/cl_parse.c:743-758</a></span></div><div class="code-scroll"><pre><code class="lang-c">		cmd = MSG_ReadByte ();
+	} while (ret &amp;&amp; cls.state == ca_connected);</code></pre></div></figure><p><code>CL_GetMessage</code> (<code><a class="ref" target="_blank" rel="noopener" href="https://github.com/id-Software/Quake/blob/master/WinQuake/cl_demo.c#L90">WinQuake/cl_demo.c:90</a></code>) is the actual call site — it wraps <code>NET_GetMessage</code> and transparently interposes demo record/playback (see below).</p><figure class="concept" id="packet" aria-labelledby="packet-title">
+  <h3 id="packet-title">One frame on the wire, byte by byte</h3>
+  <style>
+    #packet .pk-legend { display: flex; flex-wrap: wrap; gap: 6px 18px; margin: 0 0 12px; font: 500 11px var(--f-mono); letter-spacing: .06em; text-transform: uppercase; color: var(--muted); }
+    #packet .pk-legend i { display: inline-block; width: 10px; height: 10px; margin-right: 6px; vertical-align: -1px; border-radius: 2px; }
+    #packet .k-svc { background: var(--cl); }
+    #packet .k-cmd { background: var(--sim); }
+    #packet .k-entnum { background: var(--host); }
+    #packet .k-field { background: var(--rule); }
+    #packet .pk-strip { display: flex; flex-wrap: wrap; gap: 2px; margin: 0 0 14px; }
+    #packet .pk-b { width: 26px; padding: 3px 0; text-align: center; border-radius: 2px;
+                    font: 500 11px var(--f-mono); color: var(--ink-2);
+                    background: var(--surface-2); border: 1px solid transparent; }
+    #packet .pk-b[data-k="svc"] { background: var(--cl-bg); }
+    #packet .pk-b[data-k="cmd"] { background: var(--sim-bg); }
+    #packet .pk-b[data-k="entnum"] { background: var(--surface-2); border-color: var(--host); }
+    #packet .pk-b.on { outline: 2px solid var(--sim); outline-offset: 1px; color: var(--ink); }
+    #packet .pk-fields { display: flex; flex-wrap: wrap; gap: 6px; margin: 0 0 12px; padding: 0; list-style: none; }
+    #packet .pk-fields button { cursor: pointer; padding: 4px 9px; border-radius: 3px;
+                                border: 1px solid var(--rule); background: var(--surface);
+                                color: var(--ink-2); font: 500 11px var(--f-mono); }
+    #packet .pk-fields button:hover { border-color: var(--sim); color: var(--ink); }
+    #packet .pk-fields button[aria-pressed="true"] { background: var(--sim); border-color: var(--sim); color: var(--bg); }
+    #packet .pk-status { min-height: 3em; margin: 0 0 6px; padding: 10px 14px; font-size: 15px;
+                         color: var(--ink-2); background: var(--surface); border: 1px solid var(--rule-soft); }
+    #packet .pk-unavailable { font-style: italic; color: var(--muted); }
+    @media (max-width: 640px) { #packet .pk-b { width: 22px; font-size: 10px; } }
+  </style>
+
+  <script type="application/json" id="pk-data">{"bytes":[7,75,20,52,64,15,96,70,2,237,1,17,0,0,116,100,0,25,25,0,0,0,1,223,2,1,11,236,233,89,201,197,0,3,0,128,143,128,144,136,146,128,2,246,212,32,187,251,89,211,192,128,223,246,226,29,185,252,89,209,192,6,2,128,58,4,91,0,8,244,211,97,255],"demo":"demo1.dem","frame":23,"size":73,"spans":[{"at":0,"detail":"message id, one byte","kind":"svc","label":"svc_time","len":1},{"at":1,"detail":"4 bytes","kind":"field","label":"svc_time payload","len":4},{"at":5,"detail":"message id, one byte","kind":"svc","label":"svc_clientdata","len":1},{"at":6,"detail":"17 bytes","kind":"field","label":"svc_clientdata payload","len":17},{"at":23,"detail":"delta bits 0x25f","kind":"cmd","label":"entity update","len":2},{"at":25,"detail":"byte index","kind":"entnum","label":"entity 1","len":1},{"at":26,"detail":"carried because its bit is set","kind":"field","label":"frame","len":1},{"at":27,"detail":"carried because its bit is set","kind":"field","label":"origin x","len":2},{"at":29,"detail":"carried because its bit is set","kind":"field","label":"origin y","len":2},{"at":31,"detail":"carried because its bit is set","kind":"field","label":"angle y","len":1},{"at":32,"detail":"carried because its bit is set","kind":"field","label":"origin z","len":2},{"at":34,"detail":"carried because its bit is set","kind":"field","label":"angle z","len":1},{"at":35,"detail":"delta bits 0x000","kind":"cmd","label":"entity update","len":1},{"at":36,"detail":"byte index","kind":"entnum","label":"entity 143","len":1},{"at":37,"detail":"delta bits 0x000","kind":"cmd","label":"entity update","len":1},{"at":38,"detail":"byte index","kind":"entnum","label":"entity 144","len":1},{"at":39,"detail":"delta bits 0x008","kind":"cmd","label":"entity update","len":1},{"at":40,"detail":"byte index","kind":"entnum","label":"entity 146","len":1},{"at":41,"detail":"carried because its bit is set","kind":"field","label":"origin z","len":2},{"at":43,"detail":"delta bits 0x076","kind":"cmd","label":"entity update","len":1},{"at":44,"detail":"byte index","kind":"entnum","label":"entity 212","len":1},{"at":45,"detail":"carried because its bit is set","kind":"field","label":"frame","len":1},{"at":46,"detail":"carried because its bit is set","kind":"field","label":"origin x","len":2},{"at":48,"detail":"carried because its bit is set","kind":"field","label":"origin y","len":2},{"at":50,"detail":"carried because its bit is set","kind":"field","label":"angle y","len":1},{"at":51,"detail":"delta bits 0x000","kind":"cmd","label":"entity update","len":1},{"at":52,"detail":"byte index","kind":"entnum","label":"entity 223","len":1},{"at":53,"detail":"delta bits 0x076","kind":"cmd","label":"entity update","len":1},{"at":54,"detail":"byte index","kind":"entnum","label":"entity 226","len":1},{"at":55,"detail":"carried because its bit is set","kind":"field","label":"frame","len":1},{"at":56,"detail":"carried because its bit is set","kind":"field","label":"origin x","len":2},{"at":58,"detail":"carried because its bit is set","kind":"field","label":"origin y","len":2},{"at":60,"detail":"carried because its bit is set","kind":"field","label":"angle y","len":1},{"at":61,"detail":"message id, one byte","kind":"svc","label":"svc_sound","len":1},{"at":62,"detail":"11 bytes","kind":"field","label":"svc_sound payload","len":11}],"updates":7}</script>
+
+  <div class="pk-legend" aria-hidden="true">
+    <span><i class="k-svc"></i>message id</span>
+    <span><i class="k-cmd"></i>entity update + delta bits</span>
+    <span><i class="k-entnum"></i>entity number</span>
+    <span><i class="k-field"></i>payload</span>
+  </div>
+
+  <div class="pk-strip" id="pk-strip"></div>
+  <ul class="pk-fields" id="pk-fields"></ul>
+  <p class="pk-status" id="pk-status" role="status">Select a field to see which bytes carry it.</p>
+
+  <figcaption id="pk-caption">The bytes of a single server-to-client message, taken from
+    <code>demo1.dem</code> in <code>id1/pak0.pak</code>. Colour marks what each byte is doing:
+    a message id, an entity update with its delta bitmask, an entity number, or payload.
+    Most of the frame is entity updates, and most of those are tiny — an entity that has not
+    changed costs two bytes, and one that moved costs only the axes that actually moved.
+    That is the delta compression this section describes, measured on a real frame rather
+    than asserted. The dissector walks the same field order as
+    <code>CL_ParseServerMessage</code> and refuses any frame it cannot consume exactly, so a
+    mislabelled field cannot reach this figure.</figcaption>
+</figure>
+
+<script>
+(function () {
+  "use strict";
+  var root = document.getElementById("packet");
+  if (!root) return;
+  var raw = document.getElementById("pk-data").textContent;
+  var data;
+  try { data = JSON.parse(raw); } catch (e) { data = null; }
+
+  var strip = document.getElementById("pk-strip");
+  var list = document.getElementById("pk-fields");
+  var status = document.getElementById("pk-status");
+  var caption = document.getElementById("pk-caption");
+
+  if (!data || !data.bytes || !data.bytes.length) {
+    /* No pak on this machine: say so plainly rather than showing an empty grid. */
+    strip.innerHTML = '<span class="pk-unavailable">Frame data unavailable: '
+      + 'id1/pak0.pak was not present when this page was built.</span>';
+    status.textContent = "";
+    return;
+  }
+
+  var hex = "0123456789abcdef";
+  function byteText(v) { return hex[(v >> 4) & 15] + hex[v & 15]; }
+
+  /* One cell per byte, tagged with the span that owns it. */
+  var cells = [];
+  var owner = new Array(data.bytes.length);
+  data.spans.forEach(function (s, i) {
+    for (var k = s.at; k < s.at + s.len; k++) owner[k] = i;
+  });
+  data.bytes.forEach(function (v, i) {
+    var b = document.createElement("span");
+    b.className = "pk-b";
+    b.textContent = byteText(v);
+    var s = data.spans[owner[i]];
+    if (s) b.setAttribute("data-k", s.kind);
+    b.setAttribute("data-span", owner[i]);
+    strip.appendChild(b);
+    cells.push(b);
+  });
+  strip.setAttribute("role", "img");
+  strip.setAttribute("aria-label",
+    "A row of " + data.bytes.length + " bytes: one complete server-to-client message.");
+
+  function describe(i) {
+    var s = data.spans[i];
+    var end = s.at + s.len - 1;
+    var where = s.len === 1 ? "Byte " + s.at : "Bytes " + s.at + " to " + end;
+    return where + " (" + s.len + " of " + data.bytes.length + "): " + s.label
+           + (s.detail ? ". " + s.detail : "") + ".";
+  }
+
+  var buttons = [];
+  function select(i) {
+    cells.forEach(function (c) { c.classList.remove("on"); });
+    buttons.forEach(function (b, j) { b.setAttribute("aria-pressed", j === i ? "true" : "false"); });
+    var s = data.spans[i];
+    for (var k = s.at; k < s.at + s.len; k++) cells[k].classList.add("on");
+    status.textContent = describe(i);
+  }
+
+  data.spans.forEach(function (s, i) {
+    var li = document.createElement("li");
+    var b = document.createElement("button");
+    b.type = "button";
+    b.textContent = s.label;
+    b.setAttribute("aria-pressed", "false");
+    b.addEventListener("click", function () { select(i); });
+    li.appendChild(b);
+    list.appendChild(li);
+    buttons.push(b);
+  });
+
+  cells.forEach(function (c, i) {
+    c.addEventListener("click", function () {
+      var s = c.getAttribute("data-span");
+      if (s !== null && s !== "") { select(+s); buttons[+s].focus(); }
+    });
+  });
+
+  /* Provenance belongs with the figure, and the numbers come from the data. */
+  var note = document.createElement("span");
+  note.textContent = " This frame is message " + data.frame + " of " + data.demo
+    + ", " + data.size + " bytes carrying " + data.updates + " entity updates.";
+  caption.appendChild(note);
+
+  select(0);
+})();
+</script>
+<p><code>CL_ParseServerMessage</code> (<code><a class="ref" target="_blank" rel="noopener" href="https://github.com/id-Software/Quake/blob/master/WinQuake/cl_parse.c#L720-L772">WinQuake/cl_parse.c:720-772</a>+</code>) is a byte-code interpreter over the message: it reads one opcode byte at a time and either dispatches to <code>CL_ParseUpdate</code> for a &quot;fast update&quot; (top bit set — the packed per-entity delta path) or into a big <code>switch</code> over <code>svc_*</code> opcodes for everything else:</p><figure class="code" data-fold-id="c96"><div class="code-bar"><span class="code-fold-toggle" aria-hidden="true"></span><span class="code-lang">C</span><span class="code-ref"><a class="ref" target="_blank" rel="noopener" href="https://github.com/id-Software/Quake/blob/master/WinQuake/cl_parse.c#L743-L758">WinQuake/cl_parse.c:743-758</a></span></div><div class="code-scroll"><pre><code class="lang-c">		cmd = MSG_ReadByte ();
 
 		if (cmd == -1)
 		{
@@ -3967,6 +4336,7 @@ CDAudio_Update();</code></pre></div></figure><p><code>S_Update</code> is called 
   });
 
   var current = null, ticking = false;
+  var onSection = null;   /* set by the mini map, which only exists on one guide */
   function spy() {
     ticking = false;
     var best = null;
@@ -3977,13 +4347,16 @@ CDAudio_Update();</code></pre></div></figure><p><code>S_Update</code> is called 
     if (id === current) return;
     if (current && links[current]) links[current].classList.remove("current");
     current = id;
+    var secId = null;
     if (id && links[id]) {
       links[id].classList.add("current");
       var sec = links[id].closest(".nav-sec");
+      secId = sec ? sec.getAttribute("data-sec") : null;
       if (sec && !sec.open && !search.value) {
         navSecs.forEach(function (s) { s.open = (s === sec); });
       }
     }
+    if (onSection) onSection(secId);
   }
   window.addEventListener("scroll", function () {
     if (!ticking) { ticking = true; requestAnimationFrame(spy); }
@@ -4210,6 +4583,44 @@ CDAudio_Update();</code></pre></div></figure><p><code>S_Update</code> is called 
       if (e.key === "Enter" || e.key === " ") { e.preventDefault(); goTo(stage); }
     });
   });
+
+  /* ---------------------------------------------------- rail mini map */
+  /* Where the current chapter sits in the frame, derived from the pipeline SVG
+     so the two never drift apart. A position indicator, not a second set of
+     navigation: the contents list above already links every section, so this is
+     hidden from assistive technology and holds nothing focusable.
+
+       [ Sys_SendKeyEvents ]   <- one bar per stage, in frame order
+       [ CL_SendMove       ]   <- the bar for the chapter being read is lit  */
+  var railInner = document.querySelector(".rail-inner");
+  var stages = [].slice.call(pipe.querySelectorAll(".stage[data-sec]"));
+  if (railInner && stages.length) {
+    var map = document.createElement("div");
+    map.className = "minimap";
+    map.setAttribute("aria-hidden", "true");
+    var head = document.createElement("div");
+    head.className = "minimap-head";
+    head.textContent = "Frame position";
+    map.appendChild(head);
+
+    var bars = stages.map(function (st) {
+      var name = st.querySelector(".s-name");
+      var bar = document.createElement("div");
+      bar.className = "mm-bar";
+      bar.setAttribute("data-sec", st.getAttribute("data-sec"));
+      bar.textContent = name ? name.textContent.replace(/^[^:]*:\s*/, "") : "stage";
+      map.appendChild(bar);
+      return bar;
+    });
+    railInner.appendChild(map);
+
+    onSection = function (secId) {
+      bars.forEach(function (b) {
+        b.classList.toggle("on", !!secId && b.getAttribute("data-sec") === secId);
+      });
+    };
+    spy();                                  /* light the current chapter now */
+  }
 
   applyMode("listen");
 })();

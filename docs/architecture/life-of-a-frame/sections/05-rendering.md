@@ -235,6 +235,8 @@ This accept/reject-corner trick (picking the two box corners most/least aligned 
 
 Leaf nodes push their marked surfaces (`SURF_...` flagged `msurface_t`s, `WinQuake/model.h:102`) into visibility for the frame; interior nodes pick a side via the splitting plane and, for solid, front-facing surfaces, call `R_RenderFace` (`WinQuake/r_draw.c:386`), which walks the surface's edge loop and hands each edge to the global edge-insertion machinery (`R_ClipEdge`/`R_EmitCachedEdge` in `r_draw.c`; edge results land in `newedges[]`/`removeedges[]` scan-line buckets declared at `WinQuake/r_edge.c:44-45`). Each surface polygon becomes a doubly-linked list of `edge_t` (`WinQuake/r_shared.h:144-153`) sorted by screen-space `u`, one bucket per scanline where the edge starts/ends — the classic "global edge table" from software-rasterizer literature, here specialized so a single sweep never has to re-sort more than the edges newly entering or leaving that row.
 
+::: diagram scanline
+
 `R_ScanEdges` (`WinQuake/r_edge.c:663`) is the sweep itself: for each scanline it inserts newly-active edges into a horizontally-sorted active edge list, and for every edge crossing decides whether a surface is entering (`R_LeadingEdgeBackwards`) or leaving (`R_TrailingEdge`) the active set — maintaining a *surface* stack (not just an edge stack) ordered by a `key` field that encodes BSP traversal order:
 ```c
 // WinQuake/r_edge.c:663-706

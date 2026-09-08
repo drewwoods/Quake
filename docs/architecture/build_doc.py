@@ -31,6 +31,7 @@ SRC = ""      # HERE/sections
 OUT = ""      # the generated HTML file
 XREFS = {}    # scheme -> path of another guide's HTML, relative to HERE
 XREF_USED = []  # (scheme, anchor) pairs recorded for the anchor check
+PREVIEWS = {}   # (scheme, anchor) -> short description of the target heading
 
 ASSETS = os.path.join(os.path.dirname(os.path.abspath(__file__)), "assets")
 
@@ -126,6 +127,10 @@ def inline(text, spans=None):
             XREF_USED.append((scheme, anchor))
             url = XREFS[scheme] + ("#" + anchor if anchor else "")
             cls = ' class="xref"'
+            # What the reader lands on, so a cross-doc jump can be judged first.
+            hint = PREVIEWS.get((scheme, anchor))
+            if hint:
+                cls += ' data-preview="%s"' % html.escape(hint, quote=True)
         elif not external and not url.startswith("#"):
             url = os.path.relpath(os.path.join(SRC, url), HERE)
         links.append('<a%s%s href="%s">%s</a>'
@@ -532,6 +537,49 @@ class Doc(object):
 
 
 ID_ATTR = re.compile(r'id="([^"]+)"')
+# Headings already carry their plain text in data-h, so a preview needs no
+# re-derivation from the markdown; a chapter anchor also picks up its First
+# pass paragraph, which is the one-paragraph summary of the whole chapter.
+HEADING = re.compile(r'id="([^"]+)"\s+data-h="([^"]*)"')
+FIRST_PASS = re.compile(r'<blockquote class="first-pass"><p>(.*?)</p>', re.S)
+TAGS = re.compile(r"<[^>]+>")
+
+
+def load_previews(doc):
+    """Map each cross-doc anchor to a short description of what it points at.
+
+    Read from the target's built HTML, which is checked in, so this stays
+    offline. A guide that has not been built yet simply yields no previews.
+    """
+    PREVIEWS.clear()
+    for scheme, target in doc.xrefs.items():
+        path = os.path.join(doc.here, target)
+        if not os.path.exists(path):
+            continue
+        with open(path, encoding="utf-8") as f:
+            page = f.read()
+        # Chapter titles, so a deep anchor can say which chapter it lands in.
+        chapters = [(m.start(), html.unescape(m.group(2)).strip())
+                    for m in HEADING.finditer(page) if m.group(1).startswith("sec-")]
+        for m in HEADING.finditer(page):
+            anchor, heading = m.group(1), m.group(2)
+            text = html.unescape(heading).strip()
+            if not anchor.startswith("sec-"):
+                # Without this the preview just repeats the link text.
+                owner = [t for pos, t in chapters if pos < m.start()]
+                if owner:
+                    text = "%s \u203a %s" % (owner[-1], text)
+            if anchor.startswith("sec-"):
+                m = FIRST_PASS.search(page, page.find('id="%s"' % anchor))
+                if m:
+                    summary = html.unescape(TAGS.sub("", m.group(1))).strip()
+                    summary = re.sub(r"\s+", " ", summary)
+                    if summary.lower().startswith("first pass."):
+                        summary = summary[len("first pass."):].strip()
+                    text = "%s — %s" % (text, summary)
+            if len(text) > 400:
+                text = text[:397].rstrip() + "..."
+            PREVIEWS[(scheme, anchor)] = text
 
 
 def check_xrefs(doc):
@@ -562,6 +610,7 @@ def build(doc):
     OUT = os.path.join(doc.here, doc.out)
     XREFS = doc.xrefs
     del XREF_USED[:]
+    load_previews(doc)
     _slugs.clear()
     _code_seq[0] = 0
 

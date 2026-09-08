@@ -229,6 +229,19 @@ concept without audio. Place beside `S_Update` and spatialization.
   Browser checks cover desktop dark, narrow light, keyboard endpoints, and
   static/print-style fallbacks. Both guides build; local references pass.
 
+- **Step 6 complete.** F3 dissects one real `demo1.dem` frame: `dem_slice.py`
+  walks the message the way `CL_ParseServerMessage` does and refuses any frame
+  it cannot consume exactly, which 969 of 975 demo blocks pass. F4 steps a
+  scanline through three polygons, emitting a span only where the nearest
+  surface changes. Cross-doc links carry a `data-preview` naming the target
+  chapter and heading, shown on hover and keyboard focus, CSS-only. The rail
+  gains a frame-position map built from the pipeline SVG, pinned to the bottom
+  of the rail's scrollport and hidden from assistive technology since the
+  contents list above already navigates. Browser review found and fixed four
+  defects: message ids painted their whole payload, the mini map sat below the
+  fold, emitted spans were lost against the polygon fills, and deep-anchor
+  previews only repeated the link text.
+
 ### Original sequence
 
 1. D1, D3, D5: no new build machinery, Design History stops being text-only.

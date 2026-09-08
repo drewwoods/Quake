@@ -1,0 +1,143 @@
+<figure class="concept" id="packet" aria-labelledby="packet-title">
+  <h3 id="packet-title">One frame on the wire, byte by byte</h3>
+  <style>
+    #packet .pk-legend { display: flex; flex-wrap: wrap; gap: 6px 18px; margin: 0 0 12px; font: 500 11px var(--f-mono); letter-spacing: .06em; text-transform: uppercase; color: var(--muted); }
+    #packet .pk-legend i { display: inline-block; width: 10px; height: 10px; margin-right: 6px; vertical-align: -1px; border-radius: 2px; }
+    #packet .k-svc { background: var(--cl); }
+    #packet .k-cmd { background: var(--sim); }
+    #packet .k-entnum { background: var(--host); }
+    #packet .k-field { background: var(--rule); }
+    #packet .pk-strip { display: flex; flex-wrap: wrap; gap: 2px; margin: 0 0 14px; }
+    #packet .pk-b { width: 26px; padding: 3px 0; text-align: center; border-radius: 2px;
+                    font: 500 11px var(--f-mono); color: var(--ink-2);
+                    background: var(--surface-2); border: 1px solid transparent; }
+    #packet .pk-b[data-k="svc"] { background: var(--cl-bg); }
+    #packet .pk-b[data-k="cmd"] { background: var(--sim-bg); }
+    #packet .pk-b[data-k="entnum"] { background: var(--surface-2); border-color: var(--host); }
+    #packet .pk-b.on { outline: 2px solid var(--sim); outline-offset: 1px; color: var(--ink); }
+    #packet .pk-fields { display: flex; flex-wrap: wrap; gap: 6px; margin: 0 0 12px; padding: 0; list-style: none; }
+    #packet .pk-fields button { cursor: pointer; padding: 4px 9px; border-radius: 3px;
+                                border: 1px solid var(--rule); background: var(--surface);
+                                color: var(--ink-2); font: 500 11px var(--f-mono); }
+    #packet .pk-fields button:hover { border-color: var(--sim); color: var(--ink); }
+    #packet .pk-fields button[aria-pressed="true"] { background: var(--sim); border-color: var(--sim); color: var(--bg); }
+    #packet .pk-status { min-height: 3em; margin: 0 0 6px; padding: 10px 14px; font-size: 15px;
+                         color: var(--ink-2); background: var(--surface); border: 1px solid var(--rule-soft); }
+    #packet .pk-unavailable { font-style: italic; color: var(--muted); }
+    @media (max-width: 640px) { #packet .pk-b { width: 22px; font-size: 10px; } }
+  </style>
+
+  <script type="application/json" id="pk-data">{"bytes":[7,75,20,52,64,15,96,70,2,237,1,17,0,0,116,100,0,25,25,0,0,0,1,223,2,1,11,236,233,89,201,197,0,3,0,128,143,128,144,136,146,128,2,246,212,32,187,251,89,211,192,128,223,246,226,29,185,252,89,209,192,6,2,128,58,4,91,0,8,244,211,97,255],"demo":"demo1.dem","frame":23,"size":73,"spans":[{"at":0,"detail":"message id, one byte","kind":"svc","label":"svc_time","len":1},{"at":1,"detail":"4 bytes","kind":"field","label":"svc_time payload","len":4},{"at":5,"detail":"message id, one byte","kind":"svc","label":"svc_clientdata","len":1},{"at":6,"detail":"17 bytes","kind":"field","label":"svc_clientdata payload","len":17},{"at":23,"detail":"delta bits 0x25f","kind":"cmd","label":"entity update","len":2},{"at":25,"detail":"byte index","kind":"entnum","label":"entity 1","len":1},{"at":26,"detail":"carried because its bit is set","kind":"field","label":"frame","len":1},{"at":27,"detail":"carried because its bit is set","kind":"field","label":"origin x","len":2},{"at":29,"detail":"carried because its bit is set","kind":"field","label":"origin y","len":2},{"at":31,"detail":"carried because its bit is set","kind":"field","label":"angle y","len":1},{"at":32,"detail":"carried because its bit is set","kind":"field","label":"origin z","len":2},{"at":34,"detail":"carried because its bit is set","kind":"field","label":"angle z","len":1},{"at":35,"detail":"delta bits 0x000","kind":"cmd","label":"entity update","len":1},{"at":36,"detail":"byte index","kind":"entnum","label":"entity 143","len":1},{"at":37,"detail":"delta bits 0x000","kind":"cmd","label":"entity update","len":1},{"at":38,"detail":"byte index","kind":"entnum","label":"entity 144","len":1},{"at":39,"detail":"delta bits 0x008","kind":"cmd","label":"entity update","len":1},{"at":40,"detail":"byte index","kind":"entnum","label":"entity 146","len":1},{"at":41,"detail":"carried because its bit is set","kind":"field","label":"origin z","len":2},{"at":43,"detail":"delta bits 0x076","kind":"cmd","label":"entity update","len":1},{"at":44,"detail":"byte index","kind":"entnum","label":"entity 212","len":1},{"at":45,"detail":"carried because its bit is set","kind":"field","label":"frame","len":1},{"at":46,"detail":"carried because its bit is set","kind":"field","label":"origin x","len":2},{"at":48,"detail":"carried because its bit is set","kind":"field","label":"origin y","len":2},{"at":50,"detail":"carried because its bit is set","kind":"field","label":"angle y","len":1},{"at":51,"detail":"delta bits 0x000","kind":"cmd","label":"entity update","len":1},{"at":52,"detail":"byte index","kind":"entnum","label":"entity 223","len":1},{"at":53,"detail":"delta bits 0x076","kind":"cmd","label":"entity update","len":1},{"at":54,"detail":"byte index","kind":"entnum","label":"entity 226","len":1},{"at":55,"detail":"carried because its bit is set","kind":"field","label":"frame","len":1},{"at":56,"detail":"carried because its bit is set","kind":"field","label":"origin x","len":2},{"at":58,"detail":"carried because its bit is set","kind":"field","label":"origin y","len":2},{"at":60,"detail":"carried because its bit is set","kind":"field","label":"angle y","len":1},{"at":61,"detail":"message id, one byte","kind":"svc","label":"svc_sound","len":1},{"at":62,"detail":"11 bytes","kind":"field","label":"svc_sound payload","len":11}],"updates":7}</script>
+
+  <div class="pk-legend" aria-hidden="true">
+    <span><i class="k-svc"></i>message id</span>
+    <span><i class="k-cmd"></i>entity update + delta bits</span>
+    <span><i class="k-entnum"></i>entity number</span>
+    <span><i class="k-field"></i>payload</span>
+  </div>
+
+  <div class="pk-strip" id="pk-strip"></div>
+  <ul class="pk-fields" id="pk-fields"></ul>
+  <p class="pk-status" id="pk-status" role="status">Select a field to see which bytes carry it.</p>
+
+  <figcaption id="pk-caption">The bytes of a single server-to-client message, taken from
+    <code>demo1.dem</code> in <code>id1/pak0.pak</code>. Colour marks what each byte is doing:
+    a message id, an entity update with its delta bitmask, an entity number, or payload.
+    Most of the frame is entity updates, and most of those are tiny — an entity that has not
+    changed costs two bytes, and one that moved costs only the axes that actually moved.
+    That is the delta compression this section describes, measured on a real frame rather
+    than asserted. The dissector walks the same field order as
+    <code>CL_ParseServerMessage</code> and refuses any frame it cannot consume exactly, so a
+    mislabelled field cannot reach this figure.</figcaption>
+</figure>
+
+<script>
+(function () {
+  "use strict";
+  var root = document.getElementById("packet");
+  if (!root) return;
+  var raw = document.getElementById("pk-data").textContent;
+  var data;
+  try { data = JSON.parse(raw); } catch (e) { data = null; }
+
+  var strip = document.getElementById("pk-strip");
+  var list = document.getElementById("pk-fields");
+  var status = document.getElementById("pk-status");
+  var caption = document.getElementById("pk-caption");
+
+  if (!data || !data.bytes || !data.bytes.length) {
+    /* No pak on this machine: say so plainly rather than showing an empty grid. */
+    strip.innerHTML = '<span class="pk-unavailable">Frame data unavailable: '
+      + 'id1/pak0.pak was not present when this page was built.</span>';
+    status.textContent = "";
+    return;
+  }
+
+  var hex = "0123456789abcdef";
+  function byteText(v) { return hex[(v >> 4) & 15] + hex[v & 15]; }
+
+  /* One cell per byte, tagged with the span that owns it. */
+  var cells = [];
+  var owner = new Array(data.bytes.length);
+  data.spans.forEach(function (s, i) {
+    for (var k = s.at; k < s.at + s.len; k++) owner[k] = i;
+  });
+  data.bytes.forEach(function (v, i) {
+    var b = document.createElement("span");
+    b.className = "pk-b";
+    b.textContent = byteText(v);
+    var s = data.spans[owner[i]];
+    if (s) b.setAttribute("data-k", s.kind);
+    b.setAttribute("data-span", owner[i]);
+    strip.appendChild(b);
+    cells.push(b);
+  });
+  strip.setAttribute("role", "img");
+  strip.setAttribute("aria-label",
+    "A row of " + data.bytes.length + " bytes: one complete server-to-client message.");
+
+  function describe(i) {
+    var s = data.spans[i];
+    var end = s.at + s.len - 1;
+    var where = s.len === 1 ? "Byte " + s.at : "Bytes " + s.at + " to " + end;
+    return where + " (" + s.len + " of " + data.bytes.length + "): " + s.label
+           + (s.detail ? ". " + s.detail : "") + ".";
+  }
+
+  var buttons = [];
+  function select(i) {
+    cells.forEach(function (c) { c.classList.remove("on"); });
+    buttons.forEach(function (b, j) { b.setAttribute("aria-pressed", j === i ? "true" : "false"); });
+    var s = data.spans[i];
+    for (var k = s.at; k < s.at + s.len; k++) cells[k].classList.add("on");
+    status.textContent = describe(i);
+  }
+
+  data.spans.forEach(function (s, i) {
+    var li = document.createElement("li");
+    var b = document.createElement("button");
+    b.type = "button";
+    b.textContent = s.label;
+    b.setAttribute("aria-pressed", "false");
+    b.addEventListener("click", function () { select(i); });
+    li.appendChild(b);
+    list.appendChild(li);
+    buttons.push(b);
+  });
+
+  cells.forEach(function (c, i) {
+    c.addEventListener("click", function () {
+      var s = c.getAttribute("data-span");
+      if (s !== null && s !== "") { select(+s); buttons[+s].focus(); }
+    });
+  });
+
+  /* Provenance belongs with the figure, and the numbers come from the data. */
+  var note = document.createElement("span");
+  note.textContent = " This frame is message " + data.frame + " of " + data.demo
+    + ", " + data.size + " bytes carrying " + data.updates + " entity updates.";
+  caption.appendChild(note);
+
+  select(0);
+})();
+</script>

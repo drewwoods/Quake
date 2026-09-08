@@ -1,0 +1,194 @@
+<figure class="concept" id="scanline" aria-labelledby="scanline-title">
+  <h3 id="scanline-title">Sweeping one scanline through the edge list</h3>
+  <style>
+    #scanline .sl-controls { display: flex; flex-wrap: wrap; align-items: center; gap: 8px 12px; margin-bottom: 12px; }
+    #scanline .sl-controls button { cursor: pointer; padding: 5px 11px; border-radius: 3px;
+      border: 1px solid var(--rule); background: var(--surface); color: var(--ink-2);
+      font: 500 11px var(--f-mono); letter-spacing: .06em; text-transform: uppercase; }
+    #scanline .sl-controls button:hover:not(:disabled) { border-color: var(--sim); color: var(--ink); }
+    #scanline .sl-controls button:disabled { opacity: .45; cursor: default; }
+    #scanline .sl-y { font: 500 11px var(--f-mono); color: var(--muted); }
+    #scanline .sl-cols { display: grid; grid-template-columns: minmax(0, 3fr) minmax(0, 2fr); gap: 18px; align-items: start; }
+    @media (max-width: 720px) { #scanline .sl-cols { grid-template-columns: 1fr; } }
+    #scanline svg { width: 100%; height: auto; display: block; }
+    #scanline .sl-poly-a { fill: var(--cl); fill-opacity: .20; stroke: var(--cl); stroke-width: 1.5; }
+    #scanline .sl-poly-b { fill: var(--sim); fill-opacity: .18; stroke: var(--sim); stroke-width: 1.5; }
+    #scanline .sl-poly-c { fill: var(--host); fill-opacity: .18; stroke: var(--host); stroke-width: 1.5; }
+    #scanline .sl-rule { stroke: var(--rule); stroke-width: 1; }
+    #scanline .sl-beam { stroke: var(--ink); stroke-width: 1.5; stroke-dasharray: 5 3; }
+    #scanline .sl-x { fill: var(--ink); }
+    #scanline .sl-span { stroke-width: 6; stroke-linecap: butt; }
+    #scanline .sl-lbl { font: 10.5px var(--f-mono); fill: var(--muted); }
+    #scanline table { width: 100%; border-collapse: collapse; font-size: 13.5px; }
+    #scanline th, #scanline td { padding: 4px 6px; text-align: left; border-bottom: 1px solid var(--rule-soft); }
+    #scanline th { font: 500 10.5px var(--f-mono); letter-spacing: .1em; text-transform: uppercase; color: var(--muted); }
+    #scanline td.sl-key { font-family: var(--f-mono); }
+    #scanline .sl-status { min-height: 3.2em; margin: 12px 0 0; padding: 10px 14px; font-size: 15px;
+      color: var(--ink-2); background: var(--surface); border: 1px solid var(--rule-soft); }
+  </style>
+
+  <div class="sl-controls">
+    <button type="button" id="sl-prev">◀ Previous scanline</button>
+    <button type="button" id="sl-next">Next scanline ▶</button>
+    <span class="sl-y" id="sl-y"></span>
+  </div>
+
+  <div class="sl-cols">
+    <div>
+      <svg id="sl-svg" viewBox="0 0 320 210" role="img" aria-labelledby="sl-t sl-d">
+        <title id="sl-t">Three overlapping polygons crossed by one horizontal scanline</title>
+        <desc id="sl-d">Three convex polygons at different depths overlap on screen. A dashed
+          horizontal line marks the scanline being swept. Where the line crosses a polygon edge,
+          a mark shows the crossing. Beneath the line, thick segments show the spans that survive:
+          at every pixel only the nearest polygon is drawn, so an overlapped span is cut rather
+          than painted over.</desc>
+        <rect x="0.5" y="0.5" width="319" height="209" fill="var(--surface)" class="sl-rule"/>
+        <polygon class="sl-poly-a" points="30,30 190,20 210,120 55,145"/>
+        <polygon class="sl-poly-b" points="120,60 290,45 275,160 140,150"/>
+        <polygon class="sl-poly-c" points="70,95 235,110 220,195 60,185"/>
+        <g id="sl-marks"></g>
+        <line id="sl-beam" class="sl-beam" x1="8" x2="312" y1="0" y2="0"/>
+        <g id="sl-spans"></g>
+      </svg>
+    </div>
+    <div>
+      <table>
+        <caption class="sl-lbl" style="text-align:left;padding-bottom:6px">Active edge list at this scanline</caption>
+        <thead><tr><th scope="col">x</th><th scope="col">Edge</th><th scope="col">Effect</th></tr></thead>
+        <tbody id="sl-rows"></tbody>
+      </table>
+    </div>
+  </div>
+
+  <p class="sl-status" id="sl-status" role="status"></p>
+
+  <figcaption><b>A simplified simulation, not the shipped code.</b> Three convex polygons at
+    fixed depths stand in for a scene; the real renderer builds this list from projected BSP
+    surfaces and sorts by a key encoding traversal order. What is faithful is the shape of the
+    work: edges enter and leave an active list ordered by <i>x</i>, each crossing pushes or pops
+    a surface, and the nearest surface on the stack owns the span until the next crossing. That
+    is why overdraw is eliminated rather than merely reduced — a covered span is never emitted,
+    so it is never drawn. Depths here are constant per polygon, which the real span sort does not
+    assume.</figcaption>
+</figure>
+
+<script>
+(function () {
+  "use strict";
+  var root = document.getElementById("scanline");
+  if (!root) return;
+
+  /* Three polygons, each at a constant depth. Lower depth wins a pixel. */
+  var POLYS = [
+    { id: "A", depth: 2, cls: "sl-poly-a", pts: [[30,30],[190,20],[210,120],[55,145]] },
+    { id: "B", depth: 3, cls: "sl-poly-b", pts: [[120,60],[290,45],[275,160],[140,150]] },
+    { id: "C", depth: 1, cls: "sl-poly-c", pts: [[70,95],[235,110],[220,195],[60,185]] }
+  ];
+  var COLOR = { A: "var(--cl)", B: "var(--sim)", C: "var(--host)" };
+  var TOP = 20, BOTTOM = 195, STEP = 12.5;
+
+  var beam = document.getElementById("sl-beam");
+  var marks = document.getElementById("sl-marks");
+  var spansG = document.getElementById("sl-spans");
+  var rows = document.getElementById("sl-rows");
+  var status = document.getElementById("sl-status");
+  var label = document.getElementById("sl-y");
+  var prev = document.getElementById("sl-prev");
+  var next = document.getElementById("sl-next");
+
+  var y = TOP + STEP;
+
+  /* Where this scanline crosses each polygon: convex, so at most two crossings. */
+  function crossings(poly, yy) {
+    var xs = [], p = poly.pts, n = p.length, i, a, b, t;
+    for (i = 0; i < n; i++) {
+      a = p[i]; b = p[(i + 1) % n];
+      if ((a[1] <= yy && b[1] > yy) || (b[1] <= yy && a[1] > yy)) {
+        t = (yy - a[1]) / (b[1] - a[1]);
+        xs.push(a[0] + t * (b[0] - a[0]));
+      }
+    }
+    return xs.sort(function (m, n2) { return m - n2; });
+  }
+
+  function svg(tag, attrs) {
+    var e = document.createElementNS("http://www.w3.org/2000/svg", tag);
+    for (var k in attrs) if (attrs.hasOwnProperty(k)) e.setAttribute(k, attrs[k]);
+    return e;
+  }
+
+  function draw() {
+    beam.setAttribute("y1", y);
+    beam.setAttribute("y2", y);
+    marks.textContent = "";
+    spansG.textContent = "";
+    rows.textContent = "";
+
+    /* Build the events: each crossing enters or leaves a surface. */
+    var events = [];
+    POLYS.forEach(function (poly) {
+      var xs = crossings(poly, y);
+      if (xs.length < 2) return;
+      events.push({ x: xs[0], poly: poly, enter: true });
+      events.push({ x: xs[1], poly: poly, enter: false });
+    });
+    events.sort(function (a, b) { return a.x - b.x; });
+
+    events.forEach(function (e) {
+      marks.appendChild(svg("circle", { cx: e.x.toFixed(1), cy: y, r: 2.5,
+        fill: e.enter ? COLOR[e.poly.id] : "var(--bg)",
+        stroke: COLOR[e.poly.id], "stroke-width": 1.5 }));
+      var tr = document.createElement("tr");
+      tr.innerHTML = '<td class="sl-key">' + Math.round(e.x) + '</td><td>' + e.poly.id
+        + '</td><td>' + (e.enter ? "enters" : "leaves") + '</td>';
+      rows.appendChild(tr);
+    });
+
+    /* Walk left to right keeping a stack; the nearest surface owns each span. */
+    var active = [], segs = [], i, top, from;
+    for (i = 0; i < events.length; i++) {
+      top = null;
+      active.forEach(function (p) { if (!top || p.depth < top.depth) top = p; });
+      if (top && i > 0) {
+        from = events[i - 1].x;
+        if (events[i].x - from > 0.5) {
+          /* A span runs until the *nearest* surface changes, not on every
+             crossing: an edge that enters behind the current top changes the
+             stack without ending the span. R_ScanEdges emits on the same rule. */
+          var last = segs[segs.length - 1];
+          if (last && last.poly === top && Math.abs(last.x2 - from) < 0.5) last.x2 = events[i].x;
+          else segs.push({ x1: from, x2: events[i].x, poly: top });
+        }
+      }
+      if (events[i].enter) active.push(events[i].poly);
+      else active.splice(active.indexOf(events[i].poly), 1);
+    }
+
+    segs.forEach(function (s) {
+      /* A backing stroke first: the spans sit over the polygon fills and would
+         otherwise be hard to pick out from the surface they belong to. */
+      spansG.appendChild(svg("line", { x1: s.x1.toFixed(1), x2: s.x2.toFixed(1),
+        y1: y + 8, y2: y + 8, stroke: "var(--bg)", "stroke-width": 10,
+        "stroke-linecap": "butt" }));
+      spansG.appendChild(svg("line", { class: "sl-span", x1: s.x1.toFixed(1),
+        x2: s.x2.toFixed(1), y1: y + 8, y2: y + 8, stroke: COLOR[s.poly.id] }));
+    });
+
+    label.textContent = "y = " + Math.round(y);
+    prev.disabled = y - STEP < TOP;
+    next.disabled = y + STEP > BOTTOM;
+
+    var names = segs.map(function (s) { return s.poly.id; }).join(", ");
+    status.textContent = events.length === 0
+      ? "Scanline " + Math.round(y) + " crosses no polygon: nothing is emitted for this row."
+      : "Scanline " + Math.round(y) + " has " + events.length + " edge crossings and emits "
+        + segs.length + " span" + (segs.length === 1 ? "" : "s")
+        + (segs.length ? " (" + names + ")." : ".")
+        + " Every pixel in the row belongs to exactly one surface, so nothing is drawn twice.";
+  }
+
+  prev.addEventListener("click", function () { y = Math.max(TOP + STEP, y - STEP); draw(); });
+  next.addEventListener("click", function () { y = Math.min(BOTTOM, y + STEP); draw(); });
+  draw();
+})();
+</script>

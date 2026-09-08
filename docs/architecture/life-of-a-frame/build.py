@@ -10,12 +10,38 @@ sys.path.insert(0, os.path.dirname(HERE))
 
 import bsp_slice
 import build_doc
+import dem_slice
 import visuals
 
 PAK = os.path.normpath(os.path.join(HERE, "..", "..", "..", "id1", "pak0.pak"))
 PVS_FRAGMENT = os.path.join(HERE, "diagrams", "pvs-explorer.html")
 PVS_DATA = re.compile(r'(?s)(<script type="application/json" id="pvs-data">)'
                       r'.*?(</script>)')
+PACKET_FRAGMENT = os.path.join(HERE, "diagrams", "packet.html")
+PACKET_DATA = re.compile(r'(?s)(<script type="application/json" id="pk-data">)'
+                         r'.*?(</script>)')
+
+
+def refresh_packet_data(pak=PAK):
+    """Re-derive one dissected demo frame into the packet diagram.
+
+    Same contract as the PVS slice: without the pak the fragment keeps what is
+    checked in, and the figure says so itself rather than failing the build.
+    """
+    data = dem_slice.frame_slice(pak)
+    if not data:
+        print("  packet: no dissectable frame from %s, leaving embedded data as-is" % pak)
+        return
+    with open(PACKET_FRAGMENT, encoding="utf-8") as f:
+        frag = f.read()
+    updated = PACKET_DATA.sub(lambda m: m.group(1) + dem_slice.to_json(data) + m.group(2),
+                              frag, count=1)
+    if updated != frag:
+        with open(PACKET_FRAGMENT, "w", encoding="utf-8") as f:
+            f.write(updated)
+    print("  packet: %s frame %d, %d bytes, %d entity updates, %d fields"
+          % (data["demo"], data["frame"], data["size"], data["updates"],
+             len(data["spans"])))
 
 
 def refresh_pvs_data(pak=PAK):
@@ -63,5 +89,6 @@ DOC = build_doc.Doc(
 
 if __name__ == "__main__":
     refresh_pvs_data()
+    refresh_packet_data()
     visuals.refresh()
     build_doc.build(DOC)

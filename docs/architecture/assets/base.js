@@ -165,6 +165,7 @@
   });
 
   var current = null, ticking = false;
+  var onSection = null;   /* set by the mini map, which only exists on one guide */
   function spy() {
     ticking = false;
     var best = null;
@@ -175,13 +176,16 @@
     if (id === current) return;
     if (current && links[current]) links[current].classList.remove("current");
     current = id;
+    var secId = null;
     if (id && links[id]) {
       links[id].classList.add("current");
       var sec = links[id].closest(".nav-sec");
+      secId = sec ? sec.getAttribute("data-sec") : null;
       if (sec && !sec.open && !search.value) {
         navSecs.forEach(function (s) { s.open = (s === sec); });
       }
     }
+    if (onSection) onSection(secId);
   }
   window.addEventListener("scroll", function () {
     if (!ticking) { ticking = true; requestAnimationFrame(spy); }
@@ -408,6 +412,44 @@
       if (e.key === "Enter" || e.key === " ") { e.preventDefault(); goTo(stage); }
     });
   });
+
+  /* ---------------------------------------------------- rail mini map */
+  /* Where the current chapter sits in the frame, derived from the pipeline SVG
+     so the two never drift apart. A position indicator, not a second set of
+     navigation: the contents list above already links every section, so this is
+     hidden from assistive technology and holds nothing focusable.
+
+       [ Sys_SendKeyEvents ]   <- one bar per stage, in frame order
+       [ CL_SendMove       ]   <- the bar for the chapter being read is lit  */
+  var railInner = document.querySelector(".rail-inner");
+  var stages = [].slice.call(pipe.querySelectorAll(".stage[data-sec]"));
+  if (railInner && stages.length) {
+    var map = document.createElement("div");
+    map.className = "minimap";
+    map.setAttribute("aria-hidden", "true");
+    var head = document.createElement("div");
+    head.className = "minimap-head";
+    head.textContent = "Frame position";
+    map.appendChild(head);
+
+    var bars = stages.map(function (st) {
+      var name = st.querySelector(".s-name");
+      var bar = document.createElement("div");
+      bar.className = "mm-bar";
+      bar.setAttribute("data-sec", st.getAttribute("data-sec"));
+      bar.textContent = name ? name.textContent.replace(/^[^:]*:\s*/, "") : "stage";
+      map.appendChild(bar);
+      return bar;
+    });
+    railInner.appendChild(map);
+
+    onSection = function (secId) {
+      bars.forEach(function (b) {
+        b.classList.toggle("on", !!secId && b.getAttribute("data-sec") === secId);
+      });
+    };
+    spy();                                  /* light the current chapter now */
+  }
 
   applyMode("listen");
 })();

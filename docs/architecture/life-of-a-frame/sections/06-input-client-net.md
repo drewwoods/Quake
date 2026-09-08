@@ -590,6 +590,8 @@ int CL_ReadFromServer (void)
 `NET_GetMessage` and transparently interposes demo record/playback (see
 below).
 
+::: diagram packet
+
 `CL_ParseServerMessage` (`WinQuake/cl_parse.c:720-772+`) is a byte-code
 interpreter over the message: it reads one opcode byte at a time and either
 dispatches to `CL_ParseUpdate` for a "fast update" (top bit set — the packed

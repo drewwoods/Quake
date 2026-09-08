@@ -352,6 +352,26 @@ a.xref::after {
   text-decoration: none; display: inline-block;
 }
 a.xref:hover { text-decoration-style: solid; }
+/* What a cross-doc link leads to, shown before following it. CSS-only so the
+   keyboard path comes free with :focus-visible; ::after already carries the
+   arrow, so the panel hangs off ::before, taken out of flow. */
+a.xref[data-preview] { position: relative; }
+a.xref[data-preview]:hover::before,
+a.xref[data-preview]:focus-visible::before {
+  content: attr(data-preview);
+  position: absolute; left: 0; top: calc(100% + 7px); z-index: 40;
+  width: max-content; max-width: min(42ch, 78vw);
+  padding: 9px 12px; border: 1px solid var(--rule); border-radius: 3px;
+  background: var(--surface); color: var(--ink-2);
+  font: 400 13.5px/1.45 var(--f-body); text-decoration: none;
+  white-space: normal; text-align: left;
+  box-shadow: 0 6px 18px rgba(0, 0, 0, 0.16);
+}
+/* Near the right edge the panel would overflow the column; anchor it right. */
+a.xref[data-preview]:nth-last-child(-n+2):hover::before,
+a.xref[data-preview]:nth-last-child(-n+2):focus-visible::before { left: auto; right: 0; }
+@media (max-width: 520px) { a.xref[data-preview]::before { display: none !important; } }
+@media print { a.xref[data-preview]::before { display: none !important; } }
 main p a[href^="http"]:not(.ref), main li a[href^="http"]:not(.ref) {
   color: var(--cl); text-decoration: underline; text-underline-offset: 2px;
   text-decoration-thickness: 1px; word-break: break-word;
@@ -609,3 +629,15 @@ html { scroll-behavior: smooth; }
   figure.code, .calltree, .era { break-inside: avoid; }
 }
 .bucket-note { color: var(--muted); font-size: 0.85em; }
+
+/* Rail mini map: one bar per pipeline stage, the current chapter's lit. */
+.minimap { position: sticky; bottom: 0; margin: 22px 0 0; padding: 14px 0 10px;
+  border-top: 1px solid var(--rule); background: var(--bg); }
+.minimap-head { margin-bottom: 8px; font: 500 10px var(--f-mono); letter-spacing: 0.14em;
+  text-transform: uppercase; color: var(--muted); }
+.mm-bar { margin: 0 0 3px; padding: 3px 7px; border-left: 2px solid var(--rule-soft);
+  background: var(--surface); color: var(--muted);
+  font: 400 10.5px/1.35 var(--f-mono); white-space: nowrap;
+  overflow: hidden; text-overflow: ellipsis; }
+.mm-bar.on { border-left-color: var(--sim); background: var(--sim-bg); color: var(--ink-2); }
+@media print { .minimap { display: none; } }
