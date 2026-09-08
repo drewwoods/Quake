@@ -21,16 +21,25 @@ def refresh():
     for key, label in [('server', 'Other host work (printed as “server”)'),
                        ('gfx', 'Screen update'), ('snd', 'Audio / light decay / CD update')]:
         share = means[key] / total if total else 0
-        rows.append('<tr><th scope="row">%s</th><td>%.3f ms</td><td>%.1f%%</td></tr>'
-                    % (label, means[key], share * 100))
+        # host_speeds prints integer milliseconds, so a sub-millisecond stage
+        # reads zero. Say that next to the number, not only in the notes below:
+        # a bare "0.000 ms" invites "this stage is free".
+        zero = (' <span class="bucket-note">(below measurement resolution)</span>'
+                if means[key] == 0 else '')
+        rows.append('<tr><th scope="row">%s</th><td>%.3f ms%s</td><td>%.1f%%</td></tr>'
+                    % (label, means[key], zero, share * 100))
         if key == 'server':
             continue
         y = BAR_Y[key]
         # Only the two measured call groups get bars; no invented per-function costs.
-        bar = ('<g class="measured-bar"><title>%s: %.3f ms; %.1f%% of logged total</title>'
+        tip = '%s: %.3f ms; %.1f%% of logged total' % (label, means[key], share * 100)
+        if means[key] == 0:
+            tip += ('. Integer host_speeds rows truncate a sub-millisecond stage '
+                    'to zero; below measurement resolution, not free work.')
+        bar = ('<g class="measured-bar"><title>%s</title>'
                '<rect x="46" y="%d" width="%d" height="3" fill="var(--rule)"/>'
                '<rect x="46" y="%d" width="%.2f" height="3" fill="var(--cl)"/></g>'
-               % (label, means[key], share * 100, y, BAR_WIDTH, y, BAR_WIDTH * share))
+               % (escaped(tip), y, BAR_WIDTH, y, BAR_WIDTH * share))
         (HERE / 'diagrams' / ('cost-' + key + '.html')).write_text(bar + '\n', encoding='utf-8')
     caption = ('<aside class="runtime-costs" aria-label="Measured frame costs">'
                '<h3>One measured demo run</h3><p>The thin bars in screen and sound boxes show shares '
