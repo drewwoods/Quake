@@ -163,9 +163,10 @@ maintained by James Gregory." That repository carries no licence file.
 
 For the Quake chapters specifically there is a published grant. Abrash released
 chapters 64 and 66-70 himself in 2000 as *Ramblings in Realtime*
-([Blue's News](https://www.bluesnews.com/abrash/), or this
-[mirror](https://valvedev.info/archives/abrash/contents.html) if that host blocks
-you), with a permissions note that reads in part:
+([Blue's News](https://www.bluesnews.com/abrash/); that host refuses scripted
+requests but serves browsers, and there is an
+[archived copy](https://web.archive.org/web/20260603214111/https://www.bluesnews.com/abrash/)),
+with a permissions note that reads in part:
 
 > These articles are Copyright (c) 2000 by Michael Abrash, all rights reserved
 > except as explicitly granted herein. Permission is granted for unmodified

@@ -43,6 +43,10 @@ WAYBACK = "https://archive.org/wayback/available?url="
 # one of these is reported but not counted against the run.
 BOT_BLOCKED = ("bluesnews.com",)
 
+# "Slow down", not "gone". Checking several URLs on one host in parallel earns
+# these from YouTube in particular. Retried serially, then reported separately.
+THROTTLED = (429, 503)
+
 
 def cited_urls(guides):
     """Every external URL cited in the given guides' section sources."""
@@ -58,16 +62,25 @@ def cited_urls(guides):
     return found
 
 
-def fetch_status(url, timeout=30):
-    """Return an HTTP status, or a transport error string."""
+def fetch_status(url, timeout=30, retries=1):
+    """Return an HTTP status, or a transport error string.
+
+    A throttled response is retried serially after a pause: hitting one host
+    with several parallel requests earns a 429 that says nothing about whether
+    the citation is still good.
+    """
     req = urllib.request.Request(url, headers={"User-Agent": UA})
-    try:
-        with urllib.request.urlopen(req, timeout=timeout) as r:
-            return r.status
-    except urllib.error.HTTPError as e:
-        return e.code
-    except Exception as e:                      # DNS, TLS, timeout, redirect loop
-        return type(e).__name__
+    for attempt in range(retries + 1):
+        try:
+            with urllib.request.urlopen(req, timeout=timeout) as r:
+                return r.status
+        except urllib.error.HTTPError as e:
+            if e.code in THROTTLED and attempt < retries:
+                time.sleep(3 + 2 * attempt)
+                continue
+            return e.code
+        except Exception as e:                  # DNS, TLS, timeout, redirect loop
+            return type(e).__name__
 
 
 def wayback(url, timeout=30):
@@ -110,13 +123,15 @@ def main():
             for u, status in zip(sorted(urls), pool.map(fetch_status, sorted(urls))):
                 results[u] = status
 
-    ok, blocked, bad = [], [], []
+    ok, blocked, throttled, bad = [], [], [], []
     for u in sorted(results):
         s = results[u]
         if s == 200:
             ok.append(u)
         elif any(h in u for h in BOT_BLOCKED):
             blocked.append((u, s))
+        elif s in THROTTLED:
+            throttled.append((u, s))
         else:
             bad.append((u, s))
 
@@ -124,6 +139,8 @@ def main():
         print("  200  %s" % u)
     for u, s in blocked:
         print("  %-4s %s  (host blocks scripted requests; check in a browser)" % (s, u))
+    for u, s in throttled:
+        print("  %-4s %s  (rate-limited after retry; not evidence of rot)" % (s, u))
 
     if bad:
         print("\n%d citation(s) failed:\n" % len(bad))
@@ -134,7 +151,8 @@ def main():
             print("       archived: %s" % (snap or "no Wayback snapshot"))
         return 1
 
-    print("\nall citations reachable (%d ok, %d bot-blocked)" % (len(ok), len(blocked)))
+    print("\nall citations reachable (%d ok, %d bot-blocked, %d rate-limited)"
+          % (len(ok), len(blocked), len(throttled)))
     return 0
 
 
