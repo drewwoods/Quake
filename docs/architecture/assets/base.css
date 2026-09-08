@@ -608,3 +608,4 @@ html { scroll-behavior: smooth; }
   h3, h4 { break-after: avoid; }
   figure.code, .calltree, .era { break-inside: avoid; }
 }
+.bucket-note { color: var(--muted); font-size: 0.85em; }

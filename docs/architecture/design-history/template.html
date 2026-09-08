@@ -42,7 +42,10 @@
 }
 /* One rule segment per stop; together they read as a single line. 14px is the
    vertical centre of .tl-mark, given the button's 10px top padding. */
-.tl-stop { position: relative; flex: 1 0 96px; margin: 0; }
+.tl-stop { position: relative; flex: 1 1 76px; min-width: 76px; margin: 0; }
+/* 76px basis so all seven stops fit a full-width track; they still scroll
+   on narrow screens, where the clipped dot is its own affordance and the
+   disclosure below carries every entry regardless. */
 .tl-stop::before {
   content: ""; position: absolute; left: 0; right: 0; top: 14px;
   border-top: 1px solid var(--rule);

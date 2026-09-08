@@ -623,6 +623,7 @@ html { scroll-behavior: smooth; }
   h3, h4 { break-after: avoid; }
   figure.code, .calltree, .era { break-inside: avoid; }
 }
+.bucket-note { color: var(--muted); font-size: 0.85em; }
 
 /* ------------------------------------------------- design-history only */
 
@@ -657,7 +658,10 @@ html { scroll-behavior: smooth; }
 }
 /* One rule segment per stop; together they read as a single line. 14px is the
    vertical centre of .tl-mark, given the button's 10px top padding. */
-.tl-stop { position: relative; flex: 1 0 96px; margin: 0; }
+.tl-stop { position: relative; flex: 1 1 76px; min-width: 76px; margin: 0; }
+/* 76px basis so all seven stops fit a full-width track; they still scroll
+   on narrow screens, where the clipped dot is its own affordance and the
+   disclosure below carries every entry regardless. */
 .tl-stop::before {
   content: ""; position: absolute; left: 0; right: 0; top: 14px;
   border-top: 1px solid var(--rule);
@@ -884,7 +888,7 @@ try {
           <text x="96" y="18" class="dr-lbl">L2</text>
           <text x="166" y="60" class="dr-lbl">L3</text>
           <text x="166" y="23" class="dr-lbl dr-sim">L4</text>
-          <text x="66" y="140" class="dr-lbl dr-cl">PVS(L1) = L1 L2 L3 L4</text>
+          <text x="6" y="140" class="dr-lbl dr-cl">PVS(L1) = L1–L4</text>
         </g>
         <text x="14" y="204" class="dr-note">Visible leaves precomputed per leaf;</text>
         <text x="14" y="219" class="dr-note">no runtime search. It over-reports —</text>
