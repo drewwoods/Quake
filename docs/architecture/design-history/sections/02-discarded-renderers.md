@@ -36,6 +36,10 @@ It starts as one beam — the frustum — with everything outside marked solid a
 
 The reason to use 3-D beams rather than a 2-D screen region is arithmetic. Every beam plane passes through the viewpoint, so testing a vertex against one is a dot product with the plane normal and a sign check, and generating a beam from a polygon edge is a single cross product. There is no projection and no division in the inner test ([Michael Abrash, *Graphics Programming Black Book*, ch. 64](../../../historical/abrash_black_book/chapter-64.md)). {quoted}
 
+> The advantage to working with a 3-D beam tree, rather than a 2-D region, is that determining which side of a beam plane a polygon vertex is on involves only checking the sign of the dot product of the ray to the vertex and the plane normal, because all beam planes run through the origin (the viewpoint).
+>
+> — [Michael Abrash, *Graphics Programming Black Book*, ch. 64, “The Beam Tree”](../../../historical/abrash_black_book/chapter-64.md#the-beam-tree).
+
 ::: plate ../../../historical/abrash_black_book/images/64-05.jpg Planes extend from the viewpoint through a triangle’s edges, enclosing a wedge in 3-D. | **Figure 64.5 — the beam.** Each polygon edge and the viewpoint define a beam plane. Michael Abrash, *Graphics Programming Black Book*, [chapter 64](../../../historical/abrash_black_book/chapter-64.md), figure 64.5; original image, unchanged. [Archive and reproduction note](../../../historical/abrash_black_book/README.md#source--license).
 
 It failed on the last clause of the specification. The early-out looks like it caps the worst case, but a view across the top of a level, or out to the sky, never fills the beam tree, so every polygon in the frustum gets tested. Numerical precision left thin cracks that also kept the tree from closing. Abrash's verdict:
@@ -80,6 +84,10 @@ Nor was the underlying idea unprecedented. Abrash's own reference list for the c
 
 Abrash reports that the first raw, uncompressed PVS was several megabytes. Four changes brought it down to roughly 20 KB for a good-sized level ([Michael Abrash, *Graphics Programming Black Book*, ch. 64](../../../historical/abrash_black_book/chapter-64.md)): {quoted}
 
+> Size was a concern; initially, a raw, uncompressed potentially visible set (PVS) was several megabytes in size. […] Those steps, along with changing the BSP heuristic to generate fewer leaves (choosing as the next splitter the polygon that splits the fewest other polygons appears to be the best heuristic) and sealing the outside of the levels so the BSPer can remove the outside surfaces, which can never be seen, eventually brought the PVS down to about 20 Kb for a good-size level.
+>
+> — [Michael Abrash, *Graphics Programming Black Book*, ch. 64, “Breakthrough!”](../../../historical/abrash_black_book/chapter-64.md#breakthrough).
+
 1. Store the set as a bit vector, one bit per leaf, rather than a list.
 2. Compress it with run-length encoding of zero bytes, which works extremely well because the rows are sparse. Life of a Frame covers [the decompressor](frame:mod-leafpvs-mod-decompressvis-rle-decompression).
 3. Change the BSP splitter heuristic to produce fewer leaves. Abrash: "choosing as the next splitter the polygon that splits the fewest other polygons appears to be the best heuristic" ([Abrash, ch. 64](../../../historical/abrash_black_book/chapter-64.md)).
@@ -90,6 +98,10 @@ The fourth explains a rule every Quake mapper has met: a leak prevents the norma
 ## What it bought, and what it cost
 
 The PVS is deliberately imprecise. It records what is visible from *anywhere* in a leaf, not from the actual viewpoint, so it over-reports. Abrash gives the resulting overdraw as "typically on the order of 50 percent but ranging up to 150 percent" ([Michael Abrash, *Graphics Programming Black Book*, ch. 64](../../../historical/abrash_black_book/chapter-64.md)). {quoted}
+
+> the PVS for a leaf includes all leaves visible from anywhere in the leaf, so some overdraw, typically on the order of 50 percent but ranging up to 150 percent, generally occurs
+>
+> — [Michael Abrash, *Graphics Programming Black Book*, ch. 64, “Breakthrough!”](../../../historical/abrash_black_book/chapter-64.md#breakthrough).
 
 ::: plate ../../../historical/abrash_black_book/images/64-02.jpg Overhead map: rays from the viewpoint bound a viewing wedge; heavy wall segments mark only the portions visible through gaps between solid blocks. | **Figure 64.2 — exact visibility from one viewpoint.** The PVS is coarser: it admits leaves visible from anywhere in the viewer’s leaf. This is the chapter’s exact-visibility illustration, not a PVS diagram. Michael Abrash, *Graphics Programming Black Book*, [chapter 64](../../../historical/abrash_black_book/chapter-64.md), figure 64.2; original image, unchanged. [Archive and reproduction note](../../../historical/abrash_black_book/README.md#source--license).
 

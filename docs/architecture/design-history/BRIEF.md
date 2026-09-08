@@ -109,6 +109,9 @@ tags. `{quoted}` labels source testimony, including paraphrases; it does not
 imply verbatim quotation. Keep the supporting citation. Code spans and fenced
 listings preserve these strings literally.
 
+Follow each `{quoted}` claim with a supporting blockquote and a link to the
+source section. Preserve the wording; mark omitted passages with `[…]`.
+
 ## Build
 
     python3 docs/architecture/design-history/build.py

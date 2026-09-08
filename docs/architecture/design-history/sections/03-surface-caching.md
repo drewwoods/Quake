@@ -12,6 +12,10 @@ The initial engine used Gouraud shading. Lighting values lived at vertices and w
 
 Carmack first tried adding a vertex directly beneath a spotlight and splitting the surrounding polygon. Abrash reports that this improved highlights while exposing the cost: more polygons to store, transform, and rasterize, without a corresponding increase in geometric detail. Shadows and overlapping lights demanded further subdivisions. The problem was the coupling, not simply an insufficient polygon budget. {quoted}
 
+> A primary problem with Gouraud shading is that it requires the vertices used for world geometry to serve as lighting sample points as well, even though there isn't necessarily a close relationship between lighting and geometry. This artificial coupling often forces the subdivision of a single polygon into several polygons purely for lighting reasons
+>
+> — [Michael Abrash, *Graphics Programming Black Book*, ch. 68, “Problems with Gouraud Shading”](../../../historical/abrash_black_book/chapter-68.md#problems-with-gouraud-shading).
+
 ## Why smaller triangles were not enough
 
 The decisive defect in Abrash's account was visible while turning over a floor. Screen-space interpolation across a Gouraud-shaded quad could change as its screen orientation changed. The lighting appeared to move across the texture. Triangles removed that particular rotational ambiguity, but did not by themselves make the lighting perspective-correct or independent of clipping.
@@ -24,6 +28,10 @@ Abrash describes weeks of considering alternatives while continuing to use Goura
 
 The replacement separated lighting samples from vertices. During map preprocessing, a lightmap stored illumination on a grid spaced every 16 texture texels in each direction. At runtime, the engine combined that grid with the repeated texture tile to build a lit rectangle. The perspective texture mapper then sampled that rectangle without calculating lighting for each screen pixel. Abrash describes this in [“Decoupling Lighting from Rasterization”](../../../historical/abrash_black_book/chapter-68.md). {quoted}
 
+> During off-line preprocessing, a grid, called a light map, is calculated for each polygon in the world, with a lighting value every 16 texels horizontally and vertically. […] Then the polygon is drawn with perspective texture mapping, with the surface serving as the input texture, and with no lighting performed during the texture mapping.
+>
+> — [Michael Abrash, *Graphics Programming Black Book*, ch. 68, “Decoupling Lighting from Rasterization”](../../../historical/abrash_black_book/chapter-68.md#decoupling-lighting-from-rasterization).
+
 Texture could retain fine detail while illumination varied more slowly. A crack in a stone texture did not require a separate light sample; a shadow did not require another geometric edge. The lightmap was still sampled and filtered, so this was not unlimited lighting resolution. It provided the detail the designers needed without making polygon density determine shadow quality.
 
 ::: plate ../../../historical/abrash_black_book/images/68-03.jpg A lightmap grid and a texture tile feed a combined surface: the tile repeats while brightness varies across it. | **Figure 68.3 — separate inputs, combined surface.** Fine texture detail and coarser lighting are combined before perspective mapping. The black dots illustrate lightmap sample positions; they are not drawn pixels. Michael Abrash, *Graphics Programming Black Book*, [chapter 68](../../../historical/abrash_black_book/chapter-68.md), figure 68.3; original image, unchanged. [Archive and reproduction note](../../../historical/abrash_black_book/README.md#source--license).
@@ -35,6 +43,10 @@ Because illumination was attached to the texture before projection, both passed 
 A lightmap saves lighting samples; a surface cache saves the work of combining them with texture. These are separate economies. Keeping only the small texture tile and lightmap would still require rebuilding their lit result each time it was needed.
 
 Abrash says Carmack included caching in the design immediately because he expected surface construction to be expensive. If the same surface remained visible, its already-lit pixels could serve another frame. Moving the camera did not inherently change those pixels: perspective mapping selected a new view of them. The expensive work followed changes to the surface rather than every change to the viewpoint. {quoted}
+
+> When he thought of surface-based lighting, John immediately realized that surface building would be relatively expensive. […] Consequently, his design included the concept of caching surfaces, so that if the same surface were visible in the next frame, it could be reused without having to be rebuilt.
+>
+> — [Michael Abrash, *Graphics Programming Black Book*, ch. 68, “Surface Caching”](../../../historical/abrash_black_book/chapter-68.md#surface-caching).
 
 Separating construction from drawing also made each inner loop easier to optimize. Chapter 68 reports 2.25 cycles per lit texel for surface construction and 7.5 cycles per screen pixel for perspective mapping on a Pentium. These are Abrash's inner-loop figures, not measured whole-frame costs. Texels built and pixels drawn are different quantities; a cache hit can avoid construction, while a partly hidden surface can require building texels that never reach the screen.
 
