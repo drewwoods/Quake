@@ -2,7 +2,7 @@
 
 Between March 1995 and the middle of 1996, Quake's visible-surface determination was rebuilt from scratch repeatedly. A beam tree was written, tuned, and abandoned. At least five other approaches were prototyped or seriously argued and dropped. The design that shipped — precompute, for every leaf in the map, the set of leaves potentially visible from it, then at runtime draw only those — was not on the original plan and arrived within roughly a year of Abrash's joining, well before release. This chapter follows that sequence, because the shape of the surviving code is unintelligible without it: the potentially visible set looks like an obvious idea in hindsight, and reading it as an obvious idea gets its cost model exactly backwards.
 
-> **First pass.** Quake's problem was never "how do I draw a polygon fast." It was overdraw: in a ten-thousand-polygon level most of what is inside the view frustum is hidden behind something else, and drawing it anyway is wasted work that scales with level complexity. The discarded approaches tried to make world visibility tractable at runtime. The one that shipped moved that work offline; runtime rendering still resolved pixel visibility. Next: what that decision made affordable.
+> **First pass.** Quake's problem was never "how do I draw a polygon fast." It was overdraw: in a ten-thousand-polygon level most of what is inside the view frustum is hidden behind something else, and drawing it anyway is wasted work that scales with level complexity. The discarded approaches tried to make world visibility tractable at runtime. The one that shipped moved that work offline; runtime rendering still resolved pixel visibility. [Next: surface caching and the cost of lighting](#sec-3).
 
 ## The problem, stated precisely
 

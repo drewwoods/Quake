@@ -311,7 +311,7 @@ surfcache_t *D_CacheSurface (msurface_t *surface, int miplevel)
 ```
 The cache is keyed by mip level and invalidated when the texture animates, a dynamic light touches the surface, or a lightstyle changes; otherwise the existing `surfcache_t` (`WinQuake/d_local.h:37-49`) is reused untouched. On a miss, `D_SCAlloc` allocates from a renderer-private heap sized by `SURFCACHE_SIZE_AT_320X200` (`WinQuake/d_local.h:35`) and `R_DrawSurface` rebuilds the pixels. Eviction is not LRU: a single rover pointer sweeps the heap in address order, freeing and coalescing whatever blocks it lands on until the request fits, and wrapping to the start when it runs off the end. `r_cache_thrash` is set when that wrap happens more than once in a frame — the signal that the working set no longer fits.
 
-> **.plan.** “increased surface cache size” — [Carmack, 12 Jun 1996](../../../historical/plans/carmack/by_day/johnc_plan_19960612.txt). The cache budget was a release-time tuning parameter: higher resolutions increased the set of distinct surface/lightmap composites the software path had to keep.
+> **.plan.** “increased surface cache size” — [Carmack, 12 Jun 1996](../../../historical/plans/carmack/by_day/johnc_plan_19960612.txt). The [design history](design:sec-3) traces why this cache existed. Its budget was a release-time tuning parameter: higher resolutions increased the set of distinct surface/lightmap composites the software path had to keep.
 
 ### Perspective-correct span texturing (`d_scan.c`)
 
