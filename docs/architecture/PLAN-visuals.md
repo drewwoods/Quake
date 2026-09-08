@@ -212,26 +212,22 @@ concept without audio. Place beside `S_Update` and spatialization.
 
 ## Order of work
 
-### Status at pause (2026-09-07)
+### Status (2026-09-08)
 
 - **Step 4 complete.** D2 plates and D4 evidence badges implemented, with
   authoring syntax in Design History's brief. Builder checks and desktop dark /
   narrow light browser review passed. External links: 25 reachable, one known
   bot-blocked host.
-- **Step 5 unfinished.** Real 640×480 screenshots and capture configs are in
-  `life-of-a-frame/shots/`; `capture.py`, `timings.cfg`, `timings.log`, and
-  `visuals.py` are work in progress. Do not treat draft measurements as verified.
-  Captures use native macOS commit `7a74a7c`, whose relevant host/render files
-  match guide baseline `3ef8a7a`. Initial lightmap capture was identical to the
-  normal image; capture work switched to `-nomtex` / `gl_texsort 1`.
-- **Resume step 5:** validate the newly saved `timings.json` and `shots/captures.json`,
-  document capture provenance/regeneration in `shots/README.md`, verify all
-  final pairs share the viewpoint and show the intended differences, and review
-  the completed timedemo log (the old native build can crash after completion).
-  Apply `life-of-a-frame/step5-integration.patch` to restore the draft guide
-  integration, rebuild both guides, then verify timing
-  bars, keyboard sliders, narrow screens, both themes, and print/no-JS fallbacks.
-  Rerun local asset/anchor checks and `check-links.py`.
+- **Step 5 complete.** Measured gfx/snd bars and a bucket table accompany the
+  frame map. Four keyboard-operated screenshot comparisons cover visibility,
+  entities, lightmaps, and renderer counters. Full pairs remain available
+  without JS and under print styles.
+  Captures use native macOS commit `7a74a7c`; relevant host/render files match
+  guide baseline `3ef8a7a`. Provenance, regeneration, profiler resolution, and
+  the retained run's post-summary crash are documented in
+  `life-of-a-frame/shots/README.md`. Timing means match the saved log.
+  Browser checks cover desktop dark, narrow light, keyboard endpoints, and
+  static/print-style fallbacks. Both guides build; local references pass.
 
 ### Original sequence
 

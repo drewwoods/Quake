@@ -14,6 +14,10 @@ import tempfile
 COMMIT = '7a74a7c6d901e39f907b39bec94819476bb7b845'
 BASELINE = '3ef8a7a9e53e226c831467f1b200bc77239e2e0d'
 FRAME_WAITS = 200
+WAIT_BATCH = 100
+TIMING_BATCHES = 20
+BUILD_JOBS = 8
+SOURCE_FILES = ("host.c", "gl_rmain.c", "gl_rsurf.c", "gl_screen.c")
 OUTPUT = pathlib.Path(__file__).resolve().parent
 REPO = OUTPUT.parents[2]
 VARIANTS = {'normal': '', 'no-vis': 'r_novis 1',
@@ -28,6 +32,7 @@ def run_capture(root):
     shots.mkdir(exist_ok=True)
     command = [str(root / 'WinQuake/build/macos/release/glquake'),
                '-basedir', str(root), '-window', '-width', '640', '-height', '480', '-nomtex']
+    metadata = json.loads((shots / 'captures.json').read_text(encoding='utf-8'))
     for name, setting in VARIANTS.items():
         # Fixed simulation steps and demo messages reproduce the same camera without a fake pause.
         cfg = SETTINGS + 'host_framerate 0.05\n' + setting + '\ntimedemo demo1\n'
@@ -44,9 +49,15 @@ def run_capture(root):
         subprocess.run(['sips', '-s', 'format', 'png', str(new.pop()), '--out',
                         str(shots / (name + '.png'))], check=True, stdout=subprocess.DEVNULL)
 
+    metadata['commit'] = COMMIT
+    metadata['captured_at'] = datetime.datetime.now(datetime.timezone.utc).isoformat()
+    metadata['scene'] = ('demo1, %d wait commands after timedemo starts; '
+                         '640×480; fixed host_framerate 0.05' % FRAME_WAITS)
+    (shots / 'captures.json').write_text(json.dumps(metadata, indent=2) + '\n', encoding='utf-8')
+
     # No fixed timestep or renderer counters in the measured run. Alias stays under the 8 KB command buffer.
     cfg = SETTINGS + 'host_framerate 0\ntimedemo demo1\nwait\nhost_speeds 1\n'
-    cfg += 'alias wait100 "' + 'wait;' * 100 + '"\n' + 'wait100\n' * 20
+    cfg += 'alias wait100 "' + 'wait;' * WAIT_BATCH + '"\n' + 'wait100\n' * TIMING_BATCHES
     cfg += 'host_speeds 0\ntoggleconsole\nquit\n'
     (root / 'id1/timings.cfg').write_text(cfg)
     (OUTPUT / 'timings.cfg').write_text(cfg)
@@ -61,16 +72,23 @@ def run_capture(root):
                       log[:summary.start()], re.M)
     # host_speeds starts with a stale static timestamp; discard that initialization row.
     rows = [tuple(map(int, row)) for row in rows[1:]]
+    if not rows:
+        raise RuntimeError('No timing samples after initialization')
     notes = [
         'First native macOS GL revision; not an executable of documentation baseline ' + BASELINE[:7] + '.',
         'host.c, gl_rmain.c, gl_rsurf.c and gl_screen.c match the documentation baseline.',
         'Windowed 640×480, -nomtex, gl_texsort 1; volume 0; default display synchronization.',
         'Means of integer millisecond host_speeds rows before the completed demo summary; first stale-timestamp row excluded.',
         'The server bucket is the remainder between frames, including non-graphics client work, scheduling and printing; demo playback runs no local server.',
-        'gfx measures SCR_UpdateScreen including presentation; snd measures S_Update and CD audio. These are wall times, not CPU-only costs.',
+        'gfx measures SCR_UpdateScreen including presentation; snd includes S_Update, CL_DecayLights and CD audio. These are wall times, not CPU-only costs.',
         'Integer truncation makes short stages read zero; zero is below measurement resolution, not free work.',
         'One instrumented run on modern hardware; console logging and scheduling affect timings. Not a historical performance claim.'
     ]
+    signal = re.search(r'Received signal (\d+), exiting', log[summary.end():])
+    if signal:
+        notes.append('The native signal handler reported signal ' + signal.group(1)
+                     + ' after the completed summary; it can exit with status zero. '
+                     'Only pre-summary measurements are retained.')
     if result.returncode:
         notes.append('This native revision exited with status ' + str(result.returncode) + ' after printing the completed timedemo summary; retained only pre-summary measurements.')
     data = dict(commit=COMMIT, baseline=BASELINE,
@@ -85,19 +103,21 @@ def run_capture(root):
 
 
 def main():
-    parser = argparse.ArgumentParser(description=__doc__)
-    parser.add_argument('--export', type=pathlib.Path, help='Reuse a clean export of the pinned revision.')
-    args = parser.parse_args()
-    if args.export:
-        run_capture(args.export)
-        return
+    argparse.ArgumentParser(description=__doc__).parse_args()
+    # Always build the pinned source; reused exports could silently mislabel measurements.
+    for name in SOURCE_FILES:
+        path = 'WinQuake/' + name
+        baseline = subprocess.check_output(['git', '-C', str(REPO), 'show', BASELINE + ':' + path])
+        native = subprocess.check_output(['git', '-C', str(REPO), 'show', COMMIT + ':' + path])
+        if baseline != native:
+            raise RuntimeError('Capture source differs from documented baseline: ' + path)
     with tempfile.TemporaryDirectory(prefix='quake-doc-capture-') as temporary:
         root = pathlib.Path(temporary)
         archive = subprocess.check_output(['git', '-C', str(REPO), 'archive', COMMIT])
         with tarfile.open(fileobj=io.BytesIO(archive)) as source:
             source.extractall(root, filter='data')
         subprocess.run(['make', '-C', str(root / 'WinQuake'), '-f', 'Makefile.macos',
-                        '-j8', 'glquake'], check=True)
+                        '-j%d' % BUILD_JOBS, 'glquake'], check=True)
         run_capture(root)
 
 

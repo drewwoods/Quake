@@ -10,6 +10,7 @@ sys.path.insert(0, os.path.dirname(HERE))
 
 import bsp_slice
 import build_doc
+import visuals
 
 PAK = os.path.normpath(os.path.join(HERE, "..", "..", "..", "id1", "pak0.pak"))
 PVS_FRAGMENT = os.path.join(HERE, "diagrams", "pvs-explorer.html")
@@ -53,10 +54,14 @@ DOC = build_doc.Doc(
         ("06-input-client-net.md", "Client"),
         ("07-sound-misc.md", "Sound"),
     ],
-    extra={"{{OWNERSHIP}}": os.path.join("diagrams", "ownership.html")},
+    extra={"{{OWNERSHIP}}": os.path.join("diagrams", "ownership.html"),
+           "{{GFX_COST}}": os.path.join("diagrams", "cost-gfx.html"),
+           "{{SND_COST}}": os.path.join("diagrams", "cost-snd.html"),
+           "{{MEASURED_COSTS}}": os.path.join("diagrams", "measured-costs.html")},
     xrefs={"design": os.path.join("..", "design-history", "quake-design-history.html")},
 )
 
 if __name__ == "__main__":
     refresh_pvs_data()
+    visuals.refresh()
     build_doc.build(DOC)

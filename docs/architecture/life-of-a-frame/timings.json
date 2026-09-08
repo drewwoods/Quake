@@ -20,8 +20,9 @@
     "Windowed 640\u00d7480, -nomtex, gl_texsort 1; volume 0; default display synchronization.",
     "Means of integer millisecond host_speeds rows before the completed demo summary; first stale-timestamp row excluded.",
     "The server bucket is the remainder between frames, including non-graphics client work, scheduling and printing; demo playback runs no local server.",
-    "gfx measures SCR_UpdateScreen including presentation; snd measures S_Update and CD audio. These are wall times, not CPU-only costs.",
+    "gfx measures SCR_UpdateScreen including presentation; snd includes S_Update, CL_DecayLights and CD audio. These are wall times, not CPU-only costs.",
     "Integer truncation makes short stages read zero; zero is below measurement resolution, not free work.",
-    "One instrumented run on modern hardware; console logging and scheduling affect timings. Not a historical performance claim."
+    "One instrumented run on modern hardware; console logging and scheduling affect timings. Not a historical performance claim.",
+    "The native signal handler reported signal 11 after the completed summary; it can exit with status zero. Only pre-summary measurements are retained."
   ]
 }

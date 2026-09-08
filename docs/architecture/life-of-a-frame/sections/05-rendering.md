@@ -8,6 +8,8 @@ After the software pipeline, the [assembly walkthrough](#assembly-walkthrough-wh
 
 ::: diagram rendering
 
+::: diagram screenshots
+
 ## Where it sits in the frame
 
 In the baseline loop, `_Host_Frame` calls `SCR_UpdateScreen` once per accepted frame. It is the top of the rendering pipeline. The software build's version locks the video buffer and calls the view code:

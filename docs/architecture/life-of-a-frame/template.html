@@ -8,6 +8,28 @@
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Archivo:wght@600;700;800&family=IBM+Plex+Mono:ital,wght@0,400;0,500;0,600;1,400&family=Source+Serif+4:ital,opsz,wght@0,8..60,400;0,8..60,600;1,8..60,400&display=swap">
 <style>
 {{BASE_CSS}}
+/* Evidence stays readable as paired images without scripting or in print. */
+.stage.k-cl .measured-bar rect { fill: var(--rule); stroke: none; }
+.stage.k-cl .measured-bar rect:last-child { fill: var(--cl); }
+.runtime-costs, .capture-pair { margin: 1.5rem 0; }
+.runtime-costs code { overflow-wrap: anywhere; }
+.capture-gallery { max-width: 640px; }
+.capture-images { display: grid; gap: .5rem; }
+.capture-images p { margin: .25rem 0; font-family: var(--f-mono); font-size: .85em; }
+.capture-images img { display: block; width: 100%; height: auto; }
+.capture-control { margin: .75rem 0; }
+.capture-control input { width: min(100%, 20rem); vertical-align: middle; }
+.capture-pair.is-interactive .capture-images { position: relative; display: block; }
+.capture-pair.is-interactive .capture-after { position: absolute; inset: 0; clip-path: inset(0 calc(100% - var(--reveal, 50%)) 0 0); }
+.capture-pair.is-interactive .capture-images p { display: none; }
+.capture-pair.is-interactive .capture-images::after { content: ""; position: absolute; top: 0; bottom: 0; left: var(--reveal, 50%); border-left: 2px solid var(--cl); pointer-events: none; }
+@media print {
+  .capture-control, .capture-images::after { display: none; }
+  .capture-pair.is-interactive .capture-images { display: grid; }
+  .capture-pair.is-interactive .capture-after { position: static; clip-path: none; }
+  .capture-pair.is-interactive .capture-images p { display: block; }
+}
+
 </style>
 
 <script>
@@ -196,6 +218,7 @@ try {
           <text class="s-name" x="46" y="665">SCR_UpdateScreen</text>
           <text class="s-sub" x="46" y="681">screen.c:808 · gl_screen.c:821 — V_/R_RenderView</text>
           <text class="s-sub" x="46" y="696">PVS mark, edge list or texture chains, HUD overlay</text>
+          {{GFX_COST}}
         </g>
         <g class="stage k-cl" data-modes="listen remote" data-sec="sec-4" data-h="R_MarkLeaves" tabindex="0" role="button">
           <rect x="480" y="646" width="390" height="30" rx="2"></rect>
@@ -210,6 +233,7 @@ try {
           <rect x="30" y="724" width="390" height="44" rx="2"></rect>
           <text class="s-name" x="46" y="743">S_Update</text>
           <text class="s-sub" x="46" y="758">snd_dma.c:721 — respatialize, paint ahead of DMA cursor</text>
+          {{SND_COST}}
         </g>
 
         <!-- loop -->
@@ -220,6 +244,8 @@ try {
       <figcaption>Read downward for the order in the <b>original listen-server frame</b>; indented helpers run inside their parent stage. Commands reach the local server before it simulates. A remote client skips that server stage, sends its command, then reads available updates — despite a misleading comment in the original <code>host.c</code>. The mode buttons highlight work in this process; the remote server has its own loop. This map omits connection housekeeping and some host calls. The state boundary is useful, but not absolute: local play shares assets and host services, and <code>CL_LerpPoint</code> checks <code>sv.active</code>. Click a stage for details.</figcaption>
     </figure>
 
+    {{MEASURED_COSTS}}
+
     {{BODY}}
 
     <p class="colophon">Assembled from a read of the GPL Quake release in <code>WinQuake/</code>. Line references verified against the working tree at commit <code>3ef8a7a</code>; links target <a target="_blank" rel="noopener" href="https://github.com/id-Software/Quake">id-Software/Quake</a> on GitHub, where numbering may differ slightly. Primary secondary sources throughout: Michael Abrash's <em>Graphics Programming Black Book</em> and Fabien Sanglard's Quake source review.</p>
@@ -228,6 +254,21 @@ try {
 
 <script>
 {{BASE_JS}}
+// Reveal only changes the view; both complete images remain available without JS.
+document.querySelectorAll(".capture-pair").forEach(function (figure) {
+  var control = figure.querySelector(".capture-control");
+  var slider = control.querySelector("input");
+  var output = control.querySelector("output");
+  function reveal() {
+    figure.style.setProperty("--reveal", slider.value + "%");
+    output.value = slider.value + "%";
+    slider.setAttribute("aria-valuetext", slider.value + "% changed image");
+  }
+  figure.classList.add("is-interactive");
+  control.hidden = false;
+  slider.addEventListener("input", reveal);
+  reveal();
+});
 </script>
 
 </html>

@@ -38,7 +38,7 @@ def refresh():
                '<table><caption>Mean of %s logged frames; total %.3f ms</caption>'
                '<thead><tr><th scope="col">Measured bucket</th><th scope="col">Mean</th>'
                '<th scope="col">Share</th></tr></thead><tbody>%s</tbody></table>'
-               '<p>%s · %s · baseline <code>%s</code> · %s.</p><p><code>%s</code></p>'
+               '<p>%s · %s · capture build <code>%s</code> · %s.</p><p><code>%s</code></p>'
                '<p>%s</p><p><a href="timings.json">Measurement data</a> · '
                '<a href="shots/README.md">Regeneration and capture provenance</a></p></aside>'
                % (timings['samples'], total, ''.join(rows), escaped(timings['machine']),
@@ -65,7 +65,7 @@ def refresh():
                        'Reveal changed image (%s → %s)</label> <input id="%s-slider" type="range" min="0" '
                        'max="100" value="50" step="1" aria-describedby="%s-description"> '
                        '<output for="%s-slider">50%%</output></div>'
-                       '<figcaption id="%s-description">%s Baseline <code>%s</code>. %s</figcaption>'
+                       '<figcaption id="%s-description">%s Capture build <code>%s</code>. %s</figcaption>'
                        '</figure>' % (figure_id, escaped(pair['before_label']), escaped(pair['after_label']),
                                       figure_id, figure_id, figure_id, figure_id,
                                       escaped(pair['description']), escaped(captures['commit']),
