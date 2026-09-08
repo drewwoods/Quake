@@ -2,7 +2,7 @@
 
 The visibility work in chapter 2 reduced the world to the pixels worth drawing. Lighting posed a different problem: how to make shadows and highlights stay attached to that world without filling it with extra polygons. Michael Abrash's [chapter 68, “Quake's Lighting Model”](../../../historical/abrash_black_book/chapter-68.md), traces the change from vertex lighting to lightmaps and cached, already-lit textures. Its argument is about representation before speed: separate the detail of a wall's texture from the detail of its illumination, then reuse their combined result. Chapter 69 tests that choice against hardware with different costs.
 
-> **First pass.** Quake's world lighting stopped depending on polygon vertices. A coarse lightmap and a detailed texture became a lit surface that the renderer could reuse across frames. That bought stable lighting and a simpler drawing loop, at the cost of memory and rebuilding when illumination changed. Next: the planned chapter on designing for one processor; the [assembly walkthrough](frame:assembly-walkthrough-where-the-pentium-speedup-comes-from) shows the resulting loops in the meantime.
+> **First pass.** Quake's world lighting stopped depending on polygon vertices. A coarse lightmap and a detailed texture became a lit surface that the renderer could reuse across frames. That bought stable lighting and a simpler drawing loop, at the cost of memory and rebuilding when illumination changed. Next: [designing for one processor](#sec-4), where the Pentium shapes the resulting loops.
 
 ## The wall that needed too many vertices
 

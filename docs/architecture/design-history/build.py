@@ -17,6 +17,8 @@ DOC = build_doc.Doc(
         ("01-before-quake.md", "Origins"),
         ("02-discarded-renderers.md", "Visibility"),
         ("03-surface-caching.md", "Lighting"),
+        ("04-one-processor.md", "Pentium"),
+        ("05-shipping-constraints.md", "Shipping"),
     ],
     xrefs={"frame": os.path.join("..", "life-of-a-frame",
                                  "quake-life-of-a-frame.html")},

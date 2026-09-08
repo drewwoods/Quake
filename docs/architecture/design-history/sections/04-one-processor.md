@@ -2,7 +2,7 @@
 
 The surface cache left Quake with a simpler texture mapper. Making that mapper affordable depended on the machine executing it. The Pentium could issue paired integer instructions and perform integer work while a floating-point divide ran. Quake arranged work to exploit both. Abrash's *Graphics Programming Black Book*, especially [chapter 63, “Floating-Point for Real-Time 3-D”](../../../historical/abrash_black_book/chapter-63.md), explains why assumptions inherited from earlier x86 processors no longer held. “One processor” here means a performance target: Quake retained portable C, but its software renderer's costs were shaped around the Pentium.
 
-> **First pass.** Quake did not merely replace C instructions with faster assembly. Its rendering stages provided independent work that the Pentium could execute together: simple integer pixel drawing while the FPU calculated a later perspective correction. Assembly made that arrangement pay; reduced precision shortened the divide itself. Next: the planned chapter on shipping constraints, where bandwidth, memory, and deadlines impose further limits.
+> **First pass.** Quake did not merely replace C instructions with faster assembly. Its rendering stages provided independent work that the Pentium could execute together: simple integer pixel drawing while the FPU calculated a later perspective correction. Assembly made that arrangement pay; reduced precision shortened the divide itself. Next: [shipping constraints](#sec-5), where bandwidth, memory, and deadlines impose further limits.
 
 ## Two pipes, one instruction stream
 
