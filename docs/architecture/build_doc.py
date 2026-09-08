@@ -4,8 +4,8 @@
 Each guide is a directory with sections/*.md, a template.html and a thin
 build.py that calls build() with a Doc config. Stdlib only. Implements the
 markdown subset the sources actually use: headings, paragraphs, fenced code,
-inline code, bold/italic, links, bullet/numbered lists, tables, blockquotes,
-horizontal rules.
+inline code/math, bold/italic, links, bullet/numbered lists, tables,
+blockquotes, horizontal rules.
 
 Plus Quake-specific transforms:
   * WinQuake/file.c:NNN[-MMM]  ->  link to upstream id-Software/Quake
@@ -93,6 +93,7 @@ BARE_URL = re.compile(r"(?<![\"=>])\bhttps?://[^\s<>()]+[^\s<>().,;:]")
 BOLD = re.compile(r"\*\*([^*]+)\*\*")
 ITAL = re.compile(r"(?<![*\w])\*([^*\n]+)\*(?!\*)")
 EVIDENCE = re.compile(r"\{(code|quoted|inferred)\}")
+INLINE_MATH = re.compile(r"(?<!\\)\$([^$\n]+)\$")
 EVIDENCE_LABELS = {"code": "Code", "quoted": "Source", "inferred": "Inference"}
 
 
@@ -153,6 +154,8 @@ def inline(text, spans=None):
 
     text = BOLD.sub(r"<strong>\1</strong>", text)
     text = ITAL.sub(r"<em>\1</em>", text)
+    # Keep simple formulas readable in static files without a math runtime.
+    text = INLINE_MATH.sub(r'<span class="math" role="math">\1</span>', text)
     text = link_refs(text)
     text = EVIDENCE.sub(lambda m: '<span class="ev ev-%s">%s</span>'
                         % (m.group(1), EVIDENCE_LABELS[m.group(1)]), text)

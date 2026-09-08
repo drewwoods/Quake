@@ -114,6 +114,7 @@ a { color: inherit; }
 p { margin: 0 0 1.05em; }
 strong { font-weight: 600; }
 em { font-style: italic; }
+.math { font-style: italic; white-space: nowrap; }
 hr { border: 0; border-top: 1px solid var(--rule); margin: 2.4em 0; }
 :focus-visible { outline: 2px solid var(--focus); outline-offset: 2px; border-radius: 2px; }
 
