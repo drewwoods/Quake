@@ -33,18 +33,18 @@
   --mark:      #f6e3a8;
   --focus:     #a2431b;
 
-  /* code panel: a deliberate single-look terminal in both themes */
-  --code-bg:   #1b1a16;
-  --code-bar:  #24231d;
-  --code-fg:   #d9d4c6;
-  --code-dim:  #8d8778;
-  --code-com:  #7d7666;
-  --code-kw:   #e08a3c;
-  --code-str:  #93b47b;
-  --code-num:  #cba13a;
-  --code-pp:   #b58ec0;
-  --code-typ:  #6fb1b8;
-  --code-rule: #35332b;
+  /* code panel: follows the theme, checked at 5:1 or better against --code-bg */
+  --code-bg:   #f2f0e8;
+  --code-bar:  #e7e4d9;
+  --code-fg:   #24231d;
+  --code-dim:  #5f5b52;
+  --code-com:  #6b6558;
+  --code-kw:   #9a3f19;
+  --code-str:  #3f6030;
+  --code-num:  #7d5f0e;
+  --code-pp:   #674472;
+  --code-typ:  #255760;
+  --code-rule: #d8d5c9;
 
   --f-display: "Archivo", "Helvetica Neue", Arial, sans-serif;
   --f-body:    "Source Serif 4", Georgia, "Times New Roman", serif;
@@ -70,6 +70,17 @@
     --host:      #a09883;
     --mark:      #4a3d18;
     --focus:     #e08a3c;
+    --code-bg:   #1b1a16;
+    --code-bar:  #24231d;
+    --code-fg:   #d9d4c6;
+    --code-dim:  #8d8778;
+    --code-com:  #7d7666;
+    --code-kw:   #e08a3c;
+    --code-str:  #93b47b;
+    --code-num:  #cba13a;
+    --code-pp:   #b58ec0;
+    --code-typ:  #6fb1b8;
+    --code-rule: #35332b;
   }
 }
 :root[data-theme="dark"] {
@@ -90,6 +101,17 @@
   --host:      #a09883;
   --mark:      #4a3d18;
   --focus:     #e08a3c;
+  --code-bg:   #1b1a16;
+  --code-bar:  #24231d;
+  --code-fg:   #d9d4c6;
+  --code-dim:  #8d8778;
+  --code-com:  #7d7666;
+  --code-kw:   #e08a3c;
+  --code-str:  #93b47b;
+  --code-num:  #cba13a;
+  --code-pp:   #b58ec0;
+  --code-typ:  #6fb1b8;
+  --code-rule: #35332b;
 }
 
 /* ---------------------------------------------------------------- base */
@@ -420,7 +442,7 @@ details.code > summary a.ref { color: var(--code-typ); border-bottom-color: var(
   color: var(--code-dim); border: 1px solid var(--code-rule); border-radius: 2px; padding: 2px 6px;
 }
 .code-ref { font-family: var(--f-mono); font-size: 11.5px; color: var(--code-dim); }
-.code-ref a.ref { color: var(--code-typ); border-bottom-color: rgba(111,177,184,0.5); }
+.code-ref a.ref { color: var(--code-typ); border-bottom-color: var(--code-typ); opacity: 0.92; }
 .code-scroll { overflow-x: auto; }
 figure.code > .code-bar { cursor: pointer; justify-content: flex-start; gap: 10px; }
 figure.code > .code-bar > .code-ref { margin-left: auto; text-align: right; }
