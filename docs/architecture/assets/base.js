@@ -429,19 +429,39 @@
     map.setAttribute("aria-hidden", "true");
     var head = document.createElement("div");
     head.className = "minimap-head";
-    head.textContent = "Frame position";
+    head.textContent = "Frame order";
+    /* The label alone does not say why this differs from the contents above. */
+    head.setAttribute("data-hint", "The frame's stages in the order they actually "
+      + "run. The highlighted one is the stage this chapter covers. The contents "
+      + "list above is a reading order, which is deliberately not the same thing.");
     map.appendChild(head);
 
+    /* Bars scroll in their own box. Putting the overflow on .minimap would make
+       it a clipping context and swallow the header's explanation panel. */
+    var barBox = document.createElement("div");
+    barBox.className = "minimap-bars";
     var bars = stages.map(function (st) {
       var name = st.querySelector(".s-name");
       var bar = document.createElement("div");
       bar.className = "mm-bar";
       bar.setAttribute("data-sec", st.getAttribute("data-sec"));
       bar.textContent = name ? name.textContent.replace(/^[^:]*:\s*/, "") : "stage";
-      map.appendChild(bar);
+      barBox.appendChild(bar);
       return bar;
     });
+    map.appendChild(barBox);
+    /* Give the nav its own scroll area so the map is a footer that reserves
+       space. Sticky would pin it over the contents instead, hiding whichever
+       sections happen to sit behind it. Header and search stay put on top. */
+    var scroller = document.createElement("div");
+    scroller.className = "rail-scroll";
+    var node = document.getElementById("nav-empty");
+    var moving = [];
+    while (node) { moving.push(node); node = node.nextElementSibling; }
+    moving.forEach(function (el) { scroller.appendChild(el); });
+    railInner.appendChild(scroller);
     railInner.appendChild(map);
+    if (rail) rail.classList.add("has-minimap");
 
     onSection = function (secId) {
       bars.forEach(function (b) {
