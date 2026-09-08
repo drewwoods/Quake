@@ -18,7 +18,7 @@ That is evidence for a tradeoff, not proof that 20 Hz was an experimentally opti
 
 ## Replace stale state instead of waiting for it
 
-The network design changed before release. In the August entry, Carmack describes QTest's reliable-stream foundation and the later addition of an unreliable sideband. Abrash's [chapter 70, “QuakeWorld”](../../../historical/abrash_black_book/chapter-70.md#quakeworld), explains the failure that drove the change: waiting for retransmission produced hitches when packets disappeared. Ordinary gameplay state moved to unreliable delivery, with reliable delivery retained for information that could not simply be superseded.
+The network design changed before release. In the August entry, Carmack describes QTest's reliable-stream foundation and the later addition of an unreliable sideband. Abrash's [chapter 70, “QuakeWorld”](../../../historical/abrash_black_book/black-book.html#quakeworld), explains the failure that drove the change: waiting for retransmission produced hitches when packets disappeared. Ordinary gameplay state moved to unreliable delivery, with reliable delivery retained for information that could not simply be superseded.
 
 The saving depended on sending only relevant state. As [chapter 2](#sec-2) established, the PVS had become a network filter as well as a rendering aid. The surviving encoder also compares entity fields against a fixed baseline, rather than requiring the preceding update packet to decode the next one (`WinQuake/sv_main.c:472-512`). {code} The [baseline account](frame:delta-against-baseline) explains the format. This gives replaceable updates a useful property: losing one does not break a chain of deltas against successive packets. It does not guarantee that every entity fits in every datagram.
 
@@ -26,7 +26,7 @@ Changing the transport did not remove all delay. Abrash describes keeping the di
 
 ## Memory changed what the player received
 
-Abrash's [chapter 68, “Quake's Lighting Model”](../../../historical/abrash_black_book/chapter-68.md#surface-caching), identifies an 8 MB machine as the intended target when discussing surface storage. [Chapter 3](#sec-3) covers how mipmapping and visibility made that cache fit. The remaining memory pressure reached beyond textures.
+Abrash's [chapter 68, “Quake's Lighting Model”](../../../historical/abrash_black_book/black-book.html#surface-caching), identifies an 8 MB machine as the intended target when discussing surface storage. [Chapter 3](#sec-3) covers how mipmapping and visibility made that cache fit. The remaining memory pressure reached beyond textures.
 
 On 1 May, Carmack recorded an automatic sound reduction based on available memory:
 
@@ -48,7 +48,7 @@ The networking transition changed a fundamental assumption without replacing the
 
 > John did not rewrite the net code to reflect this new fundamental assumption, and wound up with 8,000 lines of messy code that took right up until Quake shipped to debug.
 >
-> — [Michael Abrash, *Graphics Programming Black Book*, ch. 70, “QuakeWorld”](../../../historical/abrash_black_book/chapter-70.md#quakeworld).
+> — [Michael Abrash, *Graphics Programming Black Book*, ch. 70, “QuakeWorld”](../../../historical/abrash_black_book/black-book.html#quakeworld).
 
 The line count is Abrash's report, not a count reproduced here. More significantly, neither account establishes that a fixed deadline alone caused the decision against rewriting. They establish an architectural retrofit and a debugging cost that lasted through release. The June worklogs show that tail: [14 June](../../../historical/plans/carmack/by_day/johnc_plan_19960614.txt) records a fix for stuttering on dropped packets while still listing reliable-message backlog and packet-overflow checks as concerns.
 
@@ -69,7 +69,7 @@ The following day, Carmack recorded creating the “0.9 SW RC distribution” wh
 ## Further reading
 
 - John Carmack, [2 August 1996](../../../historical/plans/carmack/by_day/johnc_plan_19960802.txt) and [10 August 1996](../../../historical/plans/carmack/by_day/johnc_plan_19960810.txt) — retrospective accounts of the shipping network model and its latency tradeoffs.
-- Michael Abrash, *Graphics Programming Black Book*, [chapter 70, “QuakeWorld”](../../../historical/abrash_black_book/chapter-70.md#quakeworld) — packet loss, interpolation, and the cost of retrofitting unreliable delivery.
+- Michael Abrash, *Graphics Programming Black Book*, [chapter 70, “QuakeWorld”](../../../historical/abrash_black_book/black-book.html#quakeworld) — packet loss, interpolation, and the cost of retrofitting unreliable delivery.
 - Carmack, [1 May](../../../historical/plans/carmack/by_day/johnc_plan_19960501.txt), [5 May](../../../historical/plans/carmack/by_day/johnc_plan_19960505.txt), and [30 May 1996](../../../historical/plans/carmack/by_day/johnc_plan_19960530.txt) — sound reduction, reclaimable cache space, and minimum-memory testing.
 - Carmack, [14 June](../../../historical/plans/carmack/by_day/johnc_plan_19960614.txt), [18 June](../../../historical/plans/carmack/by_day/johnc_plan_19960618.txt), and [19 June 1996](../../../historical/plans/carmack/by_day/johnc_plan_19960619.txt) — late networking fixes, stuck-player recovery, and release-candidate preparation.
 - [Life of a Frame: network delivery](frame:net-layer-driver-abstraction-loopback-and-datagram-delivery), [entity interpolation](frame:entity-interpolation-entity-t-cl-mtime-cl-relinkentities), and [memory allocation](frame:brief-hunk-zone-cache-allocators-zone-c) — the surviving mechanisms.

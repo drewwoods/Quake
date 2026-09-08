@@ -1,6 +1,6 @@
 # Surface Caching: Making Light Affordable
 
-The visibility work in chapter 2 reduced the world to the pixels worth drawing. Lighting posed a different problem: how to make shadows and highlights stay attached to that world without filling it with extra polygons. Michael Abrash's [chapter 68, “Quake's Lighting Model”](../../../historical/abrash_black_book/chapter-68.md), traces the change from vertex lighting to lightmaps and cached, already-lit textures. Its argument is about representation before speed: separate the detail of a wall's texture from the detail of its illumination, then reuse their combined result. Chapter 69 tests that choice against hardware with different costs.
+The visibility work in chapter 2 reduced the world to the pixels worth drawing. Lighting posed a different problem: how to make shadows and highlights stay attached to that world without filling it with extra polygons. Michael Abrash's [chapter 68, “Quake's Lighting Model”](../../../historical/abrash_black_book/black-book.html#chapter-68-quakes-lighting-model), traces the change from vertex lighting to lightmaps and cached, already-lit textures. Its argument is about representation before speed: separate the detail of a wall's texture from the detail of its illumination, then reuse their combined result. Chapter 69 tests that choice against hardware with different costs.
 
 > **First pass.** Quake's world lighting stopped depending on polygon vertices. A coarse lightmap and a detailed texture became a lit surface that the renderer could reuse across frames. That bought stable lighting and a simpler drawing loop, at the cost of memory and rebuilding when illumination changed. Next: [designing for one processor](#sec-4), where the Pentium shapes the resulting loops.
 
@@ -14,7 +14,7 @@ Carmack first tried adding a vertex directly beneath a spotlight and splitting t
 
 > A primary problem with Gouraud shading is that it requires the vertices used for world geometry to serve as lighting sample points as well, even though there isn't necessarily a close relationship between lighting and geometry. This artificial coupling often forces the subdivision of a single polygon into several polygons purely for lighting reasons
 >
-> — [Michael Abrash, *Graphics Programming Black Book*, ch. 68, “Problems with Gouraud Shading”](../../../historical/abrash_black_book/chapter-68.md#problems-with-gouraud-shading).
+> — [Michael Abrash, *Graphics Programming Black Book*, ch. 68, “Problems with Gouraud Shading”](../../../historical/abrash_black_book/black-book.html#problems-with-gouraud-shading).
 
 ## Why smaller triangles were not enough
 
@@ -26,15 +26,15 @@ Abrash describes weeks of considering alternatives while continuing to use Goura
 
 ## Two resolutions, one stable surface
 
-The replacement separated lighting samples from vertices. During map preprocessing, a lightmap stored illumination on a grid spaced every 16 texture texels in each direction. At runtime, the engine combined that grid with the repeated texture tile to build a lit rectangle. The perspective texture mapper then sampled that rectangle without calculating lighting for each screen pixel. Abrash describes this in [“Decoupling Lighting from Rasterization”](../../../historical/abrash_black_book/chapter-68.md). {quoted}
+The replacement separated lighting samples from vertices. During map preprocessing, a lightmap stored illumination on a grid spaced every 16 texture texels in each direction. At runtime, the engine combined that grid with the repeated texture tile to build a lit rectangle. The perspective texture mapper then sampled that rectangle without calculating lighting for each screen pixel. Abrash describes this in [“Decoupling Lighting from Rasterization”](../../../historical/abrash_black_book/black-book.html#chapter-68-quakes-lighting-model). {quoted}
 
 > During off-line preprocessing, a grid, called a light map, is calculated for each polygon in the world, with a lighting value every 16 texels horizontally and vertically. […] Then the polygon is drawn with perspective texture mapping, with the surface serving as the input texture, and with no lighting performed during the texture mapping.
 >
-> — [Michael Abrash, *Graphics Programming Black Book*, ch. 68, “Decoupling Lighting from Rasterization”](../../../historical/abrash_black_book/chapter-68.md#decoupling-lighting-from-rasterization).
+> — [Michael Abrash, *Graphics Programming Black Book*, ch. 68, “Decoupling Lighting from Rasterization”](../../../historical/abrash_black_book/black-book.html#decoupling-lighting-from-rasterization).
 
 Texture could retain fine detail while illumination varied more slowly. A crack in a stone texture did not require a separate light sample; a shadow did not require another geometric edge. The lightmap was still sampled and filtered, so this was not unlimited lighting resolution. It provided the detail the designers needed without making polygon density determine shadow quality.
 
-::: plate ../../../historical/abrash_black_book/images/68-03.jpg A lightmap grid and a texture tile feed a combined surface: the tile repeats while brightness varies across it. | **Figure 68.3 — separate inputs, combined surface.** Fine texture detail and coarser lighting are combined before perspective mapping. The black dots illustrate lightmap sample positions; they are not drawn pixels. Michael Abrash, *Graphics Programming Black Book*, [chapter 68](../../../historical/abrash_black_book/chapter-68.md), figure 68.3; original image, unchanged. [Archive and reproduction note](../../../historical/abrash_black_book/README.md#source--license).
+::: plate ../../../historical/abrash_black_book/images/68-03.jpg A lightmap grid and a texture tile feed a combined surface: the tile repeats while brightness varies across it. | **Figure 68.3 — separate inputs, combined surface.** Fine texture detail and coarser lighting are combined before perspective mapping. The black dots illustrate lightmap sample positions; they are not drawn pixels. Michael Abrash, *Graphics Programming Black Book*, [chapter 68](../../../historical/abrash_black_book/black-book.html#chapter-68-quakes-lighting-model), figure 68.3; original image, unchanged. [Archive and reproduction note](../../../historical/abrash_black_book/black-book.html#about-this-version).
 
 Because illumination was attached to the texture before projection, both passed through the same perspective mapping. Turning or clipping the polygon no longer made its light slide relative to its texels. This solved the stability problem at the representation level. The companion guide covers the [lightmap data](frame:lightmaps-and-light-styles-r-light-c) and [surface-building mechanism](frame:surface-caching-d-surf-c).
 
@@ -46,7 +46,7 @@ Abrash says Carmack included caching in the design immediately because he expect
 
 > When he thought of surface-based lighting, John immediately realized that surface building would be relatively expensive. […] Consequently, his design included the concept of caching surfaces, so that if the same surface were visible in the next frame, it could be reused without having to be rebuilt.
 >
-> — [Michael Abrash, *Graphics Programming Black Book*, ch. 68, “Surface Caching”](../../../historical/abrash_black_book/chapter-68.md#surface-caching).
+> — [Michael Abrash, *Graphics Programming Black Book*, ch. 68, “Surface Caching”](../../../historical/abrash_black_book/black-book.html#surface-caching).
 
 Separating construction from drawing also made each inner loop easier to optimize. Chapter 68 reports 2.25 cycles per lit texel for surface construction and 7.5 cycles per screen pixel for perspective mapping on a Pentium. These are Abrash's inner-loop figures, not measured whole-frame costs. Texels built and pixels drawn are different quantities; a cache hit can avoid construction, while a partly hidden surface can require building texels that never reach the screen.
 
@@ -76,7 +76,7 @@ Abrash also proposed storing bullet marks, splatters, and other effects in surfa
 
 ## What survived the move to hardware
 
-[Chapter 69, “Surface Caching and Quake's Triangle Models”](../../../historical/abrash_black_book/chapter-69.md), revisits the choice after work on VQuake. Keeping surface caching meant building lit pixels on the CPU and transferring them into accelerator memory. The 16-bit surface format increased construction and transfer costs; larger framebuffers also competed with the cache for memory. A reuse strategy that suited software acquired an additional cost whenever it missed.
+[Chapter 69, “Surface Caching and Quake's Triangle Models”](../../../historical/abrash_black_book/black-book.html#chapter-69-surface-caching-and-quakes-triangle-models), revisits the choice after work on VQuake. Keeping surface caching meant building lit pixels on the CPU and transferring them into accelerator memory. The 16-bit surface format increased construction and transfer costs; larger framebuffers also competed with the cache for memory. A reuse strategy that suited software acquired an additional cost whenever it missed.
 
 Abrash then describes drawing texture and lightmap in separate hardware passes. This retained lighting independent of vertices and consistent under perspective, while avoiding storage of the combined surfaces. Its cost was extra drawing work. The distinction carries into the planned VQuake and GLQuake chapters: lightmaps could survive even when the surface cache did not.
 
@@ -84,7 +84,7 @@ Chapter 3's decision was thus two decisions. Separating illumination from geomet
 
 ## Further reading
 
-- Michael Abrash, *Graphics Programming Black Book*, [chapter 68, “Quake's Lighting Model”](../../../historical/abrash_black_book/chapter-68.md) — the failed Gouraud approach, surface-based lighting, caching, mipmapping, and dynamic-lighting limits.
-- Michael Abrash, *Graphics Programming Black Book*, [chapter 69, “Surface Caching and Quake's Triangle Models”](../../../historical/abrash_black_book/chapter-69.md), “Surface Caching with Hardware Assistance” — the changed costs and alternatives on accelerators.
+- Michael Abrash, *Graphics Programming Black Book*, [chapter 68, “Quake's Lighting Model”](../../../historical/abrash_black_book/black-book.html#chapter-68-quakes-lighting-model) — the failed Gouraud approach, surface-based lighting, caching, mipmapping, and dynamic-lighting limits.
+- Michael Abrash, *Graphics Programming Black Book*, [chapter 69, “Surface Caching and Quake's Triangle Models”](../../../historical/abrash_black_book/black-book.html#chapter-69-surface-caching-and-quakes-triangle-models), “Surface Caching with Hardware Assistance” — the changed costs and alternatives on accelerators.
 - John Carmack, [24 May 1996](../../../historical/plans/carmack/by_day/johnc_plan_19960524.txt) and [12 June 1996](../../../historical/plans/carmack/by_day/johnc_plan_19960612.txt) — cache-size work before release; neither entry supplies a benchmark.
 - [Life of a Frame: surface caching](frame:surface-caching-d-surf-c) — the reuse conditions and allocator; [the assembly walkthrough](frame:assembly-walkthrough-where-the-pentium-speedup-comes-from) follows the optimized loops.

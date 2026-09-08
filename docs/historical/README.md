@@ -29,15 +29,10 @@ docs/historical/
 │   ├── idTalks_released_1.4b.txt       # John Romero on DOOM 1.4 beta
 │   ├── id_history.txt                  # John Romero on id Software's early founding history
 │   └── ... (21 files total)
-└── abrash_black_book/            # Michael Abrash's documentation of Quake's engine development (1995)
-    ├── README.md                       # Detailed chapter breakdown and Carmack's key breakthroughs
-    ├── images/                         # The 44 figures referenced by the chapters
-    ├── chapter-60.md                   # Compiling BSP Trees (Carmack recruits Abrash to id Software)
-    ├── chapter-64.md                   # Visible-Surface Determination: Carmack's PVS and the 3D BSP
-    ├── chapter-66.md                   # Quake's 3-D Engine: The Big Picture
-    ├── chapter-68.md                   # Quake's Lighting Model (Surface Caching breakthrough)
-    ├── chapter-69.md                   # Surface Caching: Quake's Hidden Treasure
-    └── chapter-70.md                   # Quake: A Post-Mortem and a Glimpse into the Future
+└── abrash_black_book/            # Michael Abrash's Graphics Programming Black Book
+    ├── black-book.html                 # Jagregory's rendered complete book
+    ├── book.css                        # Rendered book stylesheet
+    └── images/                         # The book's figures
 ```
 
 ---
@@ -89,4 +84,7 @@ In 1995, Carmack recruited Michael Abrash from Microsoft to id Software in Mesqu
 2. **Surface Caching**: Carmack's realization that dynamic lighting could be applied to mipmapped textures in RAM once, avoiding per-pixel lighting in the rasterization loop.
 3. **Sorted Spans**: Drawing polygons strictly front-to-back using the 3D BSP tree, guaranteeing zero overdraw in software rendering.
 
-These 11 chapters from Abrash's *Graphics Programming Black Book* provide an unparalleled technical record of Carmack's engineering thoughts and id's day-to-day problem-solving during 1995.
+The complete rendered book is copied from
+[jagregory/abrash-black-book](https://github.com/jagregory/abrash-black-book),
+commit `e9812cc0fb641b87ab4e646affb1ed6c5508adee`. Architecture-guide links
+target chapter and section anchors in [`black-book.html`](abrash_black_book/black-book.html).

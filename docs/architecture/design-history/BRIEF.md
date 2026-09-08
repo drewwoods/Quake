@@ -69,9 +69,11 @@ worthless to write confident design narrative from memory.
   work (Sanglard, vintage hardware archives with citations) over wikis, and say
   in the prose which claims rest on it. Mark anything you could not corroborate
   as unverified.
-- Chapter titles: the table in `../../historical/abrash_black_book/README.md`
-  has several titles that do not match the chapter files. Cite the heading
-  inside the chapter file, not the README table.
+- Abrash citations target chapter and section anchors in
+  `../../historical/abrash_black_book/black-book.html`. This is Jagregory's
+  checked-in Pandoc build, copied with its CSS and images from
+  `jagregory/abrash-black-book` commit `e9812cc0fb641b87ab4e646affb1ed6c5508adee`.
+  Cite titles from the rendered headings.
 
 ## Format
 
@@ -218,7 +220,8 @@ collapse them into one motive. Say that the sources emphasise different halves.
 **Sources, already located.**
 
 - Abrash, *Black Book* ch. 70, section "Verite Quake" — the definitive
-  technical account: `../../historical/abrash_black_book/chapter-70.md:662`.
+  technical account:
+  `../../historical/abrash_black_book/black-book.html#verite-quake`.
   The adjacent "GLQuake" section gives the two-pass alpha lighting contrast.
 - Carmack `.plan` 22 Aug 1996 — first impressions, and the surface-cache tell:
   "We do take a bit of a hit when we have to generate a lot of 16 bit surfaces,
