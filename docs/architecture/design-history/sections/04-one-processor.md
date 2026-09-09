@@ -40,13 +40,13 @@ Those pixel runs also supplied work to hide division latency. Once the current r
 >
 > — [Michael Abrash, *Graphics Programming Black Book*, ch. 70, “Rasterization”](../../../historical/abrash_black_book/black-book.html#rasterization).
 
-“Effectively” matters. The divide still took many cycles to finish; useful integer work covered the waiting time. This depended on having work ready that did not need its result. Short runs, setup, and cleanup did not become free. In the surviving eight-pixel assembly drawer, the comment beside `FDIV` identifies the overlap as the purpose of the preceding setup (`WinQuake/d_draw.s:230-234`). {code}
+“Effectively” matters. The divide still took many cycles to finish; useful integer work covered the waiting time. This depended on having work ready that did not need its result. Short runs, setup, and cleanup did not become free. In the sixteen-pixel assembly drawer Abrash is describing, the comment beside `FDIV` identifies the overlap as the purpose of the preceding setup (`WinQuake/d_draw16.s:234-236`); the eight-pixel drawer carries the same comment (`WinQuake/d_draw.s:230-232`). {code}
 
-The source also preserves a boundary that the historical summary can obscure: the x86 build can select either the eight- or sixteen-pixel drawer, while the portable path selects the eight-pixel drawer (`WinQuake/d_init.c:148-155`). {code} Abrash's sixteen-pixel account should not be read as a description of every build or setting.
+The source also settles which drawer that account describes. On x86, `d_subdiv16` defaults to 1 and selects the sixteen-pixel drawer; clearing it selects the eight-pixel one, and the portable build has only the eight-pixel path (`WinQuake/d_init.c:27`, `148-155`). {code} Abrash's sixteen-pixel account is the default x86 configuration, not every build or setting.
 
 ## Precision was part of the budget
 
-Overlap reduced exposed waiting time. Lower precision reduced the division's actual duration. In [chapter 63's “Projection”](../../../historical/abrash_black_book/black-book.html#projection), Abrash reports 19 cycles for single-precision division; earlier in the chapter he gives 39 at full precision and 33 at double precision. These are Pentium instruction timings, not frame-rate measurements.
+Overlap reduced exposed waiting time. Lower precision reduced the division's actual duration. In [chapter 63's “Projection”](../../../historical/abrash_black_book/black-book.html#projection-1), Abrash reports 19 cycles for single-precision division; earlier in the chapter he gives 39 at full precision and 33 at double precision. These are Pentium instruction timings, not frame-rate measurements.
 
 The price was changed arithmetic. Abrash warns that reducing FPU precision also affects other operations and can alter clipping results or the tolerances needed for comparisons. Quake's rendering code makes the trade explicit: it calls `Sys_LowFPPrecision` with a comment saying the purpose is to make `FDIV` fast, and that leaving this mode active globally would reduce timing precision after extended execution (`WinQuake/r_main.c:972-976`). It restores high precision before leaving that rendering routine (`WinQuake/r_main.c:1047-1048`). {code}
 

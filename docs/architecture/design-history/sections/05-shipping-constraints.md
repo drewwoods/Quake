@@ -6,9 +6,9 @@ A fast renderer was necessary, but Quake also had to fit a small machine, surviv
 
 ## The connection the design expected
 
-Carmack's [2 August 1996 worklog](../../../historical/plans/carmack/by_day/johnc_plan_19960802.txt), written after release while developing QuakeWorld, identifies the original assumption directly. He had targeted connections below 200 ms latency; modem users were encountering substantially longer delays. His figures describe the connections he was discussing, not a measured distribution of all players. {quoted}
+Carmack's [2 August 1996 worklog](../../../historical/plans/carmack/by_day/johnc_plan_19960802.txt), written after release while developing QuakeWorld, identifies the original assumption directly. He had targeted connections below 200 ms latency; a modem player's path — client, modem, ISP, server, and back — gave him “300+ ms latencies, minimum.” His accompanying figure of 99% of players describes the connections he was discussing, not a measured distribution. {quoted}
 
-> My original design was targeted at <200ms connection latencies. […] Ok, I made a bad call. I have a T1 to my house, so I just wasn't familliar with PPP life. I'm adressing it now.
+> My original design was targeted at <200ms connection latencies. […] Unfortunately, 99% of the world gets on with a slip or ppp connection over a modem, often through a crappy overcrowded ISP. This gives 300+ ms latencies, minimum. […] Ok, I made a bad call. I have a T1 to my house, so I just wasn't familliar with PPP life. I'm adressing it now.
 >
 > — [John Carmack, 2 August 1996](../../../historical/plans/carmack/by_day/johnc_plan_19960802.txt).
 
@@ -40,7 +40,11 @@ Four days later, the worklog records another memory decision:
 
 This is the resource cache in the memory allocator, distinct from the renderer's cache of lit surfaces. The [hunk and cache account](frame:brief-hunk-zone-cache-allocators-zone-c) describes how cached resources occupy the free space between the hunk's two ends and can be reclaimed when allocations need that space. The policy lets spare memory retain useful assets without reserving that space permanently.
 
-Low-memory behavior was also made testable. On [30 May](../../../historical/plans/carmack/by_day/johnc_plan_19960530.txt), Carmack recorded adding `-minmemory` “for testing entry case.” The option survives in `Host_Init`, where it caps the supplied heap size at the selected minimum (`WinQuake/host.c:1035-1046`). {code} That is stronger evidence than an advertised memory target alone: the program had a way to exercise its constrained configuration on a larger machine.
+Low-memory behavior was also made testable. On 30 May, the worklog records the option that does it:
+
+> **.plan.** * added -minmemory parm for testing entry case — [Carmack, 30 May 1996](../../../historical/plans/carmack/by_day/johnc_plan_19960530.txt).
+
+The option survives in `Host_Init`, where it forces the supplied heap size to the minimum the build requires — one figure for the standard game, another for the level pak (`WinQuake/host.c:1035-1046`). {code} That is stronger evidence than an advertised memory target alone: the program had a way to exercise its constrained configuration on a larger machine.
 
 ## The rewrite that did not happen before release
 
