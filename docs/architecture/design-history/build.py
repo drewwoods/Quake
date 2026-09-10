@@ -19,6 +19,7 @@ DOC = build_doc.Doc(
         ("03-surface-caching.md", "Lighting"),
         ("04-one-processor.md", "Pentium"),
         ("05-shipping-constraints.md", "Shipping"),
+        ("06-quakec.md", "QuakeC"),
     ],
     xrefs={"frame": os.path.join("..", "life-of-a-frame",
                                  "quake-life-of-a-frame.html")},
