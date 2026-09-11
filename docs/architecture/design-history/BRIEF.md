@@ -257,7 +257,18 @@ collapse them into one motive. Say that the sources emphasise different halves.
   https://quake.fandom.com/wiki/VQuake corroborates weakly. Say in the prose that
   this date rests on a secondary source, and prefer the archive if it surfaces.
 
-**Gap.** The archive holds no id-side account of the VQuake porting work
-itself — Abrash's chapter is written after the fact and Rendition did the
-implementation. Anything about day-to-day decisions during the port is
-unavailable; say so rather than inferring.
+**Additional source found while writing chapter 7.** Stefan Podell's 30 October
+1997 account is reproduced at https://www.vogonswiki.com/index.php/VQuake#Architecture.
+It describes the initial polygon port, the switch to spans, and the CPU work
+that limited scaling on V2x00. This is participant testimony preserved by a
+third party, not a contemporaneous entry in the local archive. It narrows the
+gap in the port's development sequence. Abrash stresses fill rate; Podell
+stresses depth-test cost. Neither account supplies a daily development log.
+
+**End-of-port evidence.** The 12 May 1997 entry rejects a proposed Glide path
+while describing existing commitments. It establishes maintenance pressure,
+not a VQuake cancellation date. Chapter 7 preserves that distinction.
+
+**Link check, 11 September 2026.** The Sanglard and Vogons pages were accessible.
+Wayback's availability API returned HTTP 429 for both; dated snapshot links
+remain to be verified.
