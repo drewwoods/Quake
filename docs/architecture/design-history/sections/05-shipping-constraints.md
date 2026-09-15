@@ -1,79 +1,205 @@
-# Shipping Constraints: Bandwidth, Memory, Deadline
+# Shipping constraints: bandwidth, memory, deadline
 
-A fast renderer was necessary, but Quake also had to fit a small machine, survive an unreliable connection, and reach a release candidate. Those constraints left different kinds of evidence: Carmack's account of a mistaken networking assumption, worklogs recording memory reductions, and a collision workaround still recognizable in the source. This chapter follows the limits that remained after the rendering decisions. The June worklogs establish what changed near release; later retrospectives explain some of the reasons, without turning every unfinished task into a deadline story.
+Quake's fast renderer had to coexist with the realities of 1996: it needed to
+run well on modest machines, work over unreliable dial-up connections, and ship
+on a tight timeline. The traces of how id Software navigated those constraints
+are scattered throughout the code and developer accounts. Carmack's retroactive
+realization about modem latencies, logs tracking memory optimizations, and a
+last-minute collision workaround all tell parts of this story. This chapter
+examines the key technical tradeoffs id made to ship Quake under these
+limitations, setting aside the rendering decisions covered earlier. The June
+1996 .plan updates give a sense of the final sprint; later developer
+commentaries fill in some of the rationale, without mythologizing every cut
+feature as a deadline sacrifice.
 
-> **First pass.** Quake spent bandwidth on replaceable world updates, memory on caches it could reclaim, and development time on making the existing system shippable. These choices left costs: modem latency, reduced sound precision on small heaps, and recovery code around collision failures. Next: the planned QuakeC chapter, tracing the separate decision to make game logic replaceable.
+> **First pass.** Quake's original networking targeted fast connections, its
+> memory footprint shrank to fit small machines at the cost of sound quality,
+> and rough edges remained for the sake of shipping. Recovery logic worked
+> around physics failures, reduced precision freed up heap, and interpolation
+> disguised latency. Next: [QuakeC](#sec-6), which made the game rules replaceable
+> without rebuilding the engine.
 
 ## The connection the design expected
 
-Carmack's [2 August 1996 worklog](../../../historical/plans/carmack/by_day/johnc_plan_19960802.txt), written after release while developing QuakeWorld, identifies the original assumption directly. He had targeted connections below 200 ms latency; a modem player's path — client, modem, ISP, server, and back — gave him “300+ ms latencies, minimum.” His accompanying figure of 99% of players describes the connections he was discussing, not a measured distribution. {quoted}
+An illuminating admission comes from Carmack's [worklog on 2 August
+1996](../../../historical/plans/carmack/by_day/johnc_plan_19960802.txt), a
+month after launch, as he was developing QuakeWorld. He directly states the
+latency expectation he had designed around and how reality differed. His
+numbers describe the connections under discussion, not a comprehensive study of
+the playerbase. {quoted}
 
-> My original design was targeted at <200ms connection latencies. […] Unfortunately, 99% of the world gets on with a slip or ppp connection over a modem, often through a crappy overcrowded ISP. This gives 300+ ms latencies, minimum. […] Ok, I made a bad call. I have a T1 to my house, so I just wasn't familliar with PPP life. I'm adressing it now.
+> My original design was targeted at <200ms connection latencies. […] Ok, I
+> made a bad call. I have a T1 to my house, so I just wasn't familliar with PPP
+> life. I'm adressing it now.
 >
-> — [John Carmack, 2 August 1996](../../../historical/plans/carmack/by_day/johnc_plan_19960802.txt).
+> — [John Carmack, 2 August
+> 1996](../../../historical/plans/carmack/by_day/johnc_plan_19960802.txt).
 
-Bandwidth and latency were related but distinct. More frequent updates could reduce the time an input waited for server processing. Sending them faster than a modem link could carry them could instead build a queue and delay everything behind it. In the same entry, Carmack describes the existing server loop as collecting input, advancing the world, and sending updates, with a default 20 fps cadence. He explicitly warns that increasing it could overcommit dialup bandwidth and cause severe buffering delays.
+Bandwidth and latency were separate but linked constraints. Sending updates
+more often could reduce input-to-response delays. But sending them faster than
+dial-up links could handle would congest the connection, delaying everything
+queued behind them. Carmack describes Quake's release netcode as simulating at
+20 fps by default. He cautions that raising this could easily saturate modem
+bandwidth and cause punishing delays.
 
-That is evidence for a tradeoff, not proof that 20 Hz was an experimentally optimal modem setting. Nor was it a universal limit on every client and listen-server frame. The historical point is that shortening the simulation interval could worsen responsiveness once the connection became the bottleneck. The [runtime account of client and server communication](frame:server-round-trip-cl-readfromserver-cl-parseservermessage) supplies the control flow.
+This reveals a tradeoff, but doesn't prove 20 Hz was empirically optimal for
+1996 connections. Client and server frame rates could also vary. The key
+historical point is that past some threshold, shorter server frames could
+degrade responsiveness as the network became the bottleneck. The [runtime trace
+of client-server
+messaging](frame:server-round-trip-cl-readfromserver-cl-parseservermessage)
+elaborates the flow involved.
 
 ## Replace stale state instead of waiting for it
 
-The network design changed before release. In the August entry, Carmack describes QTest's reliable-stream foundation and the later addition of an unreliable sideband. Abrash's [chapter 70, “QuakeWorld”](../../../historical/abrash_black_book/black-book.html#quakeworld), explains the failure that drove the change: waiting for retransmission produced hitches when packets disappeared. Ordinary gameplay state moved to unreliable delivery, with reliable delivery retained for information that could not simply be superseded.
+Quake's netcode changed substantially prior to release. Carmack's August notes
+describe the initial reliable-ordered foundation and the unreliable channel
+grafted onto it later. Abrash's [QuakeWorld summary in the Graphics Programming
+Black Book](../../../historical/abrash_black_book/black-book.html#quakeworld)
+explains what necessitated this retrofit: waiting to retransmit dropped packets
+produced unplayable hitching. Time-critical game state moved to unreliable
+delivery. Reliable transport remained for data that couldn't simply be
+overwritten by updates.
 
-The saving depended on sending only relevant state. As [chapter 2](#sec-2) established, the PVS had become a network filter as well as a rendering aid. The surviving encoder also compares entity fields against a fixed baseline, rather than requiring the preceding update packet to decode the next one (`WinQuake/sv_main.c:472-512`). {code} The [baseline account](frame:delta-against-baseline) explains the format. This gives replaceable updates a useful property: losing one does not break a chain of deltas against successive packets. It does not guarantee that every entity fits in every datagram.
+This worked because updates only sent relevant state. [Chapter 2](#sec-2)
+covered how PVS became a network optimization as well as a rendering one. The
+delta encoder (`WinQuake/sv_main.c:472-512`) further compresses by comparing
+fields to fixed baselines, not just the last update. {code} The [discussion of
+baseline deltas](frame:delta-against-baseline) details the format. A key
+property emerges: unlike chains of incremental deltas, these snapshots stay
+decodable when one is lost. There are still no guarantees that every entity
+update fits in a single packet.
 
-Changing the transport did not remove all delay. Abrash describes keeping the displayed world slightly behind the latest server time so the client could interpolate between received states. Carmack confirms in his [10 August 1996 entry](../../../historical/plans/carmack/by_day/johnc_plan_19960810.txt) that the shipping version deliberately introduced latency to smooth variable packet arrival. The [interpolation mechanism](frame:entity-interpolation-entity-t-cl-mtime-cl-relinkentities) documents what that bought. QuakeWorld's later response belongs in chapter 8; at release, smoothing and responsiveness were still competing goals.
+Unreliable delivery didn't eliminate latency entirely. Abrash describes how
+Quake hid jitter by keeping the visible world a bit behind the latest server
+time and interpolating. Carmack's [10
+August](../../../historical/plans/carmack/by_day/johnc_plan_19960810.txt) entry
+confirms that release Quake buffered to smooth inconsistent packet arrival.
+[The interpolation code
+itself](frame:entity-interpolation-entity-t-cl-mtime-cl-relinkentities) shows
+the mechanism. At launch, fluidity and responsiveness remained in tension.
+QuakeWorld's advancements are best left for chapter 8.
 
 ## Memory changed what the player received
 
-Abrash's [chapter 68, “Quake's Lighting Model”](../../../historical/abrash_black_book/black-book.html#surface-caching), identifies an 8 MB machine as the intended target when discussing surface storage. [Chapter 3](#sec-3) covers how mipmapping and visibility made that cache fit. The remaining memory pressure reached beyond textures.
+Abrash's [Lighting
+Model](../../../historical/abrash_black_book/black-book.html#surface-caching)
+chapter identifies 8 MB PCs as Quake's baseline when discussing texture
+caching. [Chapter 3](#sec-3) explored how mipmaps and PVS made that cache
+viable. But memory pressures reached further.
 
-On 1 May, Carmack recorded an automatic sound reduction based on available memory:
+On May 1st, Carmack logged an automatic sound quality fallback based on
+available memory:
 
-> **.plan.** * automatic sound decimation based on available memory — [Carmack, 1 May 1996](../../../historical/plans/carmack/by_day/johnc_plan_19960501.txt).
+> **.plan.** * automatic sound decimation based on available memory — [Carmack,
+> 1 May
+> 1996](../../../historical/plans/carmack/by_day/johnc_plan_19960501.txt).
 
-The surviving sound initialization selects `loadas8bit` when the engine heap is smaller than 8 MiB (`WinQuake/snd_dma.c:196-200`). {code} That test concerns memory supplied to the engine, not total installed RAM. It establishes a concrete quality trade: sound storage precision could be reduced to fit. The worklog's broader word “decimation” should not be treated as an exact description of this later source revision.
+The final sound setup code cuts samples to 8-bit when the heap given to Quake
+is under 8 MB (`WinQuake/snd_dma.c:196-200`). {code} It's based on the
+application heap size, not total system RAM. This reveals a concrete quality
+dial: sound precision could drop to save space. The worklog's "decimation"
+shouldn't be taken as a literal description of the final code's behavior
+though.
 
-Four days later, the worklog records another memory decision:
+Four days later, another memory-sensitive feature:
 
-> **.plan.** * use all memory between the hunks as dynamic cache — [Carmack, 5 May 1996](../../../historical/plans/carmack/by_day/johnc_plan_19960505.txt).
+> **.plan.** * use all memory between the hunks as dynamic cache — [Carmack, 5
+> May 1996](../../../historical/plans/carmack/by_day/johnc_plan_19960505.txt).
 
-This is the resource cache in the memory allocator, distinct from the renderer's cache of lit surfaces. The [hunk and cache account](frame:brief-hunk-zone-cache-allocators-zone-c) describes how cached resources occupy the free space between the hunk's two ends and can be reclaimed when allocations need that space. The policy lets spare memory retain useful assets without reserving that space permanently.
+This refers to Quake's general resource cache, separate from the surface cache.
+The [overview of heap
+allocation](frame:brief-hunk-zone-cache-allocators-zone-c) explains how the
+cache resides in slack between the two hunk sentinels, reclaimable when either
+needs to grow. Assets can stick around while memory is plentiful without
+permanently reserving space.
 
-Low-memory behavior was also made testable. On 30 May, the worklog records the option that does it:
-
-> **.plan.** * added -minmemory parm for testing entry case — [Carmack, 30 May 1996](../../../historical/plans/carmack/by_day/johnc_plan_19960530.txt).
-
-The option survives in `Host_Init`, where it forces the supplied heap size to the minimum the build requires — one figure for the standard game, another for the level pak (`WinQuake/host.c:1035-1046`). {code} That is stronger evidence than an advertised memory target alone: the program had a way to exercise its constrained configuration on a larger machine.
+Carmack also added an option to simulate a low-memory configuration. On [May
+30th](../../../historical/plans/carmack/by_day/johnc_plan_19960530.txt) he
+logged `-minmemory`, "for testing entry case." It caps Quake's heap on the
+command line, regardless of physical RAM (`WinQuake/host.c:1035-1046`). {code}
+Its presence strengthens the evidence: not just a stated memory target, but a
+way to force even well-equipped developer machines to exercise it.
 
 ## The rewrite that did not happen before release
 
-The networking transition changed a fundamental assumption without replacing the architecture built around it. Carmack calls the old code a reliable-stream design retrofitted for unreliable packets. Abrash's retrospective says debugging the resulting system continued until shipping. {quoted}
+The networking transition changed a fundamental assumption without replacing
+the architecture built around it. Carmack calls the old code a reliable-stream
+design retrofitted for unreliable packets. Abrash's retrospective says
+debugging the resulting system continued until shipping. {quoted}
 
-> John did not rewrite the net code to reflect this new fundamental assumption, and wound up with 8,000 lines of messy code that took right up until Quake shipped to debug.
+> John did not rewrite the net code to reflect this new fundamental assumption,
+> and wound up with 8,000 lines of messy code that took right up until Quake
+> shipped to debug.
 >
-> — [Michael Abrash, *Graphics Programming Black Book*, ch. 70, “QuakeWorld”](../../../historical/abrash_black_book/black-book.html#quakeworld).
+> — [Michael Abrash, *Graphics Programming Black Book*, ch. 70,
+> "QuakeWorld"](../../../historical/abrash_black_book/black-book.html#quakeworld).
 
-The line count is Abrash's report, not a count reproduced here. More significantly, neither account establishes that a fixed deadline alone caused the decision against rewriting. They establish an architectural retrofit and a debugging cost that lasted through release. The June worklogs show that tail: [14 June](../../../historical/plans/carmack/by_day/johnc_plan_19960614.txt) records a fix for stuttering on dropped packets while still listing reliable-message backlog and packet-overflow checks as concerns.
+The line count is Abrash's report, not a count reproduced here. More
+significantly, neither account establishes that a fixed deadline alone caused
+the decision against rewriting. They establish an architectural retrofit and a
+debugging cost that lasted through release. The June worklogs show that tail:
+[14 June](../../../historical/plans/carmack/by_day/johnc_plan_19960614.txt)
+records a fix for stuttering on dropped packets while still listing
+reliable-message backlog and packet-overflow checks as concerns.
 
-The distinction matters when reading the code. A mechanism can survive because replacing it remains expensive even after its original assumption has changed. Here that interpretation is supported by both developers' later accounts, rather than inferred solely from complicated source.
+The distinction matters when reading the code. A mechanism can survive because
+replacing it remains expensive even after its original assumption has changed.
+Here that interpretation is supported by both developers' later accounts,
+rather than inferred solely from complicated source.
 
 ## A release candidate with recovery code
 
-On 18 June, the worklog records a narrowly described workaround:
+On June 18th, Carmack describes a narrow bugfix:
 
-> **.plan.** * big hack to catch rare stuck occasions — [Carmack, 18 June 1996](../../../historical/plans/carmack/by_day/johnc_plan_19960618.txt).
+> **.plan.** * big hack to catch rare stuck occasions — [Carmack, 18 June
+> 1996](../../../historical/plans/carmack/by_day/johnc_plan_19960618.txt).
 
-`SV_CheckStuck` carries a matching description of a hack for rare failures in the world clipping hull (`WinQuake/sv_phys.c:754-760`). Its recovery attempts use a previous position, then nearby positions, before reporting that the player remains stuck (`WinQuake/sv_phys.c:768-799`). {code} The worklog and comment strongly suggest the same class of workaround, but do not prove that the surviving function is unchanged from that day's implementation. {inferred}
+`SV_CheckStuck` has a similar "big hack for rare failures" comment, attempting
+recovery via the previous position and perturbation before declaring the player
+stuck (`WinQuake/sv_phys.c:754-760,768-799`). {code} Together they strongly
+imply the same breed of band-aid, but can't prove the function remains
+unaltered since. {inferred}
 
-This is a visible limit of the collision system: recovery was added around a failure that could still occur. The archive entry does not identify its numerical cause or say that a complete collision rewrite was considered. Calling it a workaround is supported; inventing the rejected alternative would not be.
+It's a glimpse of the collision code's limits: last-resort attempts to unstick
+the player could still fail. The log doesn't detail the error or indicate that
+a replacement physics system was considered and rejected. Identifying it as a
+workaround has support; extrapolating about roads not taken would not.
 
-The following day, Carmack recorded creating the “0.9 SW RC distribution” while the same entry still listed bugs and proposed rewrites ([19 June 1996](../../../historical/plans/carmack/by_day/johnc_plan_19960619.txt)). A release candidate is evidence of release preparation, not the final public release date. Together, these entries show what shipping meant in practice: a working system with known limits, recent recovery fixes, and work still deferred. The resulting source preserves those decisions alongside the more deliberate architecture.
+The following day, Carmack recorded creating the “0.9 SW RC distribution” while
+the same entry still listed bugs and proposed rewrites ([19 June
+1996](../../../historical/plans/carmack/by_day/johnc_plan_19960619.txt)). A
+release candidate is evidence of release preparation, not the final public
+release date. Together, these entries show what shipping meant in practice: a
+working system with known limits, recent recovery fixes, and work still
+deferred. The resulting source preserves those decisions alongside the more
+deliberate architecture.
 
 ## Further reading
 
-- John Carmack, [2 August 1996](../../../historical/plans/carmack/by_day/johnc_plan_19960802.txt) and [10 August 1996](../../../historical/plans/carmack/by_day/johnc_plan_19960810.txt) — retrospective accounts of the shipping network model and its latency tradeoffs.
-- Michael Abrash, *Graphics Programming Black Book*, [chapter 70, “QuakeWorld”](../../../historical/abrash_black_book/black-book.html#quakeworld) — packet loss, interpolation, and the cost of retrofitting unreliable delivery.
-- Carmack, [1 May](../../../historical/plans/carmack/by_day/johnc_plan_19960501.txt), [5 May](../../../historical/plans/carmack/by_day/johnc_plan_19960505.txt), and [30 May 1996](../../../historical/plans/carmack/by_day/johnc_plan_19960530.txt) — sound reduction, reclaimable cache space, and minimum-memory testing.
-- Carmack, [14 June](../../../historical/plans/carmack/by_day/johnc_plan_19960614.txt), [18 June](../../../historical/plans/carmack/by_day/johnc_plan_19960618.txt), and [19 June 1996](../../../historical/plans/carmack/by_day/johnc_plan_19960619.txt) — late networking fixes, stuck-player recovery, and release-candidate preparation.
-- [Life of a Frame: network delivery](frame:net-layer-driver-abstraction-loopback-and-datagram-delivery), [entity interpolation](frame:entity-interpolation-entity-t-cl-mtime-cl-relinkentities), and [memory allocation](frame:brief-hunk-zone-cache-allocators-zone-c) — the surviving mechanisms.
+- John Carmack, [2 August
+  1996](../../../historical/plans/carmack/by_day/johnc_plan_19960802.txt) and
+  [10 August
+  1996](../../../historical/plans/carmack/by_day/johnc_plan_19960810.txt) —
+  hindsight on the initial netcode, latency aims and mitigations
+- Michael Abrash, *Graphics Programming Black Book*, [chapter 70,
+  "QuakeWorld"](../../../historical/abrash_black_book/black-book.html#quakeworld)
+  — packet loss, interpolation, and unreliability retrofit pains
+- Carmack, [1
+  May](../../../historical/plans/carmack/by_day/johnc_plan_19960501.txt), [5
+  May](../../../historical/plans/carmack/by_day/johnc_plan_19960505.txt), and
+  [30 May
+  1996](../../../historical/plans/carmack/by_day/johnc_plan_19960530.txt) —
+  low-memory sound/caching policies and testing
+- Carmack, [14
+  June](../../../historical/plans/carmack/by_day/johnc_plan_19960614.txt), [18
+  June](../../../historical/plans/carmack/by_day/johnc_plan_19960618.txt), and
+  [19 June
+  1996](../../../historical/plans/carmack/by_day/johnc_plan_19960619.txt) —
+  late netcode churn, unstuck hack, and RC with unresolved issues
+- [Lifecycle walkthroughs for
+  networking](frame:net-layer-driver-abstraction-loopback-and-datagram-delivery),
+  [entity
+  interpolation](frame:entity-interpolation-entity-t-cl-mtime-cl-relinkentities),
+  and [memory management](frame:brief-hunk-zone-cache-allocators-zone-c) — the
+  shipping implementations
