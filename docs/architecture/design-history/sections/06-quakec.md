@@ -4,10 +4,10 @@ In Quake, a new map changes where the player goes, but new game code changes wha
 
 ## From Editing Files to Changing Rules
 
-id's 1993 DOOM announcement had promised an "open game" by documenting file formats for custom content. Quake took this further by making behavior executable. While the sources don't pinpoint exactly when id chose a virtual machine, QuakeC was in use before release:
+id's [1993 DOOM announcement](../../../historical/doom_1993/doom_press_release_1993.txt) had promised an "open game" by documenting file formats for custom content. Quake took this further by making behavior executable. While the sources don't pinpoint exactly when id chose a virtual machine, QuakeC was in use before release:
 
 > It includes quake.exe winded.exe progs.dat, and a zip of the latest .qc files.
-> — Carmack, .plan, 13 September 1996
+> — [Carmack, .plan, 13 September 1996](../../../historical/plans/carmack/by_day/johnc_plan_19960913.txt)
 
 Publishing replaceable game code, not just assets, let mod authors change the rules that give content meaning.
 
@@ -29,10 +29,10 @@ March 1996 entries show the machinery evolving alongside the game:
 
 > * crunched progs.dat file structure
 > * culled unused edict fields
-> — Carmack, 13 March 1996
+> — [Carmack, 13 March 1996](../../../historical/plans/carmack/by_day/johnc_plan_19960313.txt)
 
 > * made an execution stack for progs
-> — Carmack, 15 March 1996
+> — [Carmack, 15 March 1996](../../../historical/plans/carmack/by_day/johnc_plan_19960315.txt)
 
 Diagnosis features like per-function instruction counts and runaway loop checks aided authors without guarding against malicious code. Validation was still the engine's job.
 
@@ -41,7 +41,7 @@ Diagnosis features like per-function instruction counts and runaway loop checks 
 On 13 March 1997, Carmack proposed native game DLLs for Quake II, tying it to dropping DOS support:
 
 > I am strongly considering dropping qc in Quake 2 in favor of exporting most of the game logic to a seperate .dll file. This wasn't an option when we had to support dos, but I think it is the correct choice now.
-> — Carmack, .plan, 13 March 1997
+> — [Carmack, .plan, 13 March 1997](../../../historical/plans/carmack/by_day/johnc_plan_19970313.txt)
 
 He forecast a 5-10% full-game speedup with less gain for simple mods, wanted better language and debugging features, but acknowledged the cost: per-platform compilation, security issues with untrusted native code, and a higher barrier to entry.
 
@@ -52,7 +52,7 @@ QuakeC had become an onramp to programming that DLLs would block for some tinker
 By November 1998, Carmack returned to interpreted code for Quake Arena's client-side mods. Having players automatically receive native modules posed risks.
 
 > The only real solution to these problems is to use an interpreted language like Quake 1 did. I have reached the conclusion that the benefits of a standard language outweigh the benefits of a custom language for our purposes.
-> — Carmack, .plan, 3 November 1998
+> — [Carmack, .plan, 3 November 1998](../../../historical/plans/carmack/by_day/johnc_plan_19981103.txt)
 
 This separated two bundled decisions: making game logic a portable program, and inventing QuakeC to express it. The VM's portability remained valuable even if the language could be swapped. Later games kept renegotiating the tradeoffs of that separation.
 

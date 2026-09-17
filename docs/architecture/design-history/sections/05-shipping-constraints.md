@@ -1,23 +1,39 @@
-# Shipping constraints: bandwidth, memory, deadline
+# Network architecture and shipping constraints
 
-Quake's fast renderer had to coexist with the realities of 1996: it needed to
-run well on modest machines, work over unreliable dial-up connections, and ship
-on a tight timeline. The traces of how id Software navigated those constraints
-are scattered throughout the code and developer accounts. Carmack's retroactive
-realization about modem latencies, logs tracking memory optimizations, and a
-last-minute collision workaround all tell parts of this story. This chapter
-examines the key technical tradeoffs id made to ship Quake under these
-limitations, setting aside the rendering decisions covered earlier. The June
-1996 .plan updates give a sense of the final sprint; later developer
-commentaries fill in some of the rationale, without mythologizing every cut
-feature as a deadline sacrifice.
+Quake's transition from DOOM was not only a graphical leap to 3D; it was a total reconstruction of the multiplayer model from synchronous peer-to-peer lockstep to an asynchronous, authoritative client/server architecture. That architecture had to coexist with the realities of 1996: 28.8k dial-up modems, 8 MB memory baselines, and a hard shipping deadline. This chapter examines the client/server split, the "client-as-terminal" design philosophy, and the concrete technical compromises—from baseline delta compression and packet retrofits to sound decimation and physics recovery—that id Software made to ship the engine.
 
-> **First pass.** Quake's original networking targeted fast connections, its
-> memory footprint shrank to fit small machines at the cost of sound quality,
-> and rough edges remained for the sake of shipping. Recovery logic worked
-> around physics failures, reduced precision freed up heap, and interpolation
-> disguised latency. Next: [QuakeC](#sec-6), which made the game rules replaceable
-> without rebuilding the engine.
+> **First pass.** DOOM's networking ran peer-to-peer in lockstep at 35 Hz, tying game speed to network latency. Quake replaced this with an authoritative server ticking at 20 Hz, decoupling client frame rate via interpolation and unifying single-player over an in-memory loopback socket. Over 1996 dialup, this "client-as-terminal" model required aggressive data compression, an unreliable packet channel, and strict memory budgeting. Next: [QuakeC](#sec-6), which made the game rules replaceable without rebuilding the engine.
+
+## Leaving lockstep behind: the client/server split
+
+In DOOM, multiplayer was synchronous peer-to-peer: every machine ran the entire world simulation (`P_Ticker`) in lockstep at a fixed 35 Hz. Input commands (`ticcmd_t`) were exchanged across IPX LANs or serial cables. If a single packet dropped or one machine hitched, every connected player stalled until synchronization was restored.
+
+Quake abandoned lockstep for an asynchronous, authoritative client/server architecture:
+
+```
+DOOM (1993, Peer-to-Peer Lockstep, 35 Hz):
+[Client A] <========= exchange ticcmd_t =========> [Client B]
+Runs P_Ticker                                        Runs P_Ticker
+(Packet loss or machine stall freezes all players)
+
+Quake (1996, Authoritative Client/Server):
+[Client A] (unlocked FPS)                        [Client B] (unlocked FPS)
+    │   ▲                                            │   ▲
+    │   │ usercmd_t / entity updates                 │   │
+    ▼   │                                            ▼   │
+┌────────────────────────────────────────────────────────────┐
+│ Server (20 Hz sys_ticrate): Physics + QuakeC Simulation    │
+│ Authoritative world state. Packet loss does not stall FPS. │
+└────────────────────────────────────────────────────────────┘
+```
+
+This model solved three structural problems:
+
+1. **Timebase decoupling.** The server simulates physics, entity interactions, and QuakeC bytecode at a fixed 20 Hz (`sys_ticrate`), while clients render at the machine's maximum achievable frame rate. Remote clients bridge the timing gap by [interpolating entity positions](frame:entity-interpolation-entity-t-cl-mtime-cl-relinkentities) between received states.
+2. **Single-player and multiplayer unification.** Single-player is not a separate engine codepath. It runs the exact same client and server components in one process, communicating over an in-memory loopback socket ([`net_loop.c`](frame:net-layer-driver-abstraction-loopback-and-datagram-delivery)). As covered in [how client and server coexist in one process](frame:how-client-and-server-coexist-in-one-process), the local client simply copies messages directly into the server's loopback receive buffer.
+3. **Headless dedicated servers.** Because simulation is decoupled from presentation, running with `-dedicated` allows the engine to skip initializing video, sound, and input devices entirely ([`Host_Init`](frame:listen-server-dedicated-server-remote-client)).
+
+The guiding philosophy of NetQuake was **client-as-terminal**: the client gathered keyboard and mouse input, packaged it into a `usercmd_t`, sent it across the wire, and drew whatever entity positions the server dictated. The client performed zero local movement simulation and made no predictions.
 
 ## The connection the design expected
 
@@ -199,6 +215,8 @@ deliberate architecture.
   late netcode churn, unstuck hack, and RC with unresolved issues
 - [Lifecycle walkthroughs for
   networking](frame:net-layer-driver-abstraction-loopback-and-datagram-delivery),
+  [client/server coexistence](frame:how-client-and-server-coexist-in-one-process),
+  [dedicated and listen server configurations](frame:listen-server-dedicated-server-remote-client),
   [entity
   interpolation](frame:entity-interpolation-entity-t-cl-mtime-cl-relinkentities),
   and [memory management](frame:brief-hunk-zone-cache-allocators-zone-c) — the

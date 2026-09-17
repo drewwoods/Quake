@@ -42,8 +42,8 @@
 }
 /* One rule segment per stop; together they read as a single line. 14px is the
    vertical centre of .tl-mark, given the button's 10px top padding. */
-.tl-stop { position: relative; flex: 1 1 76px; min-width: 76px; margin: 0; }
-/* 76px basis so all seven stops fit a full-width track; they still scroll
+.tl-stop { position: relative; flex: 1 1 56px; min-width: 56px; margin: 0; }
+/* 56px basis so all ten stops fit a full-width track; they still scroll
    on narrow screens, where the clipped dot is its own affordance and the
    disclosure below carries every entry regardless. */
 .tl-stop::before {
@@ -54,16 +54,23 @@
 .tl-stop:last-child::before { right: 50%; }
 .tl-dot {
   position: relative; display: flex; flex-direction: column; align-items: center;
-  gap: 7px; width: 100%; padding: 10px 4px 8px; background: none; border: 0;
+  gap: 6px; width: 100%; padding: 10px 2px 8px; background: none; border: 0;
   cursor: pointer; color: var(--muted);
   font: 500 11px var(--f-mono); letter-spacing: 0.04em; text-transform: uppercase;
 }
 .tl-mark { width: 9px; height: 9px; border-radius: 50%; background: var(--bg); border: 2px solid var(--rule); }
-.tl-year { white-space: nowrap; }
+.tl-year {
+  display: flex; flex-direction: column; align-items: center;
+  white-space: nowrap; line-height: 1.25;
+}
+.tl-sub { font-size: 10px; color: var(--muted); }
+.tl-yr { font-size: 11px; }
 .tl-dot:hover { color: var(--ink); }
 .tl-dot:hover .tl-mark { border-color: var(--sim); }
+.tl-dot:hover .tl-sub { color: var(--ink); }
 .tl-dot[aria-pressed="true"] { color: var(--sim); }
 .tl-dot[aria-pressed="true"] .tl-mark { background: var(--sim); border-color: var(--sim); }
+.tl-dot[aria-pressed="true"] .tl-sub { color: var(--sim); }
 .tl-detail {
   min-height: 4.4em; padding: 12px 16px; font-size: 15.5px; color: var(--ink-2);
   background: var(--surface); border: 1px solid var(--rule-soft);
@@ -142,8 +149,11 @@ try {
         <div><dt>Jan 1993</dt><dd><b>DOOM announced.</b> A feature list that defines the ceiling Quake would have to break: texture-mapped with variable-height floors and ceilings, but no true 3-D geometry and sprites for moving things.</dd></div>
         <div><dt>Mar 1994</dt><dd><b>Quake announced as a design</b>, with no engine and development deferred until fall 1994. Romero's <code>.plan</code> promises a step over DOOM as large as DOOM was over Wolfenstein.</dd></div>
         <div><dt>Mar 1995</dt><dd><b>Abrash joins id.</b> A prototype engine and a plan already exist. Within three months, almost none of the original visibility design survives.</dd></div>
-        <div><dt>1995</dt><dd><b>The year of discarded renderers.</b> Beam trees, portal clipping, direct-BSP visibility — built, measured, abandoned. Then the PVS.</dd></div>
-        <div><dt>1996</dt><dd><b>Making it fit.</b> Surface caching, Pentium-specific assembly, dialup as an architectural input. Quake ships in June.</dd></div>
+        <div><dt>Mid 1995</dt><dd><b>The year of discarded renderers.</b> Beam trees, portal clipping, direct-BSP visibility — built, measured, abandoned. Then the PVS.</dd></div>
+        <div><dt>Nov 1995</dt><dd><b>QuakeC VM.</b> World geometry and hulls stabilized. Carmack builds an interpreted bytecode virtual machine to decouple game logic from the engine, letting designers script weapons and entities without C recompiles.</dd></div>
+        <div><dt>Feb 1996</dt><dd><b>Client/server and QTest.</b> DOOM's peer-to-peer lockstep networking is discarded for an authoritative server ticking at 20&nbsp;Hz. Single-player runs over loopback; public QTest stress-tests the netcode on the internet.</dd></div>
+        <div><dt>Spring 1996</dt><dd><b>Making it fit.</b> Surface caching, Pentium-specific assembly, and PVS-gating to fit dialup links.</dd></div>
+        <div><dt>22 Jun 1996</dt><dd><b>Quake released.</b> Shareware v0.91 uploaded to id's FTP (Episode 1), proving full 3-D software rendering and authoritative client/server architecture on consumer PCs. Direct registered orders and an experimental retail unlock CD followed in July (v1.01); GT Interactive's boxed retail CD hit North American store shelves in August 1996 (Europe in October).</dd></div>
         <div><dt>Dec 1996</dt><dd><b>VQuake.</b> The first accelerated Quake, on hardware programmable enough to keep the software renderer's architecture intact.</dd></div>
         <div><dt>1997</dt><dd><b>After ship.</b> GLQuake concedes the software rasterizer's future; QuakeWorld revisits the networking decision Quake declined to make; per-vendor ports stop being affordable.</dd></div>
       </dl>
@@ -153,10 +163,10 @@ try {
         <li><span class="rm-n">02</span><a href="#sec-2">The year of discarded renderers</a></li>
         <li><span class="rm-n">03</span><a href="#sec-3">Surface caching: making light affordable</a></li>
         <li><span class="rm-n">04</span><a href="#sec-4">Designing for one processor</a></li>
-        <li><span class="rm-n">05</span><a href="#sec-5">Shipping constraints: bandwidth, memory, deadline</a></li>
+        <li><span class="rm-n">05</span><a href="#sec-5">Network architecture and shipping constraints</a></li>
         <li><span class="rm-n">06</span><a href="#sec-6">QuakeC: why a virtual machine</a></li>
         <li><span class="rm-n">07</span><a href="#sec-7">VQuake: the surface cache on hardware</a></li>
-        <li class="todo"><span class="rm-n">08</span>After ship: GLQuake and QuakeWorld</li>
+        <li><span class="rm-n">08</span><a href="#sec-8">After ship: GLQuake and QuakeWorld</a></li>
       </ol>
     </section>
 
