@@ -276,8 +276,64 @@ The lookup order is fixed and significant: registered engine commands (a linked 
 Quake takes one large allocation from the OS at startup and layers three allocators over it, each matched to a different lifetime: the engine gets explicit control over when memory is reclaimed, plus an asset cache it can evict from under pressure.
 
 - **Zone** (`Z_Malloc`, `WinQuake/zone.c:142`) is a rover-based first-fit free-list allocator over a fixed-size arena (`DYNAMIC_SIZE` = 0xc000, `zone.c:24`) with block headers carrying a size/tag/id and a trash-detection sentinel (`ZONEID`, `zone.c:26`) checked by `Z_CheckHeap` (`zone.c:247-262`). It's for small, short-lived, arbitrarily-freed allocations — strings, cvar values — the doc comment says as much: "The zone calls are pretty much only used for small strings and structures, all big things are allocated on the hunk" (`zone.c:59-60`).
-- **Hunk** (`Hunk_AllocName`, `WinQuake/zone.c:399-427`) is a two-ended bump/stack allocator over one huge arena (`hunk_base`/`hunk_size`) — permanent, load-time data (server/client game state, the current level's BSP) grows up from `hunk_low_used`, and short-lived per-frame/per-scope temp allocations grow down from the top via `hunk_high_used` (`Hunk_HighMark`/`Hunk_FreeToHighMark`, `zone.c:452-474`). There is no per-block free; you only ever roll the mark back to a previous low/high watermark, which is why it's essentially free (a pointer subtraction) and immune to fragmentation — the tradeoff is that anything on the hunk must be freed in strict LIFO order relative to what was allocated after it.
+- **Hunk** (`Hunk_AllocName`, `WinQuake/zone.c:399-427`) is a two-ended bump/stack allocator over one huge arena (`hunk_base`/`hunk_size`) — permanent, load-time data (server/client game state, the current level's BSP) grows up from `hunk_low_used`, and short-lived per-frame/per-scope temp allocations grow down from the top via `hunk_high_used` (`Hunk_HighMark`/`Hunk_FreeToHighMark`, `zone.c:452-474`). There is no per-block free; you only ever roll the mark back to a previous low/high watermark, which avoids holes between live hunk blocks (rollback also zeroes the released bytes) — the tradeoff is that anything on the hunk must be freed in strict LIFO order relative to what was allocated after it.
 - **Cache** (`Cache_Alloc`, `WinQuake/zone.c:871-903`) sits *inside* the hunk's free middle region (between the low and high marks) and is the one allocator in the trio that's allowed to evict its own contents on demand. This is the piece that makes a fixed-size hunk workable at all on a machine with a few dozen megabytes of RAM: it lets the engine hold onto expensive-to-regenerate resources (decompressed alias models, decoded sound effects) as long as there's room, and reclaim them transparently the moment the hunk needs to grow.
+
+::: diagram memory
+
+### Reading the allocator state
+
+The strip models **block extents**, not returned pointers. `Hunk_AllocName`
+adds `sizeof(hunk_t)` after rounding the payload to 16 bytes; `Cache_Alloc`
+rounds payload plus `sizeof(cache_system_t)` to 16 bytes. Both return the address
+past their header (`WinQuake/zone.c:399-427`, `WinQuake/zone.c:871-903`).
+The sandbox uses already-sized abstract blocks; its units do not imply a C ABI
+or real asset footprint.
+
+**Zone is nested inside the low hunk.** `Memory_Init` allocates the arena with
+`Hunk_AllocName(zonesize, "zone")`, then initializes its free list
+(`WinQuake/zone.c:913-935`). The default is 48 KiB; `-zone` overrides it.
+`Z_TagMalloc` includes a header and four-byte sentinel, aligns to eight bytes,
+and splits only when the remainder exceeds `MINFRAGMENT` (64 bytes).
+`Z_Free` merges adjacent free blocks and repairs the rover
+(`WinQuake/zone.c:99-137`, `WinQuake/zone.c:156-220`). Freeing a cvar string
+returns space to Zone, not to the Cache middle. Zone never relocates live
+strings or automatically evicts them; `Z_Malloc` fails fatally if no block fits.
+The sandbox holds Zone's contents fixed to isolate the competing hunk/Cache lifetimes.
+
+**Address order and recency are different lists.** `Cache_FreeLow` visits the
+lowest-address block; `Cache_FreeHigh` visits the highest. Neither chooses an
+LRU victim. `Cache_Move` allocates a replacement while the old block still
+exists, using `Cache_TryAlloc(size, true)` to skip the bottom gap. It copies
+the payload, unlinks the old block and updates the same `cache_user_t.data`.
+The replacement enters the MRU end, even though relocation is not an asset
+access. Failure evicts that block; it does not evict some other LRU entry to
+make relocation succeed (`WinQuake/zone.c:575-750`). A recent hit therefore
+protects an asset only against ordinary LRU allocation pressure, not hunk growth.
+
+**Free total is not the largest gap.** Step 6 has 32 free units split around A;
+C needs 32 contiguous units. `Cache_Alloc` removes the LRU entry and retries.
+`Cache_Compact` is empty (`WinQuake/zone.c:799-801`): this is not a general
+compacting heap. A raw payload pointer retained across an allocating call can
+become stale; callers reacquire through the handle. `Cache_Free` clears it,
+`Cache_Check` returns NULL on a miss, and `S_LoadSound` reloads sound data
+(`WinQuake/zone.c:826-863`, `WinQuake/snd_mem.c:108-139`).
+
+**A level reset is not a Cache flush.** Startup records `host_hunklevel` after
+initialization (`WinQuake/host.c:1113`). `Host_ClearMemory` flushes the software
+renderer surface cache, marks model records unreferenced through `Mod_ClearAll`,
+and rewinds the low hunk (`WinQuake/host.c:491-502`, `WinQuake/model.c:167-180`).
+The `zone.c` model/sound Cache can survive until subsequent loading displaces
+it. `D_FlushCaches` concerns lit texture surfaces in the independent
+`d_surf.c` allocator, not decoded sounds or alias-model payloads.
+
+**High temp storage is a single active scratch allocation.** A new
+`Hunk_TempAlloc` releases the previous temp; `Hunk_HighMark` also releases it
+before returning the persistent high usage. Rolling back either hunk end
+zeroes the released range, so freeing is proportional to released bytes,
+not merely a pointer subtraction (`WinQuake/zone.c:444-548`). Hunk growth
+first checks low/high capacity: low exhaustion is fatal; high allocation
+returns NULL. Cache eviction cannot rescue overlapping low/high allocations.
 
 `Cache_Alloc` walks a doubly linked list of `cache_system_t` blocks threaded through the hunk's middle, and also keeps a second, orthogonal doubly linked list — `lru_prev`/`lru_next` — purely for recency:
 

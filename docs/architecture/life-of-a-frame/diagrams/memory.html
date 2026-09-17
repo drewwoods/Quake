@@ -1,0 +1,228 @@
+<figure class="concept" id="memory-sandbox" aria-labelledby="memory-title">
+  <h3 id="memory-title">Memory allocator sandbox</h3>
+  <style>
+    /* Two columns keep the whole demonstration on one screen: state on the
+       left, the address table (its text equivalent) on the right. */
+    /* Pinned to the tallest state (7 address rows) so stepping never shifts the page. */
+    #memory-sandbox .mem-live { min-height: 320px; }
+    #memory-sandbox .mem-grid { display: grid; grid-template-columns: minmax(0, 1.15fr) minmax(0, 1fr); gap: 0 26px; align-items: start; }
+    #memory-sandbox .mem-controls { display: flex; flex-wrap: wrap; gap: 8px; align-items: center; }
+    #memory-sandbox button { font: inherit; font-size: 14px; color: var(--ink); background: var(--surface); border: 1px solid var(--rule); border-radius: 3px; padding: 5px 10px; cursor: pointer; }
+    #memory-sandbox button:disabled { opacity: .5; cursor: default; }
+    #memory-sandbox :focus-visible { outline: 2px solid var(--ink); outline-offset: 3px; }
+    #memory-sandbox .mem-strip { display: flex; height: 56px; border: 1px solid var(--rule); margin: 8px 0; }
+    #memory-sandbox .mem-block { box-sizing: border-box; border-right: 1px solid var(--bg); display: flex; justify-content: center; align-items: center; min-width: 0; font: 12px var(--f-mono); color: var(--ink); background: var(--surface); }
+    #memory-sandbox .mem-zone { background: color-mix(in srgb, var(--host) 25%, var(--bg)); }
+    #memory-sandbox .mem-low { background: color-mix(in srgb, var(--sim) 25%, var(--bg)); }
+    #memory-sandbox .mem-cache { background: color-mix(in srgb, var(--cl) 25%, var(--bg)); }
+    #memory-sandbox .mem-high { background: color-mix(in srgb, var(--host) 25%, var(--bg)); }
+    #memory-sandbox .mem-free { background: repeating-linear-gradient(135deg, var(--surface), var(--surface) 5px, var(--bg) 5px, var(--bg) 7px); }
+    #memory-sandbox table { width: 100%; border-collapse: collapse; font-size: 13px; }
+    #memory-sandbox th, #memory-sandbox td { padding: 4px 7px; text-align: left; vertical-align: top; border-bottom: 1px solid var(--rule); }
+    #memory-sandbox caption { text-align: left; font-weight: bold; margin: 0 0 8px; }
+    #memory-sandbox #mem-position { font-size: 14px; margin: 0; }
+    #memory-sandbox #mem-question { font-size: 14px; margin: 0 0 8px; }
+    #memory-sandbox .mem-metrics { font: 12px var(--f-mono); overflow-wrap: anywhere; margin: 0 0 10px; }
+    #memory-sandbox .mem-result { font-size: 14px; min-height: 6em; margin: 10px 0 0; padding: 10px 12px; border-left: 3px solid var(--cl); background: var(--surface); }
+    #memory-sandbox [aria-current="step"] { background: var(--surface); }
+    #memory-sandbox .mem-scroll { overflow-x: auto; }
+    @media (max-width: 860px) { #memory-sandbox .mem-grid { grid-template-columns: minmax(0, 1fr); } }
+    /* The worked table is the fallback: JS replaces it with the stepper. */
+    @media screen { #memory-sandbox.mem-js .mem-static { display: none; } }
+    @media print { #memory-sandbox .mem-live { display: none !important; } }
+  </style>
+  <p><b>Illustrative simulation.</b> One 128-unit arena; sizes include abstract overhead,
+    not measured bytes. Zone occupies [0, 8) inside the low hunk, startup data [8, 16),
+    a persistent high allocation [120, 128); the saved level mark is 16. Asset loading is
+    reduced to its final Cache allocation.</p>
+
+  <div class="mem-live mem-grid" hidden>
+    <div>
+      <p id="mem-position"></p>
+      <div class="mem-strip" aria-hidden="true" id="mem-strip"></div>
+      <p class="mem-metrics" id="mem-metrics"></p>
+      <p id="mem-question"></p>
+      <div class="mem-controls">
+        <button type="button" id="mem-step">Next step</button>
+        <button type="button" id="mem-back">Back</button>
+        <button type="button" id="mem-reset">Reset</button>
+      </div>
+      <p id="mem-result" class="mem-result" role="status" aria-live="polite" aria-atomic="true"></p>
+    </div>
+    <div class="mem-scroll" tabindex="0" role="region" aria-label="Current memory addresses">
+      <table><caption>Current allocations · half-open block ranges</caption>
+        <thead><tr><th scope="col">Owner</th><th scope="col">Range</th><th scope="col">Handle / lifetime</th></tr></thead>
+        <tbody id="mem-blocks"></tbody>
+      </table>
+    </div>
+  </div>
+
+  <div class="mem-static mem-scroll" tabindex="0" role="region" aria-label="Worked allocator sequence">
+    <table id="mem-sequence">
+      <caption>Worked sequence</caption>
+      <thead><tr><th scope="col">Step / operation</th><th scope="col">Result</th><th scope="col">Responsible code</th></tr></thead>
+      <tbody>
+        <tr data-op="low" data-size="32"><th scope="row">1. Load map A: low hunk +32</th><td>Low mark 16 → 48. Zone and startup data stay. No Cache entries yet.</td><td><code>Hunk_AllocName → Cache_FreeLow</code></td></tr>
+        <tr data-op="alloc" data-id="A" data-size="16"><th scope="row">2. Load sound A: Cache 16</th><td>A occupies [48, 64). A.data points past its block header.</td><td><code>S_LoadSound → Cache_Alloc</code></td></tr>
+        <tr data-op="alloc" data-id="B" data-size="24"><th scope="row">3. Load alias model B: Cache 24</th><td>B occupies [64, 88). MRU → LRU: B, A.</td><td><code>Mod_LoadAliasModel → Cache_Alloc</code></td></tr>
+        <tr data-op="touch" data-id="A"><th scope="row">4. Access sound A</th><td>Addresses stay. MRU → LRU: A, B. A hit refreshes recency.</td><td><code>Cache_Check</code></td></tr>
+        <tr data-op="low" data-size="24"><th scope="row">5. Grow low hunk +24</th><td>Low mark 48 → 72. A moves [48, 64) → [88, 104); A.data changes. B cannot move into the remaining 16-unit tail: evicted, B.data = NULL. Address order forces A to move first despite its recent use.</td><td><code>Cache_FreeLow → Cache_Move → Cache_TryAlloc(size, true)</code></td></tr>
+        <tr data-op="alloc" data-id="C" data-size="32"><th scope="row">6. Load sound C: Cache 32</th><td>32 free units exist as two 16-unit gaps. No contiguous fit. Evict A (the only LRU entry), then place C at [72, 104). A.data = NULL.</td><td><code>Cache_Alloc → Cache_Free → retry</code></td></tr>
+        <tr data-op="rewind"><th scope="row">7. Change maps: clear old level</th><td>Low mark 72 → 16. Zone and startup data survive. C stays [72, 104); no compaction or Cache flush. The separate renderer surface cache is flushed.</td><td><code>Host_ClearMemory → Hunk_FreeToLowMark</code></td></tr>
+        <tr data-op="low" data-size="40"><th scope="row">8. Load map B: low hunk +40</th><td>Low mark 16 → 56. C stays [72, 104); the new level does not reach it.</td><td><code>Hunk_AllocName → Cache_FreeLow</code></td></tr>
+        <tr data-op="alloc" data-id="A" data-size="16"><th scope="row">9. Request sound A again</th><td>A misses, reloads at [56, 72). MRU → LRU: A, C. Reclaimed space does not resurrect an evicted payload.</td><td><code>S_LoadSound → Cache_Check → Cache_Alloc</code></td></tr>
+        <tr data-op="high" data-size="32"><th scope="row">10. Temporary high hunk +32</th><td>High usage 8 → 40; boundary 120 → 88. C overlaps and cannot relocate: evicted. A stays [56, 72).</td><td><code>Hunk_TempAlloc → Cache_FreeHigh → Cache_Move</code></td></tr>
+        <tr data-op="release"><th scope="row">11. Read high mark, releasing temp</th><td>High usage 40 → 8. A and Zone survive. C remains absent; freeing temp memory does not reload it.</td><td><code>Hunk_HighMark → Hunk_FreeToHighMark</code></td></tr>
+      </tbody>
+    </table>
+  </div>
+  <figcaption>Strip labels: Z = Zone, P = permanent low hunk, L = level low hunk,
+    A/B/C = model/sound Cache, H = high hunk, · = free gap. The address table is the
+    text equivalent; without scripting, and in print, the full worked sequence is listed
+    instead. This is a fixed allocator experiment, not a complete map-load trace.</figcaption>
+</figure>
+<script>
+(function () {
+  "use strict";
+  const root = document.getElementById("memory-sandbox");
+  if (!root) return;
+  const ARENA = 128, ZONE_END = 8, LEVEL_MARK = 16, HIGH_BASE = 8;
+  const ASSETS = { A: "sound A", B: "alias model B", C: "sound C" };
+  const rows = Array.from(root.querySelectorAll("#mem-sequence tbody tr"));
+  const step = root.querySelector("#mem-step");
+  const back = root.querySelector("#mem-back");
+  const result = root.querySelector("#mem-result");
+  let low, high, cache, lru, index;
+
+  function touch(id) {
+    lru = [id].concat(lru.filter(function (entry) { return entry !== id; }));
+  }
+
+  function remove(block) {
+    cache = cache.filter(function (entry) { return entry !== block; });
+    lru = lru.filter(function (id) { return id !== block.id; });
+  }
+
+  /* Address order finds gaps; nobottom skips the first gap during relocation.
+     The source block remains allocated until its replacement has been found. */
+  function findGap(size, nobottom) {
+    let start = low;
+    for (let i = 0; i < cache.length; i++) {
+      const block = cache[i];
+      if ((!nobottom || i !== 0) && block.start - start >= size) return start;
+      start = block.start + block.size;
+    }
+    return ARENA - high - start >= size ? start : null;
+  }
+
+  function insert(id, start, size) {
+    cache.push({ id: id, start: start, size: size });
+    cache.sort(function (a, b) { return a.start - b.start; });
+    touch(id);
+  }
+
+  function move(block) {
+    const start = findGap(block.size, true);
+    remove(block);
+    if (start !== null) insert(block.id, start, block.size);
+  }
+
+  function apply(row) {
+    const op = row.dataset.op, size = Number(row.dataset.size), id = row.dataset.id;
+    if (op === "touch") { touch(id); return; }
+    if (op === "rewind") { low = LEVEL_MARK; return; }
+    if (op === "release") { high = HIGH_BASE; return; }
+    if (op === "low") {
+      low += size;
+      while (cache.length && cache[0].start < low) move(cache[0]);
+      return;
+    }
+    if (op === "high") {
+      high += size;
+      let previous = null;
+      while (cache.length) {
+        const block = cache[cache.length - 1];
+        if (block.start + block.size <= ARENA - high) break;
+        // Match FreeHigh's address guard if relocation did not clear the boundary.
+        if (block.start === previous) remove(block);
+        else { previous = block.start; move(block); }
+      }
+      return;
+    }
+    let start = findGap(size, false);
+    while (start === null && cache.length) {
+      remove(cache.find(function (block) { return block.id === lru[lru.length - 1]; }));
+      start = findGap(size, false);
+    }
+    if (start === null) throw new Error("Scripted allocation exceeds the arena");
+    insert(id, start, size);
+  }
+
+  function draw() {
+    const blocks = [
+      { name: "Zone", label: "Z", start: 0, end: ZONE_END, kind: "zone", detail: "fixed; Z_Free only" },
+      { name: "Startup", label: "P", start: ZONE_END, end: LEVEL_MARK, kind: "low", detail: "below host_hunklevel" }
+    ];
+    if (low > LEVEL_MARK) blocks.push({ name: "Level", label: "L", start: LEVEL_MARK, end: low, kind: "low", detail: "rewinds to mark 16" });
+    let cursor = low, free = 0, largest = 0;
+    function gap(end) {
+      if (end <= cursor) return;
+      const size = end - cursor;
+      free += size;
+      largest = Math.max(largest, size);
+      blocks.push({ name: "Free", label: "·", start: cursor, end: end, kind: "free", detail: "hunk / Cache" });
+    }
+    cache.forEach(function (block) {
+      gap(block.start);
+      cursor = block.start + block.size;
+      blocks.push({ name: ASSETS[block.id], label: block.id, start: block.start, end: cursor, kind: "cache", detail: block.id + ".data → " + block.start + " + header" });
+    });
+    gap(ARENA - high);
+    blocks.push({ name: "High hunk", label: "H", start: ARENA - high, end: ARENA, kind: "high", detail: high > HIGH_BASE ? "32 temp + 8 persistent" : "8 persistent" });
+    const strip = root.querySelector("#mem-strip"), body = root.querySelector("#mem-blocks");
+    strip.textContent = "";
+    body.textContent = "";
+    blocks.forEach(function (block) {
+      const span = document.createElement("span");
+      span.className = "mem-block mem-" + block.kind;
+      span.style.width = (100 * (block.end - block.start) / ARENA) + "%";
+      span.textContent = block.label;
+      strip.appendChild(span);
+      const tr = document.createElement("tr");
+      [block.name, "[" + block.start + ", " + block.end + ")", block.detail].forEach(function (value) {
+        const td = document.createElement("td");
+        td.textContent = value;
+        tr.appendChild(td);
+      });
+      body.appendChild(tr);
+    });
+    const absent = Object.keys(ASSETS).filter(function (id) { return !lru.includes(id); });
+    root.querySelector("#mem-position").textContent = "State " + index + " / " + rows.length + " · addresses increase left → right";
+    root.querySelector("#mem-metrics").textContent = "low_used=" + low + " · high_used=" + high + " · free=" + free + " · largest gap=" + largest + " · MRU → LRU: " + (lru.join(" → ") || "empty") + " · NULL handles: " + (absent.join(", ") || "none");
+    root.querySelector("#mem-question").textContent = index < rows.length ? "Next: " + rows[index].querySelector("th").textContent + "." : "Sequence complete.";
+    step.disabled = index === rows.length;
+    back.disabled = index === 0;
+    rows.forEach(function (row, i) {
+      if (i === index - 1) row.setAttribute("aria-current", "step");
+      else row.removeAttribute("aria-current");
+    });
+  }
+
+  /* Stepping back replays from the start: the allocator is scripted, so a
+     rerun is cheaper than storing undo state for eviction and relocation. */
+  function seek(target) {
+    low = LEVEL_MARK; high = HIGH_BASE; cache = []; lru = []; index = 0;
+    while (index < target) { apply(rows[index]); index++; }
+    const row = rows[index - 1];
+    result.textContent = row ? row.cells[1].textContent + " Code: " + row.cells[2].textContent + "."
+                             : "Step through the sequence to watch each allocator result.";
+    draw();
+  }
+  step.addEventListener("click", function () { if (index < rows.length) seek(index + 1); });
+  back.addEventListener("click", function () { if (index > 0) seek(index - 1); });
+  root.querySelector("#mem-reset").addEventListener("click", function () { seek(0); });
+  seek(0);
+  root.classList.add("mem-js");
+  root.querySelector(".mem-live").hidden = false;
+})();
+</script>

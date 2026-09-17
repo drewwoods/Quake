@@ -33,7 +33,7 @@ The distinction between `allsolid` and `startsolid` is load-bearing and easy to 
 
 ## The three hulls
 
-This is the central idea, and it is worth being precise about what "hull" means. Carmack later named the absence of exactly this as one of DOOM's bigger misses; [why the hulls are pre-expanded at compile time](design:the-bsp-that-only-drew) is covered in the design history. A `hull_t` (`WinQuake/model.h:169-177`) is a self-contained BSP:
+This is the central idea, and it is worth being precise about what "hull" means. Carmack later named the absence of exactly this as one of DOOM's bigger misses; [why the hulls are pre-expanded at compile time](design:the-bsp-used-only-for-drawing) is covered in the design history. A `hull_t` (`WinQuake/model.h:169-177`) is a self-contained BSP:
 
 ```c
 typedef struct
