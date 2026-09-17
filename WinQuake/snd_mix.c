@@ -28,6 +28,9 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 #endif
 
 #define	PAINTBUFFER_SIZE	512
+#ifdef FILE_MUSIC
+enum { SND_VOLUME_UNITY = 256 };
+#endif
 portable_samplepair_t paintbuffer[PAINTBUFFER_SIZE];
 int		snd_scaletable[32][256];
 int 	*snd_p, snd_linear_count, snd_vol;
@@ -74,7 +77,11 @@ void S_TransferStereo16 (int endtime)
 	HRESULT	hresult;
 #endif
 	
+#ifdef FILE_MUSIC
+	snd_vol = SND_VOLUME_UNITY;
+#else
 	snd_vol = volume.value*256;
+#endif
 
 	snd_p = (int *) paintbuffer;
 	lpaintedtime = paintedtime;
@@ -164,7 +171,11 @@ void S_TransferPaintBuffer(int endtime)
 	out_mask = shm->samples - 1; 
 	out_idx = paintedtime * shm->channels & out_mask;
 	step = 3 - shm->channels;
+#ifdef FILE_MUSIC
+	snd_vol = SND_VOLUME_UNITY;
+#else
 	snd_vol = volume.value*256;
+#endif
 
 #ifdef _WIN32
 	if (pDSBuf)
@@ -265,6 +276,9 @@ void S_PaintChannels(int endtime)
 	channel_t *ch;
 	sfxcache_t	*sc;
 	int		ltime, count;
+#ifdef FILE_MUSIC
+	int		effect_volume;
+#endif
 
 	while (paintedtime < endtime)
 	{
@@ -324,6 +338,17 @@ void S_PaintChannels(int endtime)
 			}
 															  
 		}
+
+#ifdef FILE_MUSIC
+	// Scale effects before adding music to keep their volumes independent.
+		effect_volume = volume.value*SND_VOLUME_UNITY;
+		for (i=0 ; i<end-paintedtime ; i++)
+		{
+			paintbuffer[i].left = (paintbuffer[i].left * effect_volume) >> 8;
+			paintbuffer[i].right = (paintbuffer[i].right * effect_volume) >> 8;
+		}
+		CDAudio_Paint (paintbuffer, end-paintedtime);
+#endif
 
 	// transfer out according to DMA format
 		S_TransferPaintBuffer(end);

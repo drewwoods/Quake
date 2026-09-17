@@ -1362,7 +1362,8 @@ Finds the file in the search path.
 Sets com_filesize and one of handle or file
 ===========
 */
-int COM_FindFile (char *filename, int *handle, FILE **file)
+int COM_FindFile (char *filename, int *handle, FILE **file,
+		qboolean allow_directories)
 {
 	searchpath_t    *search;
 	char            netpath[MAX_OSPATH];
@@ -1415,7 +1416,7 @@ int COM_FindFile (char *filename, int *handle, FILE **file)
 		else
 		{               
 	// check a file in the directory tree
-			if (!static_registered)
+			if (!static_registered && !allow_directories)
 			{       // if not a registered version, don't ever go beyond base
 				if ( strchr (filename, '/') || strchr (filename,'\\'))
 					continue;
@@ -1484,7 +1485,7 @@ it may actually be inside a pak file
 */
 int COM_OpenFile (char *filename, int *handle)
 {
-	return COM_FindFile (filename, handle, NULL);
+	return COM_FindFile (filename, handle, NULL, false);
 }
 
 /*
@@ -1497,8 +1498,22 @@ into the file.
 */
 int COM_FOpenFile (char *filename, FILE **file)
 {
-	return COM_FindFile (filename, NULL, file);
+	return COM_FindFile (filename, NULL, file, false);
 }
+
+#ifdef FILE_MUSIC
+/*
+===========
+COM_FOpenMusicFile
+
+Allows music paths in shareware builds while preserving normal asset lookup.
+===========
+*/
+int COM_FOpenMusicFile (char *filename, FILE **file)
+{
+	return COM_FindFile (filename, NULL, file, true);
+}
+#endif
 
 /*
 ============

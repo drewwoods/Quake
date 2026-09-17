@@ -78,6 +78,10 @@ directory containing licensed Quake game data.
 ./WinQuake/build/macos/release/glquake -width 800 -height 600
 ```
 
+Music uses `id1/music/track02.wav` through `track11.wav`. Files must be 44.1
+kHz stereo signed 16-bit PCM. Run with `-sndspeed 44100`. Convert other formats
+with `afconvert -f WAVE -d LEI16@44100 -c 2 track02.mp3 track02.wav`.
+
 Windowed by default; `-fullscreen` gives a borderless window over the whole
 screen. The GL surface is the size you ask for and the display scales it up,
 which keeps the original art looking like itself; pass `-hidpi` to render at

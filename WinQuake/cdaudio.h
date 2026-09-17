@@ -25,3 +25,7 @@ void CDAudio_Pause(void);
 void CDAudio_Resume(void);
 void CDAudio_Shutdown(void);
 void CDAudio_Update(void);
+
+#ifdef FILE_MUSIC
+void CDAudio_Paint(portable_samplepair_t *buffer, int frames);
+#endif
