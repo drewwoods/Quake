@@ -44,3 +44,443 @@
   </div>
   <p class="diagram-return">When debugging motion, inspect <code>cl.mtime[2]</code> and <code>cl.time</code> first, then the entity’s <code>msg_origins[2]</code> and <code>forcelink</code>. A snap may come from clock correction or from an entity-specific decision. Source: WinQuake/cl_main.c:391-434, WinQuake/cl_main.c:499-533.</p>
 </figure>
+
+<figure class="concept" id="netlab" aria-labelledby="netlab-title">
+  <h3 id="netlab-title">Network delay lab</h3>
+  <style>
+    /* Prediction on the left, the frame's state as text on the right. */
+    #netlab .nl-grid { display: grid; grid-template-columns: minmax(0, 1.25fr) minmax(0, 1fr); gap: 0 26px; align-items: start; }
+    #netlab .nl-controls { display: flex; flex-wrap: wrap; gap: 8px 16px; align-items: center; margin: 0 0 12px; }
+    #netlab .nl-controls label { font: 12px var(--f-mono); color: var(--muted); }
+    #netlab select { font: inherit; font-size: 13px; color: var(--ink); background: var(--surface); border: 1px solid var(--rule); border-radius: 3px; padding: 3px 5px; }
+    #netlab .nl-buttons { display: flex; flex-wrap: wrap; gap: 8px; align-items: center; margin: 10px 0 0; }
+    #netlab button { font: inherit; font-size: 14px; color: var(--ink); background: var(--surface); border: 1px solid var(--rule); border-radius: 3px; padding: 5px 10px; cursor: pointer; }
+    #netlab button:disabled { opacity: .5; cursor: default; }
+    #netlab :focus-visible { outline: 2px solid var(--ink); outline-offset: 3px; }
+    #netlab .nl-server { fill: none; stroke: var(--sim); stroke-width: 2; }
+    #netlab .nl-shown { fill: none; stroke: var(--cl); stroke-width: 2; }
+    #netlab .nl-snap { fill: var(--host); stroke: var(--host); stroke-width: 1.5; }
+    #netlab .nl-lost { fill: var(--bg); stroke: var(--host); stroke-width: 1.5; }
+    #netlab .nl-wire { fill: none; stroke: var(--host); stroke-width: 1; stroke-dasharray: 3 3; }
+    #netlab .nl-axis { stroke: var(--rule); stroke-width: 1; }
+    #netlab .nl-cursor { stroke: var(--ink); stroke-width: 1; stroke-dasharray: 4 4; }
+    #netlab .nl-tick { font: 11px var(--f-mono); fill: var(--muted); }
+    #netlab .nl-key { font: 11px var(--f-mono); }
+    /* Class, not a fill attribute: base.css's .explain-svg rules outrank a
+       presentation attribute, which would flatten the whole key to one colour. */
+    #netlab .k-muted { fill: var(--muted); }
+    #netlab .k-host { fill: var(--host); }
+    #netlab .k-sim { fill: var(--sim); }
+    #netlab .k-cl { fill: var(--cl); }
+    #netlab .nl-now { stroke: var(--ink); stroke-width: 1.5; }
+    #netlab .nl-dot { fill: var(--cl); stroke: var(--cl); stroke-width: 1.5; }
+    #netlab #nl-question { font-size: 14px; margin: 0; }
+    #netlab .nl-result { font-size: 14px; min-height: 7em; margin: 12px 0 0; padding: 10px 12px; border-left: 3px solid var(--cl); background: var(--surface); }
+    #netlab table { width: 100%; border-collapse: collapse; font-size: 13px; }
+    #netlab th, #netlab td { padding: 4px 7px; text-align: left; vertical-align: top; border-bottom: 1px solid var(--rule); }
+    #netlab td.nl-num { font-family: var(--f-mono); }
+    #netlab caption { text-align: left; font-weight: bold; margin: 0 0 8px; }
+    @media (max-width: 860px) { #netlab .nl-grid { grid-template-columns: minmax(0, 1fr); } }
+    /* The worked trace is the fallback: JS replaces it with the stepper. */
+    @media screen { #netlab.nl-js .nl-static { display: none; } }
+    @media print { #netlab .nl-live { display: none !important; } }
+  </style>
+
+  <p><b>Simplified simulation of the client rule, not a capture.</b> One entity runs a
+    straight corridor at 320 units per second and teleports 160 units forward at server time
+    0.600 s. The server sends one snapshot per interval over an unreliable datagram
+    (<code>WinQuake/net_dgrm.c:301-311</code>); a lost one is simply never replaced. The client
+    draws 25 frames per second and applies <code>CL_LerpPoint</code> and the
+    <code>CL_RelinkEntities</code> teleport check, nothing else: two samples, a gap limited to
+    0.1 s, a fraction clamped to [0, 1], and no extrapolation past the newest sample. This is
+    original NetQuake — no local physics prediction, no snapshot buffer to tune.</p>
+
+  <div class="nl-live" hidden>
+    <div class="nl-controls">
+      <label for="nl-interval">Packet interval</label>
+      <select id="nl-interval">
+        <option value="0.05">50 ms (20/s)</option>
+        <option value="0.1" selected>100 ms (10/s)</option>
+        <option value="0.15">150 ms</option>
+        <option value="0.2">200 ms (5/s)</option>
+      </select>
+      <label for="nl-delay">One-way delay</label>
+      <select id="nl-delay">
+        <option value="0">0 ms</option>
+        <option value="0.05" selected>50 ms</option>
+        <option value="0.1">100 ms</option>
+      </select>
+      <label for="nl-loss">Loss pattern</label>
+      <select id="nl-loss">
+        <option value="none">none</option>
+        <option value="one" selected>packet 3</option>
+        <option value="burst">packets 3 and 4</option>
+        <option value="every4">every 4th</option>
+      </select>
+    </div>
+
+    <div class="svg-scroll">
+      <svg id="nl-svg" class="explain-svg" viewBox="0 0 820 330" role="img"
+           aria-labelledby="nl-t nl-d">
+        <title id="nl-t">Server position, received snapshots and displayed position on one
+          time axis</title>
+        <desc id="nl-d">Position runs up the vertical axis, time to the right. A solid line
+          is the server's true position, with a vertical break where the entity teleports.
+          Dots mark snapshots at the server time they carry; a hollow dot marked with a
+          cross is a lost packet. A dashed link below each dot runs from send time to
+          arrival time. The stepped line is the position the client actually displays,
+          drawn only up to the current client frame. A dashed vertical line marks that
+          frame. The state table below the figure is its text equivalent.</desc>
+        <text x="8" y="16" class="nl-tick">units</text>
+        <path id="nl-frame-axes" class="nl-axis" d=""/>
+        <path id="nl-server" class="nl-server" d=""/>
+        <g id="nl-packets"></g>
+        <path id="nl-shown" class="nl-shown" d=""/>
+        <!-- After the packets: each send-to-arrival wire drops straight through
+             the time axis, and would otherwise strike out its tick label. -->
+        <g id="nl-grid"></g>
+        <g id="nl-frames"></g>
+        <line id="nl-cursor" class="nl-cursor" x1="0" x2="0" y1="26" y2="300"/>
+        <g id="nl-legend"></g>
+      </svg>
+    </div>
+    <div class="nl-grid">
+      <div>
+        <p id="nl-question"></p>
+        <div class="nl-buttons">
+          <button type="button" id="nl-smooth">Smooth</button>
+          <button type="button" id="nl-pause">Pause</button>
+          <button type="button" id="nl-snap">Snap</button>
+          <button type="button" id="nl-step">Step (no guess)</button>
+          <button type="button" id="nl-reset">Reset</button>
+        </div>
+        <p id="nl-result" class="nl-result" role="status" aria-live="polite" aria-atomic="true"></p>
+      </div>
+      <div class="table-scroll" tabindex="0" role="region" aria-label="Client interpolation state">
+        <table><caption>State after the current client frame</caption>
+          <thead><tr><th scope="col">Field</th><th scope="col">Value</th></tr></thead>
+          <tbody id="nl-state"></tbody>
+        </table>
+      </div>
+    </div>
+  </div>
+
+  <div class="nl-static table-scroll" tabindex="0" role="region" aria-label="Worked interpolation trace">
+    <table id="nl-trace">
+      <caption>Worked trace · 100 ms interval, 50 ms one-way delay, packet 3 lost</caption>
+      <thead><tr><th scope="col">Frame</th><th scope="col">cl.time</th>
+        <th scope="col">mtime[1] → mtime[0]</th><th scope="col">frac</th>
+        <th scope="col">Displayed</th><th scope="col">Server</th>
+        <th scope="col">What you see</th></tr></thead>
+      <tbody>
+        <tr><th scope="row">1 · 0.04 s</th><td class="nl-num">0.000 s</td><td class="nl-num">0.000 → 0.000 s</td><td class="nl-num">1.000</td><td class="nl-num">0.0 (0.0 this frame)</td><td class="nl-num">12.8</td><td><b>pause.</b> No snapshot has arrived yet: the client has nothing to draw but the start pose.</td></tr>
+        <tr><th scope="row">2 · 0.08 s</th><td class="nl-num">0.000 s</td><td class="nl-num">0.000 → 0.000 s</td><td class="nl-num">1.000</td><td class="nl-num">0.0 (0.0 this frame)</td><td class="nl-num">25.6</td><td><b>pause.</b> No snapshot has arrived yet: the client has nothing to draw but the start pose.</td></tr>
+        <tr><th scope="row">3 · 0.12 s</th><td class="nl-num">0.000 s</td><td class="nl-num">0.000 → 0.000 s</td><td class="nl-num">1.000</td><td class="nl-num">0.0 (0.0 this frame)</td><td class="nl-num">38.4</td><td><b>pause.</b> No snapshot has arrived yet: the client has nothing to draw but the start pose.</td></tr>
+        <tr><th scope="row">4 · 0.16 s</th><td class="nl-num">0.040 s</td><td class="nl-num">0.000 → 0.100 s</td><td class="nl-num">0.400</td><td class="nl-num">12.8 (12.8 this frame)</td><td class="nl-num">51.2</td><td><b>smooth.</b> Snapshot #1 arrived carrying server time 0.100 s; svc_time pushed the previous one into mtime[1]. Displayed motion this frame was 1.0× the nominal per-frame step.</td></tr>
+        <tr><th scope="row">5 · 0.20 s</th><td class="nl-num">0.080 s</td><td class="nl-num">0.000 → 0.100 s</td><td class="nl-num">0.800</td><td class="nl-num">25.6 (12.8 this frame)</td><td class="nl-num">64.0</td><td><b>smooth.</b> Displayed motion this frame was 1.0× the nominal per-frame step.</td></tr>
+        <tr><th scope="row">6 · 0.24 s</th><td class="nl-num">0.100 s <i>reset</i></td><td class="nl-num">0.000 → 0.100 s</td><td class="nl-num">1.000</td><td class="nl-num">32.0 (6.4 this frame)</td><td class="nl-num">76.8</td><td><b>smooth.</b> The raw fraction passed 1.01, so cl.time was pulled back to mtime[0]. Displayed motion this frame was 0.5× the nominal per-frame step.</td></tr>
+        <tr><th scope="row">7 · 0.28 s</th><td class="nl-num">0.140 s</td><td class="nl-num">0.100 → 0.200 s</td><td class="nl-num">0.400</td><td class="nl-num">44.8 (12.8 this frame)</td><td class="nl-num">89.6</td><td><b>smooth.</b> Snapshot #2 arrived carrying server time 0.200 s; svc_time pushed the previous one into mtime[1]. Displayed motion this frame was 1.0× the nominal per-frame step.</td></tr>
+        <tr><th scope="row">8 · 0.32 s</th><td class="nl-num">0.180 s</td><td class="nl-num">0.100 → 0.200 s</td><td class="nl-num">0.800</td><td class="nl-num">57.6 (12.8 this frame)</td><td class="nl-num">102.4</td><td><b>smooth.</b> Displayed motion this frame was 1.0× the nominal per-frame step.</td></tr>
+        <tr><th scope="row">9 · 0.36 s</th><td class="nl-num">0.200 s <i>reset</i></td><td class="nl-num">0.100 → 0.200 s</td><td class="nl-num">1.000</td><td class="nl-num">64.0 (6.4 this frame)</td><td class="nl-num">115.2</td><td><b>smooth.</b> The raw fraction passed 1.01, so cl.time was pulled back to mtime[0]. Displayed motion this frame was 0.5× the nominal per-frame step.</td></tr>
+        <tr><th scope="row">10 · 0.40 s</th><td class="nl-num">0.200 s <i>reset</i></td><td class="nl-num">0.100 → 0.200 s</td><td class="nl-num">1.000</td><td class="nl-num">64.0 (0.0 this frame)</td><td class="nl-num">128.0</td><td><b>pause.</b> The raw fraction passed 1.01, so cl.time was pulled back to mtime[0]. The fraction is clamped at 1 with no newer sample, and NetQuake never extrapolates: the entity waits for the next packet.</td></tr>
+        <tr><th scope="row">11 · 0.44 s</th><td class="nl-num">0.200 s <i>reset</i></td><td class="nl-num">0.100 → 0.200 s</td><td class="nl-num">1.000</td><td class="nl-num">64.0 (0.0 this frame)</td><td class="nl-num">140.8</td><td><b>pause.</b> The raw fraction passed 1.01, so cl.time was pulled back to mtime[0]. The fraction is clamped at 1 with no newer sample, and NetQuake never extrapolates: the entity waits for the next packet.</td></tr>
+        <tr><th scope="row">12 · 0.48 s</th><td class="nl-num">0.300 s <i>reset</i></td><td class="nl-num">0.300 → 0.400 s <i>clamped</i></td><td class="nl-num">0.000</td><td class="nl-num">64.0 (0.0 this frame)</td><td class="nl-num">153.6</td><td><b>pause.</b> Snapshot #4 arrived carrying server time 0.400 s; svc_time pushed the previous one into mtime[1]. The pair spanned more than 0.1 s, so mtime[1] was rewritten to 0.300 s while keeping its old position: the same two positions are now swept in 100 ms, faster than the entity really moved. The raw fraction fell below −0.01, so cl.time was pushed up to mtime[1]. The fraction restarted near 0, so this frame redraws the older sample's position: motion resumes from there.</td></tr>
+        <tr><th scope="row">13 · 0.52 s</th><td class="nl-num">0.340 s</td><td class="nl-num">0.300 → 0.400 s</td><td class="nl-num">0.400</td><td class="nl-num">89.6 (25.6 this frame)</td><td class="nl-num">166.4</td><td><b>smooth.</b> Displayed motion this frame was 2.0× the nominal per-frame step.</td></tr>
+        <tr><th scope="row">14 · 0.56 s</th><td class="nl-num">0.400 s <i>reset</i></td><td class="nl-num">0.400 → 0.500 s</td><td class="nl-num">0.000</td><td class="nl-num">128.0 (38.4 this frame)</td><td class="nl-num">179.2</td><td><b>snap.</b> Snapshot #5 arrived carrying server time 0.500 s; svc_time pushed the previous one into mtime[1]. The raw fraction fell below −0.01, so cl.time was pushed up to mtime[1]. The displayed position jumped 38.4 units in one frame, against a nominal 12.8.</td></tr>
+        <tr><th scope="row">15 · 0.60 s</th><td class="nl-num">0.440 s</td><td class="nl-num">0.400 → 0.500 s</td><td class="nl-num">0.400</td><td class="nl-num">140.8 (12.8 this frame)</td><td class="nl-num">352.0</td><td><b>smooth.</b> Displayed motion this frame was 1.0× the nominal per-frame step.</td></tr>
+        <tr><th scope="row">16 · 0.64 s</th><td class="nl-num">0.480 s</td><td class="nl-num">0.400 → 0.500 s</td><td class="nl-num">0.800</td><td class="nl-num">153.6 (12.8 this frame)</td><td class="nl-num">364.8</td><td><b>smooth.</b> Displayed motion this frame was 1.0× the nominal per-frame step.</td></tr>
+        <tr><th scope="row">17 · 0.68 s</th><td class="nl-num">0.520 s</td><td class="nl-num">0.500 → 0.600 s <i>clamped</i></td><td class="nl-num">0.200 <i>forced</i></td><td class="nl-num">352.0 (198.4 this frame)</td><td class="nl-num">377.6</td><td><b>snap.</b> Snapshot #6 arrived carrying server time 0.600 s; svc_time pushed the previous one into mtime[1]. The pair spanned more than 0.1 s, so mtime[1] was rewritten to 0.500 s while keeping its old position: the same two positions are now swept in 100 ms, faster than the entity really moved. A component of the delta exceeds 100 units, so CL_RelinkEntities forces f = 1 for this entity: it is drawn at the newest sample, not interpolated. The displayed position jumped 198.4 units in one frame, against a nominal 12.8.</td></tr>
+        <tr><th scope="row">18 · 0.72 s</th><td class="nl-num">0.560 s</td><td class="nl-num">0.500 → 0.600 s</td><td class="nl-num">0.600 <i>forced</i></td><td class="nl-num">352.0 (0.0 this frame)</td><td class="nl-num">390.4</td><td><b>pause.</b> A component of the delta exceeds 100 units, so CL_RelinkEntities forces f = 1 for this entity: it is drawn at the newest sample, not interpolated. That sample has not changed, so nothing moves.</td></tr>
+        <tr><th scope="row">19 · 0.76 s</th><td class="nl-num">0.600 s</td><td class="nl-num">0.600 → 0.700 s</td><td class="nl-num">0.000</td><td class="nl-num">352.0 (0.0 this frame)</td><td class="nl-num">403.2</td><td><b>pause.</b> Snapshot #7 arrived carrying server time 0.700 s; svc_time pushed the previous one into mtime[1]. The fraction restarted near 0, so this frame redraws the older sample's position: motion resumes from there.</td></tr>
+        <tr><th scope="row">20 · 0.80 s</th><td class="nl-num">0.640 s</td><td class="nl-num">0.600 → 0.700 s</td><td class="nl-num">0.400</td><td class="nl-num">364.8 (12.8 this frame)</td><td class="nl-num">416.0</td><td><b>smooth.</b> Displayed motion this frame was 1.0× the nominal per-frame step.</td></tr>
+        <tr><th scope="row">21 · 0.84 s</th><td class="nl-num">0.680 s</td><td class="nl-num">0.600 → 0.700 s</td><td class="nl-num">0.800</td><td class="nl-num">377.6 (12.8 this frame)</td><td class="nl-num">428.8</td><td><b>smooth.</b> Displayed motion this frame was 1.0× the nominal per-frame step.</td></tr>
+        <tr><th scope="row">22 · 0.88 s</th><td class="nl-num">0.720 s</td><td class="nl-num">0.700 → 0.800 s</td><td class="nl-num">0.200</td><td class="nl-num">390.4 (12.8 this frame)</td><td class="nl-num">441.6</td><td><b>smooth.</b> Snapshot #8 arrived carrying server time 0.800 s; svc_time pushed the previous one into mtime[1]. Displayed motion this frame was 1.0× the nominal per-frame step.</td></tr>
+        <tr><th scope="row">23 · 0.92 s</th><td class="nl-num">0.760 s</td><td class="nl-num">0.700 → 0.800 s</td><td class="nl-num">0.600</td><td class="nl-num">403.2 (12.8 this frame)</td><td class="nl-num">454.4</td><td><b>smooth.</b> Displayed motion this frame was 1.0× the nominal per-frame step.</td></tr>
+        <tr><th scope="row">24 · 0.96 s</th><td class="nl-num">0.800 s</td><td class="nl-num">0.800 → 0.900 s</td><td class="nl-num">0.000</td><td class="nl-num">416.0 (12.8 this frame)</td><td class="nl-num">467.2</td><td><b>smooth.</b> Snapshot #9 arrived carrying server time 0.900 s; svc_time pushed the previous one into mtime[1]. Displayed motion this frame was 1.0× the nominal per-frame step.</td></tr>
+        <tr><th scope="row">25 · 1.00 s</th><td class="nl-num">0.840 s</td><td class="nl-num">0.800 → 0.900 s</td><td class="nl-num">0.400</td><td class="nl-num">428.8 (12.8 this frame)</td><td class="nl-num">480.0</td><td><b>smooth.</b> Displayed motion this frame was 1.0× the nominal per-frame step.</td></tr>
+      </tbody>
+    </table>
+  </div>
+  <figcaption><b>Three curves, one time axis.</b> The server line is ground truth, the dots are
+    what arrived, the stepped line is what the player sees — always behind, because the client
+    aims to stay between the last two timestamps it holds. The three labels are this
+    figure's, not the engine's: a <i>pause</i> is a frame that displays no movement — the
+    fraction clamped at 1 with no newer sample, since NetQuake never extrapolates, or a
+    fraction restarted at 0 on the older sample. A <i>snap</i> is the &gt;100-unit relink
+    override, or any displayed jump over 2.5× the per-frame nominal 12.8 units. Lost packets are not
+    resent or reconstructed; the next snapshot to arrive simply becomes <code>mtime[0]</code>
+    and pushes the previous one into <code>mtime[1]</code>, which is why a loss shows up as a
+    freeze followed by compressed motion rather than a gap in the path. Sizes and the loss
+    patterns are chosen to be reproducible, not measured. Source:
+    WinQuake/cl_main.c:391-434, WinQuake/cl_main.c:499-533, WinQuake/cl_parse.c:773-776,
+    WinQuake/net_dgrm.c:301-311, WinQuake/net_dgrm.c:370-384.</figcaption>
+</figure>
+<script>
+(function () {
+  "use strict";
+  const root = document.getElementById("netlab");
+  if (!root) return;
+
+  /* The scene: constant run speed plus one teleport, so both snap causes are
+     reachable — the >100-unit relink override and a clock reset. */
+  const SPEED = 320, TELEPORT_T = 0.6, TELEPORT_JUMP = 160;
+  const FRAME = 0.04, FRAMES = 25, RUN_END = FRAME * FRAMES;
+  const LERP_LIMIT = 0.1, TOL = 0.01, TELEPORT_UNITS = 100;
+  const NOMINAL = SPEED * FRAME, SNAP_STEP = 2.5 * NOMINAL;
+  const MAX_POS = 500;
+  /* Plot box: time left to right, position bottom to top. */
+  const X0 = 70, X1 = 790, Y0 = 210, Y1 = 30, T_SPAN = RUN_END + 0.05;
+  const WIRE_Y = 258, FRAME_Y = 292;
+  const LOSS = {
+    none: function () { return false; },
+    one: function (n) { return n === 3; },
+    burst: function (n) { return n === 3 || n === 4; },
+    every4: function (n) { return n % 4 === 0; }
+  };
+
+  const el = function (id) { return root.querySelector("#" + id); };
+  const intervalSel = el("nl-interval"), delaySel = el("nl-delay"), lossSel = el("nl-loss");
+  const stepBtn = el("nl-step");
+  let frame, guesses, hits;
+
+  function serverPos(t) { return SPEED * t + (t >= TELEPORT_T - 1e-9 ? TELEPORT_JUMP : 0); }
+  function x(t) { return X0 + (X1 - X0) * t / T_SPAN; }
+  function y(p) { return Y0 + (Y1 - Y0) * p / MAX_POS; }
+  function svg(tag, attrs) {
+    const node = document.createElementNS("http://www.w3.org/2000/svg", tag);
+    Object.keys(attrs).forEach(function (k) { node.setAttribute(k, attrs[k]); });
+    return node;
+  }
+
+  function packets() {
+    const interval = Number(intervalSel.value), delay = Number(delaySel.value);
+    const lost = LOSS[lossSel.value], out = [];
+    for (let n = 1; n * interval <= RUN_END + 1e-9; n++)
+      out.push({ n: n, time: n * interval, pos: serverPos(n * interval),
+                 arrive: n * interval + delay, lost: lost(n) });
+    return out;
+  }
+
+  /* One client frame, in host order: advance cl.time, parse arrivals, lerp.
+     svc_time shifts the pair (cl_parse.c:773-776); CL_LerpPoint limits the gap
+     and clamps the fraction; CL_RelinkEntities overrides f for a big delta. */
+  function run(upto) {
+    const pkts = packets(), log = [];
+    let clTime = 0, m1 = 0, m0 = 0, o1 = 0, o0 = 0, got = 0, shown = 0;
+    for (let i = 1; i <= upto; i++) {
+      const prev = shown, now = i * FRAME, arrived = [];
+      clTime += FRAME;
+      pkts.forEach(function (p) {
+        if (p.lost || p.arrive <= now - FRAME + 1e-9 || p.arrive > now + 1e-9) return;
+        m1 = m0; m0 = p.time; o1 = o0; o0 = p.pos; got++; arrived.push(p);
+      });
+      let f = m0 - m1, frac, reset = "", clamped = false;
+      if (!f) { clTime = m0; frac = 1; }                 // no pair yet, or a local server
+      else {
+        if (f > LERP_LIMIT) { m1 = m0 - LERP_LIMIT; f = LERP_LIMIT; clamped = true; }
+        frac = (clTime - m1) / f;
+        if (frac < 0) { if (frac < -TOL) { clTime = m1; reset = "low"; } frac = 0; }
+        else if (frac > 1) { if (frac > 1 + TOL) { clTime = m0; reset = "high"; } frac = 1; }
+      }
+      const delta = o0 - o1, tele = Math.abs(delta) > TELEPORT_UNITS;
+      shown = o1 + (tele ? 1 : frac) * delta;
+      const moved = shown - prev;
+      log.push({ i: i, now: now, clTime: clTime, m1: m1, m0: m0, f: f, frac: frac,
+                 o1: o1, o0: o0, delta: delta, shown: shown, moved: moved,
+                 server: serverPos(now), arrived: arrived, clamped: clamped,
+                 reset: reset, tele: tele, got: got,
+                 kind: Math.abs(moved) < 0.5 ? "pause"
+                       : (tele || Math.abs(moved) > SNAP_STEP) ? "snap" : "smooth" });
+    }
+    return { pkts: pkts, log: log };
+  }
+
+  function drawAxes() {
+    let d = "M" + X0 + " " + Y0 + "H" + X1 + "M" + X0 + " " + Y1 + "V" + (FRAME_Y + 8);
+    el("nl-frame-axes").setAttribute("d", d);
+    const g = el("nl-grid");
+    g.textContent = "";
+    for (let t = 0; t <= RUN_END + 1e-9; t += 0.1) {
+      g.appendChild(svg("line", { class: "nl-axis", x1: x(t), x2: x(t), y1: Y0, y2: Y0 + 4 }));
+      const label = svg("text", { class: "nl-tick", x: x(t) + 5, y: Y0 + 18 });
+      label.textContent = t.toFixed(1);
+      g.appendChild(label);
+    }
+    [0, 250, 500].forEach(function (p) {
+      const label = svg("text", { class: "nl-tick", x: X0 - 8, y: y(p) + 4, "text-anchor": "end" });
+      label.textContent = p;
+      g.appendChild(label);
+    });
+    [["server time (s)", X0, Y0 + 34, "k-muted", "start"],
+     ["arrival", X0 - 8, WIRE_Y + 4, "k-host", "end"],
+     ["server position", X0, 16, "k-sim", "start"],
+     ["snapshot", 260, 16, "k-host", "start"],
+     ["displayed position", 500, 16, "k-cl", "start"]].forEach(function (k) {
+      const label = svg("text", { class: "nl-key " + k[3], x: k[1], y: k[2],
+        "text-anchor": k[4] });
+      label.textContent = k[0];
+      el("nl-legend").appendChild(label);
+    });
+  }
+
+  function draw(sim) {
+    const log = sim.log, last = log[log.length - 1];
+    /* Server truth, sampled finely and broken at the teleport. */
+    let d = "";
+    for (let t = 0; t <= RUN_END + 1e-9; t += 0.01) {
+      const jump = t >= TELEPORT_T - 1e-9 && t - 0.01 < TELEPORT_T - 1e-9;
+      d += (!d || jump ? "M" : "L") + x(t).toFixed(1) + " " + y(serverPos(t)).toFixed(1);
+    }
+    el("nl-server").setAttribute("d", d);
+
+    const g = el("nl-packets");
+    g.textContent = "";
+    sim.pkts.forEach(function (p) {
+      g.appendChild(svg("circle", { class: p.lost ? "nl-lost" : "nl-snap",
+        cx: x(p.time).toFixed(1), cy: y(p.pos).toFixed(1), r: 4 }));
+      if (p.lost)
+        g.appendChild(svg("path", { class: "nl-lost", "stroke-width": 1.5,
+          d: "M" + (x(p.time) - 6) + " " + (y(p.pos) - 6) + "l12 12M" + (x(p.time) + 6)
+             + " " + (y(p.pos) - 6) + "l-12 12" }));
+      /* Send time to arrival time, on its own lane: a lost packet stops short. */
+      const to = p.lost ? x(p.time) + 8 : x(Math.min(p.arrive, T_SPAN));
+      g.appendChild(svg("path", { class: "nl-wire",
+        d: "M" + x(p.time).toFixed(1) + " " + y(p.pos).toFixed(1) + "V" + WIRE_Y
+           + "H" + to.toFixed(1) }));
+      if (!p.lost)
+        g.appendChild(svg("circle", { class: "nl-snap", cx: to.toFixed(1), cy: WIRE_Y, r: 2.5 }));
+    });
+
+    /* Displayed position: a staircase, only as far as the current frame. */
+    let s = "M" + x(0) + " " + y(0);
+    log.forEach(function (l) { s += "H" + x(l.now).toFixed(1) + "V" + y(l.shown).toFixed(1); });
+    el("nl-shown").setAttribute("d", s);
+
+    const fg = el("nl-frames");
+    fg.textContent = "";
+    for (let i = 1; i <= FRAMES; i++)
+      fg.appendChild(svg("line", { class: i === frame ? "nl-axis nl-now" : "nl-axis",
+        x1: x(i * FRAME), x2: x(i * FRAME),
+        y1: FRAME_Y - (i === frame ? 8 : 4), y2: FRAME_Y }));
+    if (last) {
+      fg.appendChild(svg("circle", { class: "nl-dot",
+        cx: x(last.now).toFixed(1), cy: y(last.shown).toFixed(1), r: 4 }));
+      el("nl-cursor").setAttribute("x1", x(last.now).toFixed(1));
+      el("nl-cursor").setAttribute("x2", x(last.now).toFixed(1));
+    }
+    const lane = svg("text", { class: "nl-tick", x: X1, y: FRAME_Y + 16, "text-anchor": "end" });
+    lane.textContent = "client frames, " + Math.round(1 / FRAME) + " per second";
+    fg.appendChild(lane);
+  }
+
+  function stateRows(l) {
+    if (!l) return [["client frame", "0 of " + FRAMES + " · nothing received yet"]];
+    return [
+      ["client frame", l.i + " of " + FRAMES + " · wall clock " + l.now.toFixed(2) + " s"],
+      ["cl.time", l.clTime.toFixed(3) + " s" + (l.reset ? " · reset to mtime[" + (l.reset === "low" ? 1 : 0) + "]" : "")],
+      ["cl.mtime[1] → [0]", l.m1.toFixed(3) + " → " + l.m0.toFixed(3) + " s"
+        + (l.clamped ? " · older timestamp rewritten to newest − 0.1" : "")],
+      ["interval used", l.f ? l.f.toFixed(3) + " s" : "0 · single sample, fraction forced to 1"],
+      ["fraction", l.frac.toFixed(3) + (l.tele ? " · overridden to 1 for this entity" : "")],
+      ["msg_origins[1] → [0]", l.o1.toFixed(1) + " → " + l.o0.toFixed(1)
+        + " · delta " + l.delta.toFixed(1) + (l.tele ? " (over 100)" : "")],
+      ["displayed", l.shown.toFixed(1) + " · moved " + l.moved.toFixed(1) + " this frame"],
+      ["server now", l.server.toFixed(1) + " · displayed lags by " + (l.server - l.shown).toFixed(1)],
+      ["snapshots received", l.got + (l.arrived.length ? " · #" + l.arrived.map(function (p) { return p.n; }).join(", #") + " this frame" : "")]
+    ];
+  }
+
+  /* Why the frame looked the way it did, in the engine's terms. */
+  function explain(l) {
+    const parts = [];
+    if (l.arrived.length)
+      parts.push("Snapshot #" + l.arrived[l.arrived.length - 1].n + " arrived carrying server time "
+        + l.m0.toFixed(3) + " s; svc_time pushed the previous one into mtime[1].");
+    if (l.clamped)
+      parts.push("The pair spanned more than 0.1 s, so mtime[1] was rewritten to "
+        + l.m1.toFixed(3) + " s while keeping its old position: the same two positions are now"
+        + " swept in 100 ms, faster than the entity really moved.");
+    if (l.reset === "high")
+      parts.push("The raw fraction passed 1.01, so cl.time was pulled back to mtime[0].");
+    if (l.reset === "low")
+      parts.push("The raw fraction fell below −0.01, so cl.time was pushed up to mtime[1].");
+    if (l.tele)
+      parts.push("A component of the delta exceeds 100 units, so CL_RelinkEntities forces f = 1"
+        + " for this entity: it is drawn at the newest sample, not interpolated.");
+    if (!l.got) parts.push("No snapshot has arrived yet: the client has nothing to draw but the start pose.");
+    else if (l.kind === "pause" && l.tele) parts.push("That sample has not changed, so nothing moves.");
+    else if (l.kind === "pause" && l.frac >= 1) parts.push("The fraction is clamped at 1 with no newer"
+      + " sample, and NetQuake never extrapolates: the entity waits for the next packet.");
+    else if (l.kind === "pause") parts.push("The fraction restarted near 0, so this frame redraws the"
+      + " older sample's position: motion resumes from there.");
+    if (l.kind === "snap") parts.push("The displayed position jumped " + Math.abs(l.moved).toFixed(1)
+      + " units in one frame, against a nominal " + NOMINAL.toFixed(1) + ".");
+    if (l.kind === "smooth") parts.push("Displayed motion this frame was " + (l.moved / NOMINAL).toFixed(1)
+      + "× the nominal per-frame step.");
+    return parts.join(" ");
+  }
+
+  const LABEL = { smooth: "smooth", pause: "pause", snap: "snap" };
+
+  function render(guess) {
+    const sim = run(frame), l = sim.log[sim.log.length - 1];
+    draw(sim);
+    const body = el("nl-state");
+    body.textContent = "";
+    stateRows(l).forEach(function (row) {
+      const tr = document.createElement("tr"), th = document.createElement("th");
+      th.scope = "row";
+      th.textContent = row[0];
+      const td = document.createElement("td");
+      td.className = "nl-num";
+      td.textContent = row[1];
+      tr.appendChild(th);
+      tr.appendChild(td);
+      body.appendChild(tr);
+    });
+    el("nl-question").textContent = frame === FRAMES
+      ? "Run complete. Change a control to start over, or reset."
+      : "Client frame " + (frame + 1) + " of " + FRAMES
+        + ": smooth movement, a pause, or a snap?";
+    stepBtn.disabled = frame === FRAMES;
+    ["nl-smooth", "nl-pause", "nl-snap"].forEach(function (id) { el(id).disabled = frame === FRAMES; });
+    if (!l) {
+      el("nl-result").textContent = "Predict the next client frame, then watch the stepped line.";
+      return;
+    }
+    const score = guesses ? " Predictions: " + hits + " of " + guesses + " right." : "";
+    const verdict = guess
+      ? (guess === l.kind ? "You said " + LABEL[guess] + " — right. " :
+         "You said " + LABEL[guess] + "; it was " + LABEL[l.kind] + ". ")
+      : "";
+    el("nl-result").textContent = verdict + "Frame " + l.i + ": " + LABEL[l.kind] + ". "
+      + explain(l) + score;
+  }
+
+  function advance(guess) {
+    if (frame === FRAMES) return;
+    frame++;
+    if (guess) {
+      guesses++;
+      if (guess === run(frame).log[frame - 1].kind) hits++;
+    }
+    render(guess);
+  }
+
+  function reset() { frame = 0; guesses = 0; hits = 0; render(null); }
+
+  [["nl-smooth", "smooth"], ["nl-pause", "pause"], ["nl-snap", "snap"],
+   ["nl-step", null]].forEach(function (pair) {
+    el(pair[0]).addEventListener("click", function () { advance(pair[1]); });
+  });
+  el("nl-reset").addEventListener("click", reset);
+  [intervalSel, delaySel, lossSel].forEach(function (sel) {
+    sel.addEventListener("change", reset);
+  });
+
+  drawAxes();
+  reset();
+  root.classList.add("nl-js");
+  root.querySelector(".nl-live").hidden = false;
+})();
+</script>

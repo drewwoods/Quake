@@ -126,6 +126,8 @@ This is the whole panning model: a dot product of the vector-to-source against t
 
 Note the special case at the top: sounds attached to the local view entity (`cl.viewentity`, e.g. weapon fire, pain grunts) always play at full, unpanned volume — imagine your own gunshot getting quietly panned to one ear because of a floating-point epsilon in your own origin vs. listener origin.
 
+::: diagram spatialize
+
 ## Channels and the paint buffer mixer (snd_mix.c)
 
 Once every channel's `leftvol`/`rightvol` are current, `S_Update_` (`WinQuake/snd_dma.c:856-902`) figures out how far ahead of the current DMA play position to mix (`_snd_mixahead`, clamped to the DMA buffer size), restores/resumes the Windows DirectSound buffer if needed, and calls the actual mixer, `S_PaintChannels` (`WinQuake/snd_mix.c:261-332`):

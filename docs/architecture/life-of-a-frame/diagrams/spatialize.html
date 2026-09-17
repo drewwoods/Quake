@@ -1,0 +1,369 @@
+<figure class="concept" id="spatialize" aria-labelledby="spatialize-title">
+  <h3 id="spatialize-title">Hear spatialization</h3>
+  <style>
+    /* Map on the left, controls and meters on the right, so one screen holds
+       the geometry and the numbers it produces. */
+    #spatialize .sp-grid { display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); gap: 0 26px; align-items: start; }
+    /* .sp-grid's display would outrank the UA's [hidden] rule on the same element. */
+    #spatialize .sp-live[hidden] { display: none; }
+    #spatialize svg { width: 100%; height: auto; display: block; touch-action: none; }
+    #spatialize .sp-row { display: flex; flex-wrap: wrap; align-items: center; gap: 4px 10px; margin: 0 0 8px; }
+    #spatialize .sp-row label { font: 500 11px var(--f-mono); letter-spacing: .06em; text-transform: uppercase; color: var(--muted); flex: 0 0 8.5em; }
+    #spatialize .sp-row input[type=range] { flex: 1 1 110px; min-width: 90px; accent-color: var(--sim); }
+    #spatialize .sp-row output { font: 12px var(--f-mono); color: var(--ink); flex: 0 0 4.5em; }
+    #spatialize select { font: inherit; font-size: 14px; color: var(--ink); background: var(--surface); border: 1px solid var(--rule); border-radius: 3px; padding: 3px 6px; }
+    #spatialize button { font: inherit; font-size: 14px; color: var(--ink); background: var(--surface); border: 1px solid var(--rule); border-radius: 3px; padding: 5px 10px; cursor: pointer; }
+    #spatialize button:disabled { opacity: .5; cursor: default; }
+    #spatialize :focus-visible { outline: 2px solid var(--ink); outline-offset: 3px; }
+    #spatialize .sp-axis { stroke: var(--host); stroke-width: 1.5; }
+    #spatialize .sp-ring { fill: none; stroke: var(--rule); stroke-width: 1; }
+    #spatialize .sp-clip { fill: none; stroke: var(--sim); stroke-width: 1.5; stroke-dasharray: 4 3; }
+    #spatialize .sp-ray { stroke: var(--rule); stroke-width: 1; stroke-dasharray: 2 3; }
+    #spatialize .sp-src { fill: var(--cl); stroke: var(--bg); stroke-width: 1.5; }
+    #spatialize .sp-lbl { font: 10.5px var(--f-mono); fill: var(--muted); }
+    #spatialize .sp-meter { display: grid; grid-template-columns: auto minmax(0, 1fr) auto; gap: 6px; align-items: center; margin: 0 0 6px; font: 12px var(--f-mono); white-space: nowrap; }
+    #spatialize .sp-track { display: block; height: 14px; background: var(--surface); border: 1px solid var(--rule); }
+    #spatialize .sp-fill { display: block; height: 100%; background: var(--cl); }
+    #spatialize .sp-over { background: var(--sim); }
+    #spatialize table { width: 100%; border-collapse: collapse; font-size: 13px; }
+    #spatialize th, #spatialize td { padding: 4px 7px; text-align: left; vertical-align: top; border-bottom: 1px solid var(--rule); }
+    #spatialize caption { text-align: left; font-weight: bold; margin: 0 0 8px; }
+    #spatialize .sp-terms { font: 12px var(--f-mono); overflow-wrap: anywhere; margin: 10px 0 0; color: var(--ink-2); }
+    #spatialize .sp-status { min-height: 4.4em; margin: 10px 0 0; padding: 10px 12px; font-size: 14px; color: var(--ink-2); background: var(--surface); border-left: 3px solid var(--cl); }
+    @media (max-width: 860px) { #spatialize .sp-grid { grid-template-columns: minmax(0, 1fr); } }
+    @media print { #spatialize .sp-live { display: none !important; } }
+  </style>
+
+  <div class="sp-live sp-grid" hidden>
+    <div>
+      <svg id="sp-svg" viewBox="0 0 300 300" role="img" aria-labelledby="sp-t sp-d">
+        <title id="sp-t">Top-down map of one sound source around the listener</title>
+        <desc id="sp-d">The listener sits at the centre of the map with two arrows: forward,
+          and the right axis ninety degrees clockwise from it. A dot marks the sound source,
+          placed by bearing and distance. Rings mark 250, 500 and 1000 world units; the dashed
+          ring is the distance at which the current attenuation silences the sound. Rotating the
+          listener swings both arrows while the source stays put, which is what changes the
+          left/right split. The sliders below set the same values, and the readout and meters
+          beside the map give every intermediate number in text.</desc>
+        <circle class="sp-ring" cx="150" cy="150" r="25"/>
+        <circle class="sp-ring" cx="150" cy="150" r="50"/>
+        <circle class="sp-ring" cx="150" cy="150" r="100"/>
+        <circle class="sp-clip" id="sp-clipring" cx="150" cy="150" r="100"/>
+        <text class="sp-lbl" x="152" y="46">1000</text>
+        <line class="sp-ray" id="sp-ray" x1="150" y1="150" x2="150" y2="50"/>
+        <line class="sp-axis" id="sp-fwd" x1="150" y1="150" x2="150" y2="90" marker-end="url(#sp-arrow)"/>
+        <line class="sp-axis" id="sp-right" x1="150" y1="150" x2="195" y2="150" marker-end="url(#sp-arrow)"/>
+        <text class="sp-lbl" id="sp-fwd-lbl" x="150" y="86">forward</text>
+        <text class="sp-lbl" id="sp-right-lbl" x="199" y="153">right</text>
+        <circle cx="150" cy="150" r="4" fill="var(--host)"/>
+        <circle class="sp-src" id="sp-handle" cx="150" cy="50" r="7"/>
+        <defs>
+          <marker id="sp-arrow" viewBox="0 0 8 8" refX="6" refY="4" markerWidth="5" markerHeight="5" orient="auto">
+            <path d="M0,1 L7,4 L0,7 z" fill="var(--host)"/>
+          </marker>
+        </defs>
+      </svg>
+      <p class="sp-terms" id="sp-terms"></p>
+    </div>
+
+    <div>
+      <div class="sp-row">
+        <label for="sp-bearing">Source bearing</label>
+        <input type="range" id="sp-bearing" min="0" max="355" step="5" value="0">
+        <output for="sp-bearing" id="sp-bearing-out"></output>
+      </div>
+      <div class="sp-row">
+        <label for="sp-dist">Distance</label>
+        <input type="range" id="sp-dist" min="0" max="1200" step="25" value="400">
+        <output for="sp-dist" id="sp-dist-out"></output>
+      </div>
+      <div class="sp-row">
+        <label for="sp-yaw">Listener yaw</label>
+        <input type="range" id="sp-yaw" min="0" max="355" step="5" value="0">
+        <output for="sp-yaw" id="sp-yaw-out"></output>
+      </div>
+      <div class="sp-row">
+        <label for="sp-vol">master_vol</label>
+        <input type="range" id="sp-vol" min="0" max="255" step="5" value="255">
+        <output for="sp-vol" id="sp-vol-out"></output>
+      </div>
+      <div class="sp-row">
+        <label for="sp-attn">attenuation</label>
+        <select id="sp-attn">
+          <option value="0">ATTN_NONE (0)</option>
+          <option value="1" selected>ATTN_NORM (1)</option>
+          <option value="2">ATTN_IDLE (2)</option>
+          <option value="3">ATTN_STATIC (3)</option>
+        </select>
+      </div>
+      <div class="sp-row">
+        <label for="sp-view" style="flex:0 0 auto">
+          <input type="checkbox" id="sp-view"> entnum == cl.viewentity
+        </label>
+      </div>
+
+      <div class="sp-meter"><span>leftvol</span>
+        <span class="sp-track"><span class="sp-fill" id="sp-left-fill"></span></span>
+        <span id="sp-left-num"></span></div>
+      <div class="sp-meter"><span>rightvol</span>
+        <span class="sp-track"><span class="sp-fill" id="sp-right-fill"></span></span>
+        <span id="sp-right-num"></span></div>
+
+      <div class="sp-row" style="margin-top:12px">
+        <button type="button" id="sp-play">Play tone</button>
+        <button type="button" id="sp-stop" disabled>Mute / stop</button>
+      </div>
+
+      <p class="sp-status" id="sp-status" role="status" aria-live="polite" aria-atomic="true"></p>
+    </div>
+  </div>
+
+  <div class="table-scroll" tabindex="0" role="region" aria-label="Worked spatialization examples">
+    <table>
+      <caption>Worked examples · master_vol 255, stereo, source is not the view entity</caption>
+      <thead><tr>
+        <th scope="col">Source</th><th scope="col">attenuation</th><th scope="col">dot</th>
+        <th scope="col">dist</th><th scope="col">lscale / rscale</th>
+        <th scope="col">leftvol / rightvol</th><th scope="col">What it shows</th>
+      </tr></thead>
+      <tbody>
+        <tr><th scope="row">Dead ahead, 300 units</th><td>ATTN_NORM (0.001/unit)</td><td>0.00</td><td>0.30</td><td>1.00 / 1.00</td><td>178 / 178</td><td>Centred: both ears equal.</td></tr>
+        <tr><th scope="row">Directly behind, 300 units</th><td>ATTN_NORM</td><td>0.00</td><td>0.30</td><td>1.00 / 1.00</td><td>178 / 178</td><td>Identical to dead ahead. There is no front/back cue at all.</td></tr>
+        <tr><th scope="row">Hard right (90°), 300 units</th><td>ATTN_NORM</td><td>1.00</td><td>0.30</td><td>0.00 / 2.00</td><td>0 / 357</td><td>rscale peaks at 2, so rightvol overshoots master_vol; leftvol is fully silent. The overshoot lasts while <code>(1 - dist) · 2 &gt; 1</code>, i.e. inside 500/attenuation units.</td></tr>
+        <tr><th scope="row">Hard right (90°), 800 units</th><td>ATTN_NORM</td><td>1.00</td><td>0.80</td><td>0.00 / 2.00</td><td>0 / 101</td><td>Past 500 units the distance term pulls even the 2× ear back under 255. Not 102: <code>(int)</code> truncates, and 0.8 has no exact binary form, so 101.99… becomes 101.</td></tr>
+        <tr><th scope="row">Dead ahead, 400 units</th><td>ATTN_STATIC (0.003/unit)</td><td>0.00</td><td>1.20</td><td>1.00 / 1.00</td><td>0 / 0</td><td>dist ≥ 1 ⇒ negative scale ⇒ clamped to 0. Silent past 1000/attenuation units.</td></tr>
+      </tbody>
+    </table>
+  </div>
+
+  <figcaption>Live geometry, exact arithmetic: the rules are transcribed from
+    <code>SND_Spatialize</code> (<code>WinQuake/snd_dma.c:404-450</code>) with
+    <code>dist_mult = attenuation / sound_nominal_clip_dist</code>
+    (<code>WinQuake/snd_dma.c:484</code>, <code>WinQuake/snd_dma.c:54</code>), as re-run each frame by
+    <code>S_Update</code> (<code>WinQuake/snd_dma.c:727-753</code>). Simplified: one channel instead of
+    eight dynamic plus static and ambient ones, no channel combining, stereo only (the
+    <code>shm-&gt;channels == 1</code> branch forces both scales to 1), and geometry flattened
+    to the horizontal plane — the engine uses the full 3D vectors, but only the dot with
+    <code>listener_right</code> reaches the mix, so height changes distance and nothing else.
+    <code>SND_Spatialize</code> itself clamps only at zero; the 255 ceiling belongs to the 8-bit
+    painter (<code>WinQuake/snd_mix.c:353-356</code>), and the 16-bit painter
+    (<code>WinQuake/snd_mix.c:375-397</code>) has none, so an overshoot there amplifies the sample.
+    Attenuation names and values are QuakeC's <code>ATTN_*</code> constants, quoted from
+    QuakeWorld's progs — the only copy in this tree (<code>qw-qc/defs.qc:398-401</code>), same
+    values; the C side only ever sees the resulting float.
+    Audio is a synthetic tone, not a Quake sample. Its per-ear gain takes the 8-bit painter's
+    255 clamp and then the 16-bit painter's <code>(data * leftvol) &gt;&gt; 8</code> scale
+    (<code>WinQuake/snd_mix.c:390</code>) — two painters' rules combined so the tone cannot
+    exceed full scale — then scaled down for headroom. The table alone carries the
+    argument if scripting or audio is unavailable.</figcaption>
+</figure>
+<script>
+(function () {
+  "use strict";
+  const root = document.getElementById("spatialize");
+  if (!root) return;
+
+  const NOMINAL_CLIP = 1000.0;   /* sound_nominal_clip_dist, snd_dma.c:54 */
+  const MAX_VOL = 255;           /* the 8-bit painter's ceiling, snd_mix.c:353-356 */
+  const PAINT_SHIFT = 256;       /* (data * vol) >> 8, snd_mix.c:390 */
+  const MAX_DIST = 1200, CENTRE = 150, RADIUS = 120, HEADROOM = 0.22, TONE_HZ = 330;
+  const PX = RADIUS / MAX_DIST;
+
+  const el = function (id) { return root.querySelector("#" + id); };
+  const bearing = el("sp-bearing"), dist = el("sp-dist"), yaw = el("sp-yaw");
+  const vol = el("sp-vol"), attn = el("sp-attn"), view = el("sp-view");
+  const play = el("sp-play"), stop = el("sp-stop"), status = el("sp-status");
+  let audio = null;
+
+  /* Bearings are clockwise from the map's up direction; screen y grows down. */
+  function unit(deg) {
+    const r = deg * Math.PI / 180;
+    return { x: Math.sin(r), y: Math.cos(r) };
+  }
+  function screenX(v, len) { return CENTRE + v.x * len; }
+  function screenY(v, len) { return CENTRE - v.y * len; }
+
+  /* In the plane, listener_right · source_vec is sin(bearing - yaw). The
+     cardinal angles are spelled out: sin(180°) is 1.2e-16 in floating point,
+     which would show a centred source as 152/153 instead of 153/153. */
+  function panDot(delta) {
+    const d = ((delta % 360) + 360) % 360;
+    if (d % 180 === 0) return 0;
+    if (d === 90) return 1;
+    if (d === 270) return -1;
+    return Math.sin(d * Math.PI / 180);
+  }
+
+  /* SND_Spatialize, snd_dma.c:404-450. dist_mult folds in the server's
+     attenuation (snd_dma.c:484); the view-entity case skips panning entirely. */
+  function spatialize(state) {
+    const master = state.master;
+    if (state.viewentity) {
+      return { viewentity: true, dot: 0, dist: 0, lscale: 1, rscale: 1, left: master, right: master };
+    }
+    const distMult = state.attenuation / NOMINAL_CLIP;
+    const d = state.distance * distMult;
+    const dot = state.distance === 0 ? 0 : panDot(state.bearing - state.yaw);
+    const rscale = 1 + dot, lscale = 1 - dot;
+    const clamp = function (scale) { return Math.max(0, Math.trunc(master * (1 - d) * scale)); };
+    return { viewentity: false, dot: dot, dist: d, lscale: lscale, rscale: rscale,
+             left: clamp(lscale), right: clamp(rscale) };
+  }
+
+  function meter(fill, num, value) {
+    const over = value > MAX_VOL;
+    fill.style.width = (100 * Math.min(value, MAX_VOL) / MAX_VOL) + "%";
+    fill.classList.toggle("sp-over", over);
+    num.textContent = value + (over ? " ▸ " + MAX_VOL : "");
+  }
+
+  function sentence(r, state) {
+    if (r.viewentity) {
+      return "Attached to the view entity, so SND_Spatialize returns master_vol in both ears "
+        + "before any geometry is considered: " + r.left + " / " + r.right + ".";
+    }
+    if (r.left === 0 && r.right === 0) {
+      if (r.dist >= 1) {
+        return "Silent. dist = " + r.dist.toFixed(2) + " ≥ 1, so (1 - dist) is negative in both "
+          + "ears and both clamp to zero. This attenuation goes quiet past "
+          + Math.round(NOMINAL_CLIP / state.attenuation) + " units.";
+      }
+      return "Silent. dist = " + r.dist.toFixed(2) + " is still under 1, but master_vol "
+        + state.master + " leaves both ears under 1 after (int) truncation.";
+    }
+    /* Distance 0: VectorNormalize (WinQuake/mathlib.c:385-401) returns 0 and leaves
+       source_vec zero, so the engine's dot is 0 whatever the bearing. */
+    if (state.distance === 0) {
+      return "Source sits on the listener. VectorNormalize leaves source_vec zero, so dot = 0 "
+        + "whatever the bearing, and both ears get master_vol: " + r.left + " / " + r.right + ".";
+    }
+    const bias = Math.abs(r.dot) < 0.02 ? "centred: the source is on the forward axis, ahead or "
+      + "behind, and both ears get the same volume"
+      : (r.dot > 0 ? "biased right" : "biased left") + " by dot = " + r.dot.toFixed(2);
+    const over = Math.max(r.left, r.right) > MAX_VOL
+      ? " The louder ear exceeds 255 and is clamped by the 8-bit painter." : "";
+    return "Pan is " + bias + ". leftvol = " + r.left + ", rightvol = " + r.right + "."
+      + over;
+  }
+
+  function draw() {
+    const state = { bearing: +bearing.value, distance: +dist.value, yaw: +yaw.value,
+                    master: +vol.value, attenuation: +attn.value, viewentity: view.checked };
+    const r = spatialize(state);
+
+    el("sp-bearing-out").textContent = state.bearing + "°";
+    el("sp-dist-out").textContent = state.distance;
+    el("sp-yaw-out").textContent = state.yaw + "°";
+    el("sp-vol-out").textContent = state.master;
+
+    const src = unit(state.bearing), fwd = unit(state.yaw), rt = unit(state.yaw + 90);
+    const len = state.distance * PX;
+    el("sp-handle").setAttribute("cx", screenX(src, len).toFixed(1));
+    el("sp-handle").setAttribute("cy", screenY(src, len).toFixed(1));
+    el("sp-ray").setAttribute("x2", screenX(src, len).toFixed(1));
+    el("sp-ray").setAttribute("y2", screenY(src, len).toFixed(1));
+    [["sp-fwd", fwd, 60], ["sp-right", rt, 45]].forEach(function (pair) {
+      el(pair[0]).setAttribute("x2", screenX(pair[1], pair[2]).toFixed(1));
+      el(pair[0]).setAttribute("y2", screenY(pair[1], pair[2]).toFixed(1));
+    });
+    el("sp-fwd-lbl").setAttribute("x", screenX(fwd, 74).toFixed(1));
+    el("sp-fwd-lbl").setAttribute("y", screenY(fwd, 74).toFixed(1));
+    el("sp-right-lbl").setAttribute("x", screenX(rt, 62).toFixed(1));
+    el("sp-right-lbl").setAttribute("y", screenY(rt, 62).toFixed(1));
+    /* The dashed ring is where dist reaches 1 and the sound cuts out. */
+    const clipRing = state.attenuation > 0 ? NOMINAL_CLIP / state.attenuation * PX : 0;
+    el("sp-clipring").setAttribute("r", Math.min(clipRing, RADIUS).toFixed(1));
+    el("sp-clipring").style.visibility = state.attenuation > 0 ? "visible" : "hidden";
+
+    meter(el("sp-left-fill"), el("sp-left-num"), r.left);
+    meter(el("sp-right-fill"), el("sp-right-num"), r.right);
+    el("sp-terms").textContent = r.viewentity
+      ? "entnum == cl.viewentity · geometry skipped · leftvol=rightvol=master_vol=" + r.left
+      : "dist_mult=" + (state.attenuation / NOMINAL_CLIP).toFixed(5)
+      + " · dot=" + r.dot.toFixed(3) + " · dist=" + r.dist.toFixed(3)
+      + " · lscale=" + r.lscale.toFixed(3) + " · rscale=" + r.rscale.toFixed(3)
+      + " · leftvol=" + r.left + " · rightvol=" + r.right;
+    status.textContent = sentence(r, state);
+    if (audio) gains(r);
+  }
+
+  /* Audio is built only on an explicit press, and the gains track the same
+     integers the meters show: vol clamped to 255, then vol / 256. */
+  function gains(r) {
+    const at = audio.ctx.currentTime;
+    audio.left.gain.setTargetAtTime(Math.min(r.left, MAX_VOL) / PAINT_SHIFT * HEADROOM, at, 0.02);
+    audio.right.gain.setTargetAtTime(Math.min(r.right, MAX_VOL) / PAINT_SHIFT * HEADROOM, at, 0.02);
+  }
+
+  function start() {
+    const Ctor = window.AudioContext || window.webkitAudioContext;
+    if (!Ctor) {
+      status.textContent = "This browser exposes no AudioContext, so the tone is unavailable. "
+        + "The meters and the worked examples carry the same numbers.";
+      play.disabled = true;
+      return;
+    }
+    try {
+      const ctx = new Ctor();
+      const osc = ctx.createOscillator();
+      const left = ctx.createGain(), right = ctx.createGain();
+      const merger = ctx.createChannelMerger(2);
+      osc.type = "triangle";
+      osc.frequency.value = TONE_HZ;
+      left.gain.value = 0;
+      right.gain.value = 0;
+      osc.connect(left).connect(merger, 0, 0);
+      osc.connect(right).connect(merger, 0, 1);
+      merger.connect(ctx.destination);
+      osc.start();
+      audio = { ctx: ctx, osc: osc, left: left, right: right };
+    } catch (err) {
+      status.textContent = "Audio could not start (" + err.name + "). The meters and the worked "
+        + "examples carry the same numbers.";
+      play.disabled = true;
+      return;
+    }
+    play.disabled = true;
+    stop.disabled = false;
+    draw();
+  }
+
+  function end() {
+    if (!audio) return;
+    audio.osc.stop();
+    audio.ctx.close();
+    audio = null;
+    play.disabled = false;
+    stop.disabled = true;
+    draw();
+  }
+
+  /* Dragging is a convenience; the sliders are the keyboard path and take
+     arrow keys natively. Both write the same bearing/distance state. */
+  function drag(ev) {
+    const svg = el("sp-svg"), box = svg.getBoundingClientRect();
+    const x = (ev.clientX - box.left) / box.width * 300 - CENTRE;
+    const y = CENTRE - (ev.clientY - box.top) / box.height * 300;
+    const deg = (Math.atan2(x, y) * 180 / Math.PI + 360) % 360;
+    bearing.value = Math.round(deg / 5) * 5 % 360;
+    dist.value = Math.min(MAX_DIST, Math.round(Math.hypot(x, y) / PX / 25) * 25);
+    draw();
+  }
+
+  el("sp-svg").addEventListener("pointerdown", function (ev) {
+    el("sp-svg").setPointerCapture(ev.pointerId);
+    drag(ev);
+  });
+  el("sp-svg").addEventListener("pointermove", function (ev) {
+    if (el("sp-svg").hasPointerCapture(ev.pointerId)) drag(ev);
+  });
+  [bearing, dist, yaw, vol, attn, view].forEach(function (control) {
+    control.addEventListener("input", draw);
+  });
+  play.addEventListener("click", start);
+  stop.addEventListener("click", end);
+
+  root.querySelector(".sp-live").hidden = false;
+  draw();
+})();
+</script>

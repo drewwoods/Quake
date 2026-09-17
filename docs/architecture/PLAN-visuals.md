@@ -242,6 +242,31 @@ concept without audio. Place beside `S_Update` and spatialization.
   fold, emitted spans were lost against the polygon fills, and deep-anchor
   previews only repeated the link text.
 
+- **F9 complete.** `diagrams/spatialize.html` runs `SND_Spatialize`'s exact
+  arithmetic on a top-down map: source bearing and distance, listener yaw,
+  `ATTN_*`, `master_vol`, and a view-entity toggle, with live `dot`/`dist`/
+  `lscale`/`rscale` and integer left/right meters. Audio is a Web Audio tone
+  built only on a button press, per-ear gain `vol / 256`, with mute and an
+  AudioContext-absent fallback. Sliders are the keyboard path; a five-row
+  worked table teaches the same points without script or sound — no front/back
+  cue, the 2x ear overshooting 255 inside 500/attenuation units, `(int)`
+  truncation giving 101 rather than 102, and silence past
+  1000/attenuation. Placed after the `SND_Spatialize` listing in section 07.
+  No browser available this session: verified by reading the built HTML and
+  running the widget's script under `node` against a DOM stub, whose outputs
+  match the worked table.
+
+- **F7 complete.** The interpolation figure gains a network delay lab:
+  packet interval, one-way delay and four fixed loss patterns, stepped client
+  frames, and a smooth/pause/snap prediction before each step. It models
+  `CL_LerpPoint` only — two samples, the 0.1 s gap limit, a clamped fraction,
+  no extrapolation — plus the 100-unit relink override, and says so rather
+  than borrowing QuakeWorld prediction. A 25-frame worked trace is the text
+  equivalent and the JS-off fallback. No browser this session either: the
+  fragment's own script was run under `node` across all 48 control
+  combinations, and the worked trace is generated from it. Both guides build;
+  local references pass.
+
 ### Original sequence
 
 1. D1, D3, D5: no new build machinery, Design History stops being text-only.
