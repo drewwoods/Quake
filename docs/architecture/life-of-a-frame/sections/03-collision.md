@@ -2,7 +2,7 @@
 
 Collision answers a question: if this object tries to move from A to B, how far can it get and what does it hit? The caller uses the answer to stop, slide, bounce or trigger game behavior.
 
-> **First pass.** Start with **trace_t**, the result of a movement query. `SV_Move` checks the world and candidate solid entities; it does not decide whether a hit means damage or a bounce. World hulls make common box sizes cheap to trace. The separate **areanode tree** narrows which moving entities need testing. Source: `WinQuake/world.h:28-37`, `WinQuake/world.c:923-961`. [Next: BSP and visibility →](#sec-4)
+> **First pass.** Start with **trace_t**, the result of a movement query. `SV_Move` checks the world and candidate solid entities; it does not decide whether a hit means damage or a bounce. **mins/maxs** is the mover's box relative to origin. A **hull** is a collision BSP of **clipnodes**; three pre-expanded world hulls turn common box sizes into a point trace. The **areanode** tree narrows which moving entities need testing. Source: `WinQuake/world.h:28-37`, `WinQuake/world.c:923-961`. [Next: BSP and visibility →](#sec-4)
 
 ::: diagram collision
 
@@ -27,7 +27,7 @@ typedef struct
 } trace_t;
 ```
 
-The distinction between `allsolid` and `startsolid` is load-bearing and easy to get backwards. `startsolid` means the trace *began* inside a solid — the mover is embedded — but it may still have found open space along the way. `allsolid` means it never left solid at all. The header comment on `SV_Move` (`WinQuake/world.h:72-75`) states the resulting policy explicitly: "if the starting point is in a solid, it will be allowed to move out to an open area." That is a deliberate, forgiving choice — a player who ends up stuck (through a telefrag, a moving platform, or float error at a hull seam) can escape rather than being frozen forever. `SV_FlyMove` turns `allsolid` into "kill velocity, return 3" (`WinQuake/sv_phys.c:262-266`), but tolerates `startsolid` silently.
+The distinction between `allsolid` and `startsolid` is load-bearing and easy to get backwards. `startsolid` means the trace *began* inside a solid — the mover is embedded — but it may still have found open space along the way. `allsolid` means it never left solid at all. `allsolid` leaves `fraction` at 1 and `endpos` at the requested end (`WinQuake/world.c:729-733`); the plane is not valid. Callers must test `allsolid` before trusting those fields. The header comment on `SV_Move` (`WinQuake/world.h:72-75`) states the policy: "if the starting point is in a solid, it will be allowed to move out to an open area." A start-in-solid trace that later reaches empty clears `allsolid` and is allowed out; one that never does stays `allsolid`. `SV_FlyMove` turns `allsolid` into "kill velocity, return 3" (`WinQuake/sv_phys.c:262-266`) and does not move, but tolerates `startsolid` silently.
 
 `inopen` / `inwater` record the content types the trace passed through; the QuakeC `traceline` builtin exposes them via `trace_inopen` / `trace_inwater` to distinguish a shot that crossed a water surface. `fraction` is parametric along the move, so callers can determine how much of the requested path was completed; the hit plane is then used to clip velocity.
 
@@ -79,7 +79,7 @@ Hulls 1 and 2 are built at load time by `Mod_LoadClipnodes` (`WinQuake/model.c:9
 	hull->clip_maxs[2] = 64;
 ```
 
-(The single clipnode lump in the BSP actually stores both hulls' node sets back to back, distinguished by the per-model `headnode[]` array, `WinQuake/bspfile.h:86`; `MAX_MAP_HULLS` is 4, `WinQuake/bspfile.h:24`, with slot 3 unused in Quake 1.)
+The `firstclipnode = 0` values are overwritten. `Mod_LoadBrushModel` sets each hull's `firstclipnode` from the submodel's `headnode[]` (`WinQuake/model.c:1189-1198`, `dmodel_t.headnode` at `WinQuake/bspfile.h:86`). Hulls 1 and 2 share one clipnode array; the headnodes pick the roots, including for doors. `MAX_MAP_HULLS` is 4 (`WinQuake/bspfile.h:24`); slot 3 is unused by `SV_HullForEntity`. Hull 0's headnode indexes the transcribed render nodes, not this lump.
 
 Hull 0 is different: it has no clipnodes of its own in the file. `Mod_MakeHull0` (`WinQuake/model.c:998-1028`) *transcribes the rendering BSP* into clipnode form so that point queries can use identical code:
 
@@ -109,11 +109,11 @@ Hull 0 is different: it has no clipnodes of its own in the file. `Mod_MakeHull0`
 	}
 ```
 
-Note hull 0's `clip_mins`/`clip_maxs` stay zeroed — a point has no size, so no offset correction is needed.
+Note hull 0's `clip_mins`/`clip_maxs` stay zeroed — a point has no size, so no offset correction is needed. Point traces therefore see render geometry: clip-only brushes (`CONTENTS_CLIP`, `WinQuake/bspfile.h:144`) live in hulls 1 and 2, not hull 0.
 
 **Why three?** Because dilating the world by the mover's size at *compile* time turns a swept-box test into a swept-point test at runtime. This is a Minkowski sum baked into the data. Expand each solid obstacle by the reflected mover box: the space where the box’s origin would cause an overlap becomes solid in the expanded world. For example, a box with a 16-unit horizontal half-width must stop its center 16 units before a vertical wall. `qbsp` does this expansion once, offline, so the inner trace only needs a point path after the runtime has selected a hull and applied its offset — `SV_RecursiveHullCheck` only ever traces a line.
 
-The constraint applies to collision against BSP geometry: **there are only three pre-expanded mover sizes.** `SV_HullForEntity` chooses hull 0, 1, or 2 by the moving box's width. A grenade or nail uses the point hull; players and most monsters use the 32×32×56 hull; large monsters use the 64×64×88 hull. Arbitrary entity-vs-entity boxes still work through the generated box hull described below. This is why a rocket can pass through a gap that its player cannot.
+The constraint applies to collision against BSP geometry: **there are only three pre-expanded mover sizes.** `SV_HullForEntity` chooses hull 0, 1, or 2 by the mover's X width, for players and monsters alike: under 3 is hull 0 (grenade, nail, rocket), at most 32 is hull 1 (32×32×56, players and most monsters), else hull 2 (64×64×88, large monsters). Against a non-BSP entity the engine fabricates a box hull instead — player vs player is two AABBs, not hull 1 vs hull 1. This is why a rocket can pass through a gap that its player cannot.
 
 > **.plan.** “invisible brushes for clip hull” — [Carmack, 11 Mar 1996](../../../historical/plans/carmack/by_day/johnc_plan_19960311.txt). The collision hull was also a mapper-facing contract: authors could add geometry that shaped movement without adding visible polygons.
 
@@ -358,7 +358,7 @@ The pattern is: subtract the offset going in, add it back coming out. `p1f`/`p2f
 
 ## `SV_Move` and the areanode tree
 
-`SV_Move` (`WinQuake/world.c:923-961`) is the public entry point, and it is short because all it does is compose: trace the world, then trace whatever entities the move's bounding box could reach.
+`SV_Move` (`WinQuake/world.c:923-961`) is the public entry point, and it is short because all it does is compose: trace the world (edict 0, BSP hulls), then trace whatever solid entities the move's bounding box could reach (box hull, or BSP hulls for doors).
 
 ```c
 	memset ( &clip, 0, sizeof ( moveclip_t ) );
@@ -391,7 +391,7 @@ The pattern is: subtract the offset going in, add it back coming out. `p1f`/`p2f
 	SV_ClipToLinks ( sv_areanodes, &clip );
 ```
 
-`MOVE_MISSILE` (`WinQuake/world.h:42`) is a gameplay cheat with a clean implementation: a rocket is a point against the world but a 30-unit cube against monsters, via the separate `mins2`/`maxs2` used only in the monster branch of `SV_ClipToLinks` (`WinQuake/world.c:857-860`). Rockets therefore hit monsters that they visually miss, which is exactly what makes the rocket launcher feel good. `MOVE_NOMONSTERS` (`WinQuake/world.h:41`) is the opposite lever, used for line-of-sight and edge tests.
+`MOVE_MISSILE` (`WinQuake/world.h:42`) expands only the entity search: a rocket stays a point against the world and against players, but `SV_ClipToLinks` uses a ±15 box (`mins2`/`maxs2`) against `FL_MONSTER` (`WinQuake/world.c:857-860`). Players are not `FL_MONSTER`, so deathmatch rocket hits are point-vs-AABB. Against monsters the larger box is why a near miss still hits. `MOVE_NOMONSTERS` (`WinQuake/world.h:41`) is the opposite lever, used for line-of-sight and edge tests.
 
 `SV_MoveBounds` (`WinQuake/world.c:893-916`) computes the AABB swept by the whole move, padded by one unit on each side, and — as with the `#if 0` "test against everything" debug branch at `WinQuake/world.c:895-898` — the padding and the debug escape hatch tell you this code was tuned against real bugs.
 
@@ -762,7 +762,7 @@ Six traces for the shotgun, fourteen for the super shotgun, every shot, plus one
 
 **Projectiles** are edicts. QuakeC spawns one, sets `.movetype` to `MOVETYPE_FLYMISSILE`, `.solid` to `SOLID_BBOX`, `.owner` to the shooter, and a `.touch` function; the engine then moves it each frame through `SV_Physics_Toss` → `SV_PushEntity` → `SV_Move`, and `SV_Impact` (`WinQuake/sv_phys.c:153`) invokes the touch function on contact. `MOVETYPE_FLYMISSILE` is what selects `MOVE_MISSILE` and the ±15 monster-clipping expansion described above.
 
-So: hitscan is *N* traces resolved this instant with no entity created; projectiles are one entity traced once per frame until something touches it. The tradeoff is exactly the one you would expect — hitscan costs CPU at fire time and nothing thereafter, projectiles cost an edict slot, per-frame physics, and network bandwidth for as long as they fly. On a 1996 server with `MAX_EDICTS` at 600, that mattered.
+So: hitscan is *N* traces resolved this instant with no entity created; projectiles are one entity traced once per frame until something touches it. Hitscan costs CPU at fire time and nothing thereafter; projectiles cost an edict slot, per-frame physics, and network bandwidth for as long as they fly. On a 1996 server with `MAX_EDICTS` 600 (`WinQuake/quakedef.h:107`), that mattered.
 
 ## Call graph
 
@@ -772,7 +772,7 @@ SV_Move (start, mins, maxs, end, type, passedict)      world.c:923
     SV_HullForEntity                                   world.c:129
       SV_HullForBox        [non-BSP entities]          world.c:105
         (topology from SV_InitBoxHull)                 world.c:68
-      model->hulls[0|1|2]  [SOLID_BSP]                 model.c:998 / 944
+      model->hulls[0|1|2]  [SOLID_BSP]                 model.c:998 / 944, 1189-1198
     SV_RecursiveHullCheck                              world.c:581
       SV_HullPointContents                             world.c:491 (asm: worlda.s:47)
       (recurse near side, then far side)               world.c:657, 672
@@ -805,7 +805,7 @@ SV_movestep (monsters)                                 sv_move.c:110
     SV_Move           [midpoint + 4 corners]           sv_move.c:74, 87
   SV_LinkEdict                                         world.c:372
 SV_StepDirection                                       sv_move.c:233
-  PF_changeyaw                                         pr_cmds.c
+  PF_changeyaw                                         pr_cmds.c:1412
   SV_movestep                                          sv_move.c:110
 SV_NewChaseDir / SV_MoveToGoal                         sv_move.c:284 / 393
 
@@ -822,17 +822,17 @@ PF_setorigin -> SV_LinkEdict                           pr_cmds.c:120
 - `trace_t` — `WinQuake/world.h:28-37` — the universal query result: `allsolid`, `startsolid`, `inopen`/`inwater`, `fraction`, `endpos`, `plane`, `ent`.
 - `plane_t` — `WinQuake/world.h:22-26` — impact plane (normal + distance) reported in `trace_t`; distinct from the renderer's `mplane_t`.
 - `hull_t` — `WinQuake/model.h:169-177` — a collision BSP: clipnodes, planes, node range, and the `clip_mins`/`clip_maxs` the hull was dilated for.
-- `dclipnode_t` — `WinQuake/bspfile.h` — plane index + two children; negative child = `CONTENTS_*`. The whole collision tree is made of these.
-- `model_t.hulls[MAX_MAP_HULLS]` — `WinQuake/model.h:355`, `MAX_MAP_HULLS` = 4 (`WinQuake/bspfile.h:24`) — hull 0 point (built by `Mod_MakeHull0`, `WinQuake/model.c:998`), hull 1 32×32×56, hull 2 64×64×88 (`WinQuake/model.c:959-981`); slot 3 unused in Quake 1.
+- `dclipnode_t` — `WinQuake/bspfile.h:165-169` — plane index + two children; negative child = `CONTENTS_*`. The whole collision tree is made of these.
+- `model_t.hulls[MAX_MAP_HULLS]` — `WinQuake/model.h:355`, `MAX_MAP_HULLS` = 4 (`WinQuake/bspfile.h:24`) — hull 0 point (built by `Mod_MakeHull0`, `WinQuake/model.c:998`), hull 1 32×32×56, hull 2 64×64×88 (`WinQuake/model.c:959-981`); `firstclipnode` from `dmodel_t.headnode[]` (`WinQuake/model.c:1189-1198`); slot 3 unused by `SV_HullForEntity`.
 - `box_hull` / `box_clipnodes[6]` / `box_planes[6]` — `WinQuake/world.c:56-58` — the single reusable six-plane BSP that makes an AABB traceable by the same code as the world.
 - `areanode_t` — `WinQuake/world.c:181-188` — depth-4 X/Y k-d node holding two intrusive lists, `trigger_edicts` and `solid_edicts`; `AREA_DEPTH` 4, `AREA_NODES` 32 (`WinQuake/world.c:190-191`), storage at `WinQuake/world.c:193`.
-- `link_t` / `edict_t.area` — `WinQuake/common.h`, `WinQuake/progs.h:38` — intrusive doubly-linked list node embedded in every edict; `EDICT_FROM_AREA` recovers the edict.
+- `link_t` / `edict_t.area` — `WinQuake/common.h:52-55`, `WinQuake/progs.h:38` — intrusive doubly-linked list node embedded in every edict; `EDICT_FROM_AREA` recovers the edict.
 - `moveclip_t` — `WinQuake/world.c:33-42` — per-`SV_Move` scratch: swept `boxmins`/`boxmaxs`, the mover's `mins`/`maxs`, the monster-only `mins2`/`maxs2`, `type`, `passedict`, and the accumulating `trace`.
 - `edict_t.leafnums[MAX_ENT_LEAFS]` / `num_leafs` — `WinQuake/progs.h:40-41`, `MAX_ENT_LEAFS` = 16 (`WinQuake/progs.h:34`) — BSP leaves the entity touches, filled by `SV_FindTouchedLeafs` during link; consumed by PVS transmission.
 - `SOLID_*` — `WinQuake/server.h:132-136` — `NOT` (unlinked), `TRIGGER` (touch, don't block), `BBOX`, `SLIDEBOX`, `BSP` (use the model's hulls).
 - `MOVE_NORMAL` / `MOVE_NOMONSTERS` / `MOVE_MISSILE` — `WinQuake/world.h:40-42` — the `type` argument to `SV_Move`; `MOVE_MISSILE` swaps in the ±15 monster-clip box.
 - `DIST_EPSILON` (0.03125) — `WinQuake/world.c:573` — the 1/32-unit standoff that keeps traces from landing exactly on planes.
-- `STEPSIZE` (18) — `WinQuake/sv_phys.c:957` — maximum step height, shared by `SV_WalkMove` and `SV_movestep`/`SV_CheckBottom`.
+- `STEPSIZE` (18) — `WinQuake/sv_phys.c:957` and `WinQuake/sv_move.c:24` — duplicate `#define`s; maximum step height for `SV_WalkMove` and `SV_movestep`/`SV_CheckBottom`.
 
 ## Further reading
 

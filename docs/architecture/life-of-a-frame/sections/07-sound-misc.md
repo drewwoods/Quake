@@ -22,11 +22,11 @@ else
 CDAudio_Update();
 ```
 
-`S_Update` is called with the render view's origin and axis vectors (`r_origin`, `vpn`, `vright`, `vup`) once the client is fully signed onto a game (`cls.signon == SIGNONS`); otherwise it's called with the null vectors so ambient/ancient channels still get serviced during loading screens. Command-buffer execution (`Cbuf_Execute`, `WinQuake/host.c:657`) and console/cvar handling happen earlier in the same frame, before networking and simulation — see the Call graph below for the full ordering.
+`S_Update` is called with the render view origin and axes (`r_origin`, `vpn`, `vright`, `vup`) when `cls.signon == SIGNONS`; otherwise with zeros, so mixing still fills the device buffer during load screens. `CDAudio_Update()` after it is not the mixer: it is a CD-ROM transport (`WinQuake/cd_win.c:398-417`; other ports in `cd_*.c`) and does not write the DMA buffer. On Windows it only pauses or resumes on `bgmvolume`. `Cbuf_Execute` (`WinQuake/host.c:657`) runs once per accepted frame, before networking and simulation. `Host_GetConsoleCommands` (`WinQuake/host.c:672`) only queues stdin; those lines run on the next frame's `Cbuf_Execute`.
 
 ## Sound: S_Update and spatialization
 
-`S_Update` (`WinQuake/snd_dma.c:721-808`) is the once-per-frame entry point for the whole mixer. It updates the listener's position/orientation, refreshes the four ambient-sound channels, re-spatializes every active dynamic/static channel, and finally asks the mixer to paint audio into the DMA buffer:
+`S_Update` (`WinQuake/snd_dma.c:721-808`) is `_Host_Frame`'s mixer entry. It stores the listener pose, refreshes the four ambient channels, re-spatializes every active dynamic/static channel, and calls `S_Update_` to paint into the DMA buffer. The renderer can also call `S_Update_` via `S_ExtraUpdate` during a slow draw, without re-spatializing.
 
 ```c
 // WinQuake/snd_dma.c:721-748
@@ -59,15 +59,13 @@ void S_Update(vec3_t origin, vec3_t forward, vec3_t right, vec3_t up)
 		SND_Spatialize(ch);         // respatialize channel
 ```
 
-Channels are a flat array `channel_t channels[MAX_CHANNELS]` (`WinQuake/snd_dma.c:39`, `MAX_CHANNELS` = 128, `WinQuake/sound.h:130`) partitioned into three regions by index range, documented right above the array in the header:
+Channels are a flat array `channel_t channels[MAX_CHANNELS]` (`WinQuake/snd_dma.c:39`, `MAX_CHANNELS` = 128, `WinQuake/sound.h:130`). The running mixer uses three index ranges:
 
-```c
-// WinQuake/sound.h:136-137
-// MAX_DYNAMIC_CHANNELS to MAX_DYNAMIC_CHANNELS + NUM_AMBIENTS -1 = water, etc
-// MAX_DYNAMIC_CHANNELS + NUM_AMBIENTS to total_channels = static sounds
-```
+- `0 .. NUM_AMBIENTS-1` — four leaf ambients (water/sky/slime/lava, `WinQuake/bspfile.h:204-209`), written by `S_UpdateAmbientSounds` (`WinQuake/snd_dma.c:664`)
+- `NUM_AMBIENTS .. NUM_AMBIENTS+MAX_DYNAMIC_CHANNELS-1` — eight dynamic voices; the only range `SND_PickChannel` walks (`WinQuake/snd_dma.c:363`)
+- `NUM_AMBIENTS+MAX_DYNAMIC_CHANNELS .. total_channels` — static loops from `S_StaticSound` (`WinQuake/snd_dma.c:620`)
 
-`NUM_AMBIENTS` is 4 (`WinQuake/bspfile.h:209`, water/sky/slime/lava loop sounds baked per-leaf into the BSP), and `MAX_DYNAMIC_CHANNELS` is 8 (`WinQuake/sound.h:131`) — one per `entnum/entchannel` slot picked by `SND_PickChannel` (`WinQuake/snd_dma.c:354`). Everything past that is a "static" channel: a fire-and-forget looping sound baked at map load (torches, etc.) that never moves. `S_Update`'s loop at `snd_dma.c:751-784` deliberately *combines* multiple static channels that share the same `sfx` into one channel's volume accumulation ("so we don't mix five torches every frame") — a cheap way to bound mixer cost on levels with dozens of identical ambient props, while preserving their summed left and right contributions. The tradeoff is that combined loops share the selected channel’s playback phase.
+`NUM_AMBIENTS` is 4, `MAX_DYNAMIC_CHANNELS` is 8 (`WinQuake/sound.h:131`). Those eight dynamic slots are shared by every entity; they are not one mixer voice per `entnum/entchannel`. `sound.h:135-137` comments the regions in a different order (dynamic, then ambient, then static). Static origins never move after spawn. `S_Update` at `snd_dma.c:751-784` *combines* static channels that share an `sfx` into one volume sum ("so we don't mix five torches every frame"). Combined loops keep the selected channel's playback phase.
 
 `SND_Spatialize` (`WinQuake/snd_dma.c:398-444`) computes per-channel left/right volume from 3D geometry:
 
@@ -122,15 +120,13 @@ void SND_Spatialize(channel_t *ch)
 }
 ```
 
-This is the whole panning model: a dot product of the vector-to-source against the listener's right axis gives a `[-1,1]` pan bias, and linear distance falloff (scaled by `dist_mult`, which folds in the server's `attenuation` value) gives volume rolloff. There is no HRTF, no real-time convolution, no hardware 3D-audio dependency — id needed something that ran identically and cheaply on every sound card, down to ones with only a raw PCM DMA buffer and no mixing hardware. A dot-product pan plus linear attenuation is a handful of FPU ops per channel per frame, which is what made spatializing dozens of channels viable on a Pentium-class CPU with no dedicated DSP.
-
-Note the special case at the top: sounds attached to the local view entity (`cl.viewentity`, e.g. weapon fire, pain grunts) always play at full, unpanned volume — imagine your own gunshot getting quietly panned to one ear because of a floating-point epsilon in your own origin vs. listener origin.
+This is the whole panning model: a dot of the source vector against `listener_right` is a `[-1,1]` pan, and linear falloff uses `dist_mult = attenuation / sound_nominal_clip_dist` (clip 1000, `WinQuake/snd_dma.c:54,478`). Volume is zero once `dist >= 1`. No HRTF. View-entity sounds (`cl.viewentity`: weapon fire, pain) skip both pan and distance and play at `master_vol` on both ears, so a gunshot at the listener origin cannot collapse to one side.
 
 ::: diagram spatialize
 
 ## Channels and the paint buffer mixer (snd_mix.c)
 
-Once every channel's `leftvol`/`rightvol` are current, `S_Update_` (`WinQuake/snd_dma.c:856-902`) figures out how far ahead of the current DMA play position to mix (`_snd_mixahead`, clamped to the DMA buffer size), restores/resumes the Windows DirectSound buffer if needed, and calls the actual mixer, `S_PaintChannels` (`WinQuake/snd_mix.c:261-332`):
+Once every channel's `leftvol`/`rightvol` are current, `S_Update_` (`WinQuake/snd_dma.c:856-902`) mixes `_snd_mixahead` seconds ahead of the DMA play cursor (default 0.1, clamped to the buffer, `WinQuake/snd_dma.c:82,875-878`), restores/resumes the Windows DirectSound buffer if needed, and calls `S_PaintChannels` (`WinQuake/snd_mix.c:261-332`):
 
 ```c
 // WinQuake/snd_mix.c:269-291
@@ -159,9 +155,11 @@ Once every channel's `leftvol`/`rightvol` are current, `S_Update_` (`WinQuake/sn
 			ltime = paintedtime;
 ```
 
-`paintbuffer` is a fixed global array of `portable_samplepair_t` (int left/right accumulators, `WinQuake/snd_mix.c:31`), sized `PAINTBUFFER_SIZE` samples — never the full DMA buffer, which is why the outer `while` loop chunks the work. `SND_PaintChannelFrom8`/`SND_PaintChannelFrom16` (`WinQuake/snd_mix.c:346-393` and following) additively accumulate each channel's samples into `paintbuffer[i].left/right` using a precomputed scale table (`SND_InitScaletable`, `WinQuake/snd_mix.c:334-341`) for the 8-bit path — 32 volume buckets × 256 signed sample values, so an 8-bit sample times a volume level is a table lookup, not a multiply, at a time when integer multiplies were still relatively expensive relative to loads. Mixing is done in a wider-than-8/16-bit accumulator precisely so 32+ overlapping sounds can sum without per-sample clamping until the very end (`S_TransferPaintBuffer`, `WinQuake/snd_mix.c:139`, which does the final clamp/format conversion when writing into the DMA buffer). This "accumulate wide, clamp once at the edge" design is the standard trick for software mixing without a hardware mixer: it avoids the artifacts (and cost) of clamping after every single channel addition.
+`paintbuffer` is a fixed global array of `portable_samplepair_t` (int left/right accumulators, `WinQuake/snd_mix.c:31`), `PAINTBUFFER_SIZE` = 512 samples — never the full DMA buffer, which is why the outer `while` chunks the work. `SND_PaintChannelFrom8`/`SND_PaintChannelFrom16` (`WinQuake/snd_mix.c:346-370`, `375-397`) add into `paintbuffer[i].left/right`. The 8-bit path uses a scale table (`SND_InitScaletable`, `WinQuake/snd_mix.c:334-341`): 32 volume buckets × 256 signed sample values, a lookup instead of a multiply. If the hunk is under 8 MB, `loadas8bit` is forced (`WinQuake/snd_dma.c:196-200`); see [memory changed what the player received](design:memory-changed-what-the-player-received). Mixing stays in a wide accumulator so many overlapping voices can sum; clamp and format conversion happen once at the edge (`S_TransferPaintBuffer`, `WinQuake/snd_mix.c:139`).
 
-Sounds loop by adjusting `ch->pos`/`ch->end` against the cached sample data's `loopstart` (`WinQuake/snd_mix.c:310-323`) — when a channel's play cursor reaches `ch->end` and the underlying `sfxcache_t` has no loop point, the channel is simply cleared (`ch->sfx = NULL`) and drops out of the mix on the next `S_Update`.
+Sounds loop by rewriting `ch->pos`/`ch->end` from `sfxcache_t.loopstart` (`WinQuake/snd_mix.c:310-323`). If `loopstart < 0` when the cursor hits `ch->end`, the channel is cleared (`ch->sfx = NULL`) and drops out of the mix.
+
+The DMA buffer is not on the hunk except `-simsound` fakedma (`WinQuake/snd_dma.c:215-227`). `SNDDMA_Init` (`WinQuake/snd_win.c:557`, `WinQuake/snd_linux.c:37`) owns a looping device buffer: DirectSound `pDSBuf` or waveOut on Windows (`WinQuake/snd_win.c:65,317,406,477-540`), OSS `mmap` on Linux (`WinQuake/snd_linux.c:132`). `shm` (`WinQuake/snd_dma.c:47`) is the engine's view; `S_TransferPaintBuffer` writes it. The device advances the play cursor between frames. `SNDDMA_Submit` is empty for DirectSound and OSS mmap; the waveOut path submits blocks (`WinQuake/snd_win.c:667-715`, `WinQuake/snd_linux.c:266-268`). `S_ExtraUpdate` (`WinQuake/snd_dma.c:844-853`) calls `S_Update_` from the renderer (`WinQuake/r_main.c:937`) so a slow draw still fills ahead of that cursor.
 
 > **.plan.** “limit sound buffers to 4k, add extra mix points and mix full buffer” — [Carmack, 12 Jun 1996](../../../historical/plans/carmack/by_day/johnc_plan_19960612.txt). The fixed paint buffer and ahead-of-DMA fill are the shape of a live buffer-management problem on 1996 sound hardware, not abstract audio middleware.
 
@@ -216,7 +214,9 @@ On the client, `CL_ParseServerMessage`'s dispatch table hits `case svc_sound: CL
 }
 ```
 
-`S_StartSound` (`WinQuake/snd_dma.c:451` onward) then calls `SND_PickChannel` to claim a channel slot for that `(entnum, entchannel)` pair — channel 0 auto-allocates a free dynamic channel, channels 1-7 override anything already playing on that same entity/channel pair (see the doc comment at `sv_main.c:107-111`: "Each entity can have eight independant sound sources, like voice, weapon, feet, etc. Channel 0 is an auto-allocate channel, the others override anything allready running on that entity/channel pair") — then calls `SND_Spatialize` once immediately so the sound has correct volumes from its very first mixed frame (`snd_dma.c:482`).
+`S_StartSound` (`WinQuake/snd_dma.c:451`) calls `SND_PickChannel` for that `(entnum, entchannel)` pair. The server comment at `sv_main.c:107-111` is the rule: each entity has eight logical sources (voice, weapon, feet, …); channel 0 never overrides, 1–7 replace the same entity/channel pair. The eight dynamic mixer slots are still shared. With no override match, `SND_PickChannel` replaces the slot with the least remaining life, except it will not replace a `cl.viewentity` sound with a non-viewentity one — then it returns NULL and `S_StartSound` drops the event (`WinQuake/snd_dma.c:365-385,471-473`). It spatializes immediately so `S_ExtraUpdate` can mix the voice before the next `S_Update` (`snd_dma.c:482`). If both volumes are 0, it returns after clearing the stolen slot.
+
+Looping map props use a different message: `svc_spawnstaticsound` → `CL_ParseStaticSound` → `S_StaticSound` (`WinQuake/cl_parse.c:697-709`, `WinQuake/snd_dma.c:620`). Those take static slots and must have `loopstart >= 0`. Static `dist_mult` uses `attenuation/64` because the signon byte is already `atten*64` (`WinQuake/pr_cmds.c:539`, `WinQuake/snd_dma.c:650`). If `total_channels == MAX_CHANNELS`, the static is printed and dropped (`WinQuake/snd_dma.c:628-631,641-644`).
 
 ## Brief: Sbar_Draw (status bar)
 
@@ -228,7 +228,7 @@ The console keeps its scrollback in a single flat ring-style char buffer, `con_t
 
 ## Brief: Cbuf/Cmd/Cvar plumbing
 
-Every typed command, config-file `exec`, alias expansion, and `+`/`-` command-line argument funnels through one text pipeline. `Cbuf_AddText` (`WinQuake/cmd.c:86-99`) appends raw text to a single global `sizebuf_t cmd_text` (8192 bytes, allocated in `Cbuf_Init`, `cmd.c:73-76`); `Cbuf_InsertText` (`cmd.c:111-136`) instead splices text at the *front* of the buffer (used by `exec`/alias expansion so a config file's commands run before whatever was already queued after it). Once per frame, `Cbuf_Execute` (`WinQuake/host.c:657`, calling `WinQuake/cmd.c:143-193`) pulls lines out up to the next `\n` or unquoted `;`, and hands each to `Cmd_ExecuteString`:
+Every typed command, config-file `exec`, alias expansion, and `+`/`-` command-line argument funnels through one text pipeline. `Cbuf_AddText` (`WinQuake/cmd.c:86-99`) appends raw text to a single global `sizebuf_t cmd_text` (8192 bytes, allocated in `Cbuf_Init`, `cmd.c:73-76`); `Cbuf_InsertText` (`cmd.c:111-136`) instead splices text at the *front* of the buffer (used by `exec`/alias expansion so a config file's commands run before whatever was already queued after it). Once per accepted frame, `Cbuf_Execute` (`WinQuake/host.c:657`, `WinQuake/cmd.c:143-193`) pulls lines up to the next `\n` or unquoted `;` and hands each to `Cmd_ExecuteString`. That is the only execute in the frame. `Host_GetConsoleCommands` (`WinQuake/host.c:532`) later `Cbuf_AddText`s stdin; those lines wait until the next frame. `wait` (`WinQuake/cmd.c:53-56,186-190`) stops the drain with text still queued.
 
 ```c
 // WinQuake/cmd.c:614-650
@@ -322,9 +322,9 @@ become stale; callers reacquire through the handle. `Cache_Free` clears it,
 (`WinQuake/zone.c:826-863`, `WinQuake/snd_mem.c:108-139`).
 
 **A level reset is not a Cache flush.** Startup records `host_hunklevel` after
-initialization (`WinQuake/host.c:1113`). `Host_ClearMemory` flushes the software
+initialization (`WinQuake/host.c:915-916`). `Host_ClearMemory` flushes the software
 renderer surface cache, marks model records unreferenced through `Mod_ClearAll`,
-and rewinds the low hunk (`WinQuake/host.c:491-502`, `WinQuake/model.c:167-180`).
+and rewinds the low hunk (`WinQuake/host.c:477-488`, `WinQuake/model.c:167-180`).
 The `zone.c` model/sound Cache can survive until subsequent loading displaces
 it. `D_FlushCaches` concerns lit texture surfaces in the independent
 `d_surf.c` allocator, not decoded sounds or alias-model payloads.
@@ -396,7 +396,7 @@ void *Mod_Extradata (model_t *mod)
 		Sys_Error ("Mod_Extradata: caching failed");
 ```
 
-Precached sound effects go through the identical pattern via `snd_mem.c` (`Cache_Alloc ( &s->cache, len + sizeof(sfxcache_t), s->name);`, `WinQuake/snd_mem.c:139`, checked on every play attempt via `Cache_Check (&sfx->cache)` at `WinQuake/snd_dma.c:970`).
+Precached sound effects go through the identical pattern via `snd_mem.c` (`Cache_Alloc ( &s->cache, len + sizeof(sfxcache_t), s->name);`, `WinQuake/snd_mem.c:139`). `S_LoadSound` hits `Cache_Check (&s->cache)` first (`WinQuake/snd_mem.c:108-110`) on every mix of that sfx, including from `S_PaintChannels`.
 
 Worth being precise that the *software renderer's texture surface cache* — the lightmapped, mip-scaled wall/floor textures rasterized by `R_DrawSurface` in `WinQuake/r_surf.c:248-331` and fetched via `D_CacheSurface` — is **not** built on `zone.c`'s `Cache_Alloc`. It's a separate, purpose-built allocator in `WinQuake/d_surf.c`: a fixed-size ring buffer (`sc_base`/`sc_size`/`sc_rover`, `d_surf.c:29-30`) of `surfcache_t` blocks (`WinQuake/d_local.h:37-49`) sized at startup by `D_SurfaceCacheForRes` (`d_surf.c:35-53`, larger at higher resolutions since more distinct texture/lightmap combinations are visible per frame). `D_SCAlloc` (`d_surf.c:130-209`) evicts by walking forward from a rover pointer and coalescing/overwriting whatever it finds in its way — a FIFO/wrap eviction, not a true LRU — nulling each victim's owner pointer (`*sc_rover->owner = NULL`) so the next lookup treats it as a cache miss and regenerates the blit. The two systems are architectural siblings — both trade a fixed memory budget for on-demand regeneration — but separate implementations: `zone.c`'s Cache holds whole assets (models, sounds) inside the shared hunk, while `d_surf.c`'s surface cache is a renderer-private heap tuned for the volume and churn of on-screen texture surfaces every frame.
 
@@ -427,7 +427,7 @@ void _Host_Frame (float time)
 	rand ();
 ```
 
-`Host_Error` (`WinQuake/host.c:121-149`) is the landing pad every subsystem calls when it hits a non-fatal-to-the-process-but-fatal-to-this-game error. It re-entrancy-guards itself (`static qboolean inerror`, escalating to a hard `Sys_Error` if `Host_Error` is somehow called while already unwinding, `host.c:127-128`), shuts the local server down if one is running (`Host_ShutdownServer`, `host.c:138-139`), disconnects the client (`CL_Disconnect`, `host.c:144`), and then calls `longjmp (host_abortserver, 1)` (`host.c:149`) — controlled unwind straight back to the `setjmp` at the top of `_Host_Frame`, skipping the rest of whatever frame-processing code was on the stack, no matter how deep. Dedicated servers deliberately opt out of recovery (`if (cls.state == ca_dedicated) Sys_Error (...)`, `host.c:141-142`) — a dedicated server has no player-facing "you got disconnected, back to the menu" experience to fall back to, so a `Host_Error` there is treated as fatal and the process exits, on the theory that a corrupted dedicated server should restart rather than limp along in an unknown state.
+`Host_Error` (`WinQuake/host.c:121-149`) is the landing pad every subsystem calls when it hits a non-fatal-to-the-process-but-fatal-to-this-game error. It re-entrancy-guards itself (`static qboolean inerror`, escalating to a hard `Sys_Error` if `Host_Error` is somehow called while already unwinding, `host.c:127-128`), shuts the local server down if one is running (`Host_ShutdownServer`, `host.c:138-139`), disconnects the client (`CL_Disconnect`, `host.c:144`), and then calls `longjmp (host_abortserver, 1)` (`host.c:149`) — controlled unwind straight back to the `setjmp` at the top of `_Host_Frame`, skipping the rest of whatever frame-processing code was on the stack, no matter how deep. Dedicated servers opt out of recovery (`if (cls.state == ca_dedicated) Sys_Error (...)`, `host.c:141-142`): there is no menu to return to, so the process exits. `Sys_Error` (`WinQuake/sys_win.c:346-423`) is the non-recoverable path — print, `Host_Shutdown`, `exit(1)` — used for allocator failure, recursive `Host_Error`, and dedicated `Host_Error`/`Host_EndGame`. It does not `longjmp`.
 
 The alternative — plumbing an error return code through every function on the call path from QuakeC opcode dispatch up through `Host_Frame` — would have meant touching essentially the entire codebase and manually unwinding partially-initialized state at every level. `setjmp`/`longjmp` gets the same "abandon this frame, get back to a known-good top-level loop" behavior in two lines, at the cost of not running any C++-style destructors/cleanup along the way — acceptable here because the state being abandoned (partially loaded level, partially processed network packet) is precisely the state `Host_ShutdownServer`/`CL_Disconnect` are about to reset wholesale anyway.
 
@@ -441,16 +441,21 @@ _Host_Frame (host.c:633)
       Cmd_Argv[0] match -> cmd_functions list
       else -> cmd_alias list -> Cbuf_InsertText (cmd.c:111)
       else -> Cvar_Command (cvar.c:187) -> Cvar_Set (cvar.c:104)
+  Host_GetConsoleCommands (host.c:532)           <- stdin into cmd_text; runs next frame
   CL_ReadFromServer (cls.state == ca_connected)
     CL_ParseServerMessage
       case svc_sound (cl_parse.c:830)
         CL_ParseStartSoundPacket (cl_parse.c:101)
           S_StartSound (snd_dma.c:451)
-            SND_PickChannel (snd_dma.c:354)
+            SND_PickChannel (snd_dma.c:354)      <- NULL: drop
             SND_Spatialize (snd_dma.c:398)
+      case svc_spawnstaticsound (cl_parse.c:924)
+        CL_ParseStaticSound (cl_parse.c:697)
+          S_StaticSound (snd_dma.c:620)          <- drop if MAX_CHANNELS
   SCR_UpdateScreen (screen.c / gl_screen.c)
     Sbar_Draw (sbar.c:926)
     Con_DrawConsole (console.c:580)
+    S_ExtraUpdate (snd_dma.c:844)                <- from r_main.c during draw
   S_Update (snd_dma.c:721)                       <- host.c:708/712
     S_UpdateAmbientSounds (snd_dma.c:664)
     SND_Spatialize (snd_dma.c:398)  [per active channel]
@@ -460,6 +465,7 @@ _Host_Frame (host.c:633)
         SND_PaintChannelFrom8 / From16 (snd_mix.c:346 / 375)
         S_TransferPaintBuffer (snd_mix.c:139)
       SNDDMA_Submit
+  CDAudio_Update (cd_win.c:398)                  <- CD transport, not DMA mix
 
 SV_StartSound (sv_main.c:118)                    <- called from game/QuakeC side on the server
   MSG_WriteByte(svc_sound) -> sv.datagram
@@ -467,6 +473,7 @@ SV_StartSound (sv_main.c:118)                    <- called from game/QuakeC side
 Host_Error (host.c:121)                          <- called from anywhere on error
   Host_ShutdownServer / CL_Disconnect
   longjmp(host_abortserver, 1)  ------------------> back to _Host_Frame's setjmp
+Sys_Error (sys_win.c:346)                        <- process exit; no longjmp
 
 Cache_Alloc (zone.c:871)                         <- called from Mod_LoadAliasModel, snd_mem.c S_LoadSound
   Cache_TryAlloc (zone.c:680)
@@ -477,11 +484,12 @@ Mod_Extradata (model.c:64) -> Cache_Check (zone.c:849) -> Mod_LoadModel on miss
 ## Key data structures
 
 - `channel_t` — `WinQuake/sound.h:67-80` — one mixer voice: sfx pointer, computed left/right volume, playback position/loop end, owning entity/channel, world origin, distance multiplier, master volume.
-- `channels[MAX_CHANNELS]` — `WinQuake/snd_dma.c:39` — the flat 128-slot channel array, partitioned into ambient / dynamic / static regions (`WinQuake/sound.h:130-137`).
-- `portable_samplepair_t paintbuffer[PAINTBUFFER_SIZE]` — `WinQuake/snd_mix.c:31` — wide (unclamped) stereo accumulation buffer the mixer paints channels into before final format conversion.
+- `channels[MAX_CHANNELS]` — `WinQuake/snd_dma.c:39` — the flat 128-slot channel array: ambient 0–3, dynamic 4–11, static from 12 (`WinQuake/snd_dma.c:363,620,664`; header comment at `WinQuake/sound.h:135-137` lists a different order).
+- `dma_t` / `shm` — `WinQuake/sound.h:52-64`, `WinQuake/snd_dma.c:47` — engine view of the platform-owned looping playback buffer.
+- `portable_samplepair_t paintbuffer[PAINTBUFFER_SIZE]` — `WinQuake/snd_mix.c:30-31` — 512-sample wide (unclamped) stereo accumulation buffer the mixer paints into before format conversion.
 - `sfxcache_t` — `WinQuake/sound.h:42-50` — decoded PCM sample data (length, loop point, rate, width) for one sound effect, itself stored inside the `zone.c` Cache system.
 - `cvar_t` — `WinQuake/cvar.h:56-64` — name/string/value plus `archive`/`server` flags and an intrusive `next` pointer for the global cvar linked list.
-- `cmd_function_t` / `cmdalias_t` — `WinQuake/cmd.c` — intrusive linked lists of registered console commands and user aliases consulted in order by `Cmd_ExecuteString`.
+- `cmd_function_t` / `cmdalias_t` — `WinQuake/cmd.c:403-408`, `WinQuake/cmd.c:28-33` — intrusive linked lists of registered console commands and user aliases consulted in order by `Cmd_ExecuteString`.
 - `sizebuf_t cmd_text` — `WinQuake/cmd.c:66` — the linear command buffer that `Cbuf_AddText` appends to and `Cbuf_Execute` compacts from the front.
 - `memblock_t` / `memzone_t` — `WinQuake/zone.c:29-43` — Zone allocator's free-list block header and arena descriptor.
 - `hunk_t` — `WinQuake/zone.c:268-273` — Hunk allocator's per-block header (sentinel, size, 8-byte debug name), used only for consistency checking since the hunk has no per-block free.

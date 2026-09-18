@@ -2,9 +2,9 @@
 
 Rendering starts with the client’s view of the world and a camera. Quake’s software and GL builds turn those inputs into pixels using different algorithms behind the same function names.
 
-> **First pass.** Choose one path for your first read: **software** if you want to understand how a CPU paints the world, **GL** if you want to follow polygon submission to graphics hardware. In both, view setup precedes rendering and HUD drawing follows it. World surfaces and animated model entities take different drawing paths. Source: `WinQuake/screen.c:893-932`, `WinQuake/gl_screen.c:874-921`, `WinQuake/r_main.c:876-1030`. [Next: sound and plumbing →](#sec-7)
+> **First pass.** Choose one path: **software** (CPU paints the world) or **GL** (polygon submission). Skip the [assembly walkthrough](#assembly-walkthrough-where-the-pentium-speedup-comes-from) on that pass. View setup, then world, then entities, then HUD. An **edge** is a world-surface boundary in screen space; a **span** is a visible horizontal pixel run; the **surface cache** holds pre-lit world texels; a **texture chain** groups GL surfaces that share a bind. Source: `WinQuake/screen.c:888-934`, `WinQuake/gl_screen.c:874-921`, `WinQuake/r_main.c:953-1046`. [Next: sound and plumbing →](#sec-7)
 
-After the software pipeline, the [assembly walkthrough](#assembly-walkthrough-where-the-pentium-speedup-comes-from) follows the actual pixel-writing instructions and explains the historical performance comparison.
+The [assembly walkthrough](#assembly-walkthrough-where-the-pentium-speedup-comes-from) is a drill-down into the Pentium inner loops, not part of the first-pass route.
 
 ::: diagram rendering
 
@@ -15,7 +15,7 @@ After the software pipeline, the [assembly walkthrough](#assembly-walkthrough-wh
 In the baseline loop, `_Host_Frame` calls `SCR_UpdateScreen` once per accepted frame. It is the top of the rendering pipeline. The software build's version locks the video buffer and calls the view code:
 
 ```c
-// WinQuake/screen.c:884-891
+// WinQuake/screen.c:888-895
 	D_DisableBackBufferAccess ();	// for adapters that can't stay mapped in
 									//  for linear writes all the time
 
@@ -25,7 +25,9 @@ In the baseline loop, `_Host_Frame` calls `SCR_UpdateScreen` once per accepted f
 
 	VID_UnlockBuffer ();
 ```
-(`WinQuake/screen.c:808` is `SCR_UpdateScreen`'s definition.) The GL build's `SCR_UpdateScreen` (`WinQuake/gl_screen.c:821`) has no hardware framebuffer to lock — it just calls `V_RenderView ()` at `WinQuake/gl_screen.c:874` and follows with `GL_Set2D ()` for the HUD/console overlay.
+(`WinQuake/screen.c:808` is `SCR_UpdateScreen`'s definition.) Software pixels land in `vid.buffer` (`WinQuake/vid.h:36`), a CPU back buffer. `VID_LockBuffer` maps it (Windows: `MGL_beginDirectAccess`, then `vid.buffer` is the surface, `WinQuake/vid_win.c:1717-1746`). Span drawers write `d_viewbuffer`, equal to `vid.buffer` unless `r_dowarp` redirects to `r_warpbuffer` (`WinQuake/d_init.c:126-129`). HUD drawing uses the same buffer; `VID_Update` blits rectangles (`WinQuake/screen.c:949-977`).
+
+The GL build's `SCR_UpdateScreen` (`WinQuake/gl_screen.c:821`) has no CPU color buffer to lock — it calls `V_RenderView ()` at `WinQuake/gl_screen.c:874`, then `GL_Set2D ()` for the HUD/console overlay. `GL_BeginRendering` (`WinQuake/gl_screen.c:849`) only reports the viewport size; the GPU owns the back buffer; `GL_EndRendering` (`WinQuake/gl_screen.c:921`, e.g. `glXSwapBuffers` in `WinQuake/gl_vidlinuxglx.c:649-652`) flushes and swaps.
 
 `V_RenderView` (`WinQuake/view.c:995`) is shared between both builds. It computes the refdef (view origin/angles, including bob and punch-kick), pushes dynamic lights, and calls the renderer-specific `R_RenderView`:
 
@@ -51,15 +53,15 @@ void V_RenderView (void)
 	R_RenderView ();
 ```
 
-`R_RenderView` is then implemented separately in `WinQuake/r_main.c:1049` (software, a stack-alignment guard that calls the real work in `R_RenderView_` at `r_main.c:953`) and in `WinQuake/gl_rmain.c:1104` (GL). From here the two renderers do not share code again until particle drawing (`r_part.c`, `#ifdef GLQUAKE`-forked in place) and the alias-model/sprite drawing conventions.
+`R_RenderView` is then implemented separately in `WinQuake/r_main.c:1049` (software, a stack-alignment guard that calls the real work in `R_RenderView_` at `r_main.c:953`) and in `WinQuake/gl_rmain.c:1104` (GL). From here the two renderers do not share drawing code again until particle drawing (`r_part.c`, `#ifdef GLQUAKE`-forked in place). Entity dispatch is not shared: software `R_DrawEntitiesOnList` is `WinQuake/r_main.c:527`; GL's is `WinQuake/gl_rmain.c:602`.
 
 ## View setup: bob, punchangle, and color shifts (`view.c`)
 
-Before either renderer touches a BSP node, `V_CalcRefdef` (`WinQuake/view.c:864`) builds `r_refdef` — the single struct both renderers treat as ground truth for the frame (origin, angles, FOV, viewport rect). Two purely presentational effects are folded in here rather than in the renderer, because they are properties of the *camera*, not the *scene*:
+Before either renderer touches a BSP node, `V_CalcRefdef` (`WinQuake/view.c:864`) builds `r_refdef` — the single struct both renderers treat as ground truth for the frame (origin, angles, FOV, viewport rect). Bob and punchangle are folded into that camera, not the scene. Color shifts are applied later, and differently per renderer.
 
 - **View bob** — a sinusoidal vertical/forward offset proportional to XY speed, meant to sell the feeling of a body moving on foot without any actual skeletal animation:
 ```c
-// WinQuake/view.c:112-133
+// WinQuake/view.c:112-134
 float V_CalcBob (void)
 {
 	float	bob;
@@ -84,7 +86,7 @@ float V_CalcBob (void)
 	return bob;
 }
 ```
-  The result is added into `r_refdef.vieworg[2]` at `WinQuake/view.c:892` and into the view-weapon's origin at `WinQuake/view.c:930-936`.
+  The result is added into `r_refdef.vieworg[2]` at `WinQuake/view.c:893` and into the view-weapon's origin at `WinQuake/view.c:930-936`.
 
 - **Punchangle** — the recoil/impact kick the server applies to `cl.punchangle` (set from `svc_...` messages elsewhere) is summed straight into the view angles right before stair-step smoothing:
 ```c
@@ -92,9 +94,9 @@ float V_CalcBob (void)
 	VectorAdd (r_refdef.viewangles, cl.punchangle, r_refdef.viewangles);
 ```
 
-- **Color shifts (cshift)** — damage flashes, powerup tints, and underwater/lava/slime overlays are accumulated per-frame into `cl.cshifts[NUM_CSHIFTS]` (`cshift_empty`/`cshift_water`/`cshift_slime`/`cshift_lava` constants at `WinQuake/view.c:254-257`). The two renderers apply them completely differently, which is a good illustration of the palette-vs-RGB divide: the software build owns an 8-bit indexed hardware palette, so it *rewrites the palette itself* every frame a shift is active —
+- **Color shifts (cshift)** — four slots (`CSHIFT_CONTENTS` / `CSHIFT_DAMAGE` / `CSHIFT_BONUS` / `CSHIFT_POWERUP`, `WinQuake/client.h:56-60`). Water/slime/lava share `CSHIFT_CONTENTS` via the `cshift_water` / `cshift_slime` / `cshift_lava` templates (`WinQuake/view.c:254-257`, copied in `V_SetContentsColor`, `WinQuake/view.c:418`). The two renderers apply them differently: the software build owns an 8-bit indexed palette, so it *rewrites the palette itself* every frame a shift is active —
 ```c
-// WinQuake/view.c:642-649 (non-GLQUAKE V_UpdatePalette)
+// WinQuake/view.c:623-649 (non-GLQUAKE V_UpdatePalette)
 	V_CalcPowerupCshift ();
 	...
 // drop the damage value
@@ -102,7 +104,7 @@ float V_CalcBob (void)
 	if (cl.cshifts[CSHIFT_DAMAGE].percent <= 0)
 		cl.cshifts[CSHIFT_DAMAGE].percent = 0;
 ```
-  eventually calling `VID_ShiftPalette (pal)` at `WinQuake/view.c:611` — while the GL build has a true RGBA framebuffer and instead computes a blend color and draws a translucent full-screen quad in `R_PolyBlend` (`WinQuake/gl_rmain.c:718`), fed by `V_CalcBlend` (`WinQuake/view.c:482-517`, `#ifdef GLQUAKE`), which alpha-composites all active shifts:
+  eventually calling `VID_ShiftPalette (pal)` at `WinQuake/view.c:679` — while the GL build has an RGBA framebuffer and instead computes a blend color and draws a translucent full-screen quad in `R_PolyBlend` (`WinQuake/gl_rmain.c:718`), fed by `V_CalcBlend` (`WinQuake/view.c:482-517`, `#ifdef GLQUAKE`), which alpha-composites all active shifts:
 ```c
 // WinQuake/view.c:492-507
 	for (j=0 ; j<NUM_CSHIFTS ; j++)	
@@ -127,7 +129,7 @@ The software path's central design constraint is that there is no rasterizer har
 
 `R_RenderView_` (`WinQuake/r_main.c:953`) drives the frame:
 ```c
-// WinQuake/r_main.c:962-972
+// WinQuake/r_main.c:962-974
 	R_SetupFrame ();
 
 #ifdef PASSAGES
@@ -142,42 +144,21 @@ SetVisibilityByPassages ();
 // done in screen.c
 	Sys_LowFPPrecision ();
 ```
-`R_SetupFrame` (`WinQuake/r_misc.c:367`) resets per-frame counters, applies ambient light and light-style animation (`R_AnimateLight`), and bumps `r_framecount`. `R_MarkLeaves` (`WinQuake/r_main.c:491`) walks the precomputed PVS (potentially-visible-set) bit vector for the leaf the camera is standing in and stamps `visframe` up the BSP parent chain, so later BSP walks can reject whole subtrees with an integer compare:
-```c
-// WinQuake/r_main.c:503-517
-	vis = Mod_LeafPVS (r_viewleaf, cl.worldmodel);
-		
-	for (i=0 ; i<cl.worldmodel->numleafs ; i++)
-	{
-		if (vis[i>>3] & (1<<(i&7)))
-		{
-			node = (mnode_t *)&cl.worldmodel->leafs[i+1];
-			do
-			{
-				if (node->visframe == r_visframecount)
-					break;
-				node->visframe = r_visframecount;
-				node = node->parent;
-			} while (node);
-		}
-	}
-```
+`PASSAGES` is commented out at `WinQuake/r_main.c:25`, so `R_MarkLeaves` always runs. `R_SetupFrame` (`WinQuake/r_misc.c:367`) resets per-frame counters, applies ambient light and light-style animation (`R_AnimateLight`), and bumps `r_framecount`. `R_MarkLeaves` (`WinQuake/r_main.c:491`) stamps `visframe` from the camera leaf's PVS; [BSP and PVS](#sec-4) covers that walk.
 
-The real work happens in `R_EdgeDrawing` (`WinQuake/r_main.c:876`), which allocates a stack-resident edge/surface pool, calls `R_RenderWorld`, and then rasterizes:
+The real work happens in `R_EdgeDrawing` (`WinQuake/r_main.c:876`), which allocates a stack-resident edge/surface pool, emits world and brush-model edges, then sweeps:
 ```c
-// WinQuake/r_main.c:900-910
+// WinQuake/r_main.c:904-942
 	R_BeginEdgeFrame ();
-
-	if (r_dspeeds.value)
-	{
-		rw_time1 = Sys_FloatTime ();
-	}
-
+	...
 	R_RenderWorld ();
-
-	if (r_drawculledpolys)
+	...
+	R_DrawBEntitiesOnList ();
+	...
+	if (!(r_drawpolys | r_drawculledpolys))
 		R_ScanEdges ();
 ```
+`r_drawculledpolys` is a debug path that scans before brush models. The shipped path scans after `R_DrawBEntitiesOnList` (`WinQuake/r_main.c:744`), which inserts doors and plats into the same edge table as the world.
 
 `R_RenderWorld` (`WinQuake/r_bsp.c:648`) sets `modelorg` to the eye position (in model space) and recurses `R_RecursiveWorldNode` from the root, front-to-back-ordered by which side of each splitting plane the eye is on:
 ```c
@@ -199,7 +180,7 @@ void R_RenderWorld (void)
 ```
 The initial `clipflags` of `15` (all four frustum-plane bits set) is the seed for hierarchical frustum culling: `R_RecursiveWorldNode` (`WinQuake/r_bsp.c:448`) tests each node's bounding box against only the *still-relevant* clip planes, clearing bits once a plane trivially accepts the whole subtree, so deep, on-screen parts of the BSP stop paying the clip cost:
 ```c
-// WinQuake/r_bsp.c:461-495
+// WinQuake/r_bsp.c:466-497
 	if (clipflags)
 	{
 		for (i=0 ; i<4 ; i++)
@@ -233,20 +214,13 @@ The initial `clipflags` of `15` (all four frustum-plane bits set) is the seed fo
 ```
 This accept/reject-corner trick (picking the two box corners most/least aligned with a plane's normal via the precomputed `pfrustum_indexes` sign table) is exactly the frustum test Abrash walks through in the Black Book — no square roots, no per-vertex transform, just sign-driven corner selection. Notably, the *software* renderer has no `R_CullBox`-style generic helper — the corner logic is inlined directly in `R_RecursiveWorldNode` for speed, whereas the GL renderer (below) factors the equivalent test into a reusable `BoxOnPlaneSide`-based function.
 
-Leaf nodes push their marked surfaces (`SURF_...` flagged `msurface_t`s, `WinQuake/model.h:102`) into visibility for the frame; interior nodes pick a side via the splitting plane and, for solid, front-facing surfaces, call `R_RenderFace` (`WinQuake/r_draw.c:386`), which walks the surface's edge loop and hands each edge to the global edge-insertion machinery (`R_ClipEdge`/`R_EmitCachedEdge` in `r_draw.c`; edge results land in `newedges[]`/`removeedges[]` scan-line buckets declared at `WinQuake/r_edge.c:44-45`). Each surface polygon becomes a doubly-linked list of `edge_t` (`WinQuake/r_shared.h:144-153`) sorted by screen-space `u`, one bucket per scanline where the edge starts/ends — the classic "global edge table" from software-rasterizer literature, here specialized so a single sweep never has to re-sort more than the edges newly entering or leaving that row.
+Leaf nodes push their marked surfaces (`SURF_...` flagged `msurface_t`s, `WinQuake/model.h:102`) into visibility for the frame; interior nodes pick a side via the splitting plane and, for solid, front-facing surfaces, call `R_RenderFace` (`WinQuake/r_draw.c:386`), which walks the surface's edge loop and hands each edge to the global edge-insertion machinery (`R_ClipEdge` at `WinQuake/r_draw.c:259`, `R_EmitCachedEdge` at `WinQuake/r_draw.c:363`; edge results land in `newedges[]`/`removeedges[]` scan-line buckets declared at `WinQuake/r_edge.c:46-47`). Each surface polygon becomes a doubly-linked list of `edge_t` (`WinQuake/r_shared.h:144-153`) sorted by screen-space `u`, one bucket per scanline where the edge starts/ends — the classic "global edge table" from software-rasterizer literature, here specialized so a single sweep never has to re-sort more than the edges newly entering or leaving that row.
 
 ::: diagram scanline
 
-`R_ScanEdges` (`WinQuake/r_edge.c:663`) is the sweep itself: for each scanline it inserts newly-active edges into a horizontally-sorted active edge list, and for every edge crossing decides whether a surface is entering (`R_LeadingEdgeBackwards`) or leaving (`R_TrailingEdge`) the active set — maintaining a *surface* stack (not just an edge stack) ordered by a `key` field that encodes BSP traversal order:
+`R_ScanEdges` (`WinQuake/r_edge.c:663`) is the sweep itself: for each scanline it inserts newly-active edges into a horizontally-sorted active edge list, then calls `pdrawfunc` — default `R_GenerateSpans` (`WinQuake/r_edge.c:148,588`), which decides whether a surface is entering (`R_LeadingEdge`, `WinQuake/r_edge.c:460`) or leaving (`R_TrailingEdge`, `WinQuake/r_edge.c:416`) the active set. That maintains a *surface* stack ordered by a `key` field that encodes BSP traversal order. `r_draworder` switches `pdrawfunc` to `R_GenerateSpansBackward` / `R_LeadingEdgeBackwards`.
 ```c
-// WinQuake/r_edge.c:663-706
-void R_ScanEdges (void)
-{
-	int		iv, bottom;
-	byte	basespans[MAXSPANS*sizeof(espan_t)+CACHE_SIZE];
-	espan_t	*basespan_p;
-	surf_t	*s;
-	...
+// WinQuake/r_edge.c:706-721
 	bottom = r_refdef.vrectbottom - 1;
 
 	for (iv=r_refdef.vrect.y ; iv<bottom ; iv++)
@@ -264,17 +238,25 @@ void R_ScanEdges (void)
 
 		(*pdrawfunc) ();
 ```
-The surface stack sort is the payoff: because the world BSP is walked front-to-back, a surface's `key` (`WinQuake/r_shared.h:83`, "sorting key (BSP order)") is already nearly depth-ordered, so `R_LeadingEdgeBackwards` (`WinQuake/r_edge.c:335`) only has to walk forward from the current top-of-stack to find the insertion point, falling back to comparing `nearzi` (nearest 1/z) only when two brush-model surfaces genuinely tie in BSP order:
+The surface stack sort is the payoff: because the world BSP is walked front-to-back, a surface's `key` (`WinQuake/r_shared.h:85`, "sorting key (BSP order)") is already nearly depth-ordered, so `R_LeadingEdge` only has to walk from the current top-of-stack to find the insertion point. On a BSP-key tie between two brush models it compares interpolated 1/z (`d_ziorigin` plus u/v steps), not the `nearzi` field — that one is for mip selection:
 ```c
-// WinQuake/r_edge.c:347-353
-	if (++surf->spanstate == 1)
-	{
-		surf2 = surfaces[1].next;
-
-		if (surf->key > surf2->key)
+// WinQuake/r_edge.c:482-500
+		if (surf->key < surf2->key)
 			goto newtop;
+		...
+		if (surf->insubmodel && (surf->key == surf2->key))
+		{
+		// must be two bmodels in the same leaf; sort on 1/z
+			fu = (float)(edge->u - 0xFFFFF) * (1.0 / 0x100000);
+			newzi = surf->d_ziorigin + fv*surf->d_zistepv +
+					fu*surf->d_zistepu;
+			newzibottom = newzi * 0.99;
+			...
+			if (newzibottom >= testzi)
+			{
+				goto newtop;
 ```
-Whenever the topmost surface on the stack changes, the accumulated span is appended to that surface's `spans` list. Opaque world surfaces therefore own only the horizontal runs where they are frontmost, without a depth buffer. This avoids world-surface overdraw during texturing; later entity, particle, sky, and turbulent passes can still draw over existing pixels. See Abrash, *Graphics Programming Black Book*, chapters on "Adventures in Sorting" and "The Genesis of a General-Purpose Polygon Engine": https://www.jagregory.com/abrash-black-book/
+Whenever the topmost surface on the stack changes, the accumulated span is appended to that surface's `spans` list. Opaque world surfaces therefore own only the horizontal runs where they are frontmost; world texturing does not z-test. `D_DrawZSpans` still writes a 16-bit z-buffer so later alias, sprite, and particle passes can depth-test against the world. See Abrash, *Graphics Programming Black Book*, chapters on "Adventures in Sorting" and "The Genesis of a General-Purpose Polygon Engine": https://www.jagregory.com/abrash-black-book/
 
 Once a scanline's spans threaten to exceed the preallocated `MAXSPANS` budget, or at end of frame, `D_DrawSurfaces` (declared `WinQuake/d_iface.h:154`) is called to actually texture each surface's span list.
 
@@ -282,7 +264,7 @@ Once a scanline's spans threaten to exceed the preallocated `MAXSPANS` budget, o
 
 Texturing a lightmapped BSP surface in software means resampling the base texture and blending up to four lightstyles into it — expensive enough that Quake caches the *composited* result per surface rather than recomputing it every time the surface is visible. `D_CacheSurface` (`WinQuake/d_surf.c:264`) is the entry point, called from `D_DrawSurfaces`'s per-surface span walk in `WinQuake/d_edge.c:300`:
 ```c
-// WinQuake/d_surf.c:264-291
+// WinQuake/d_surf.c:264-288
 surfcache_t *D_CacheSurface (msurface_t *surface, int miplevel)
 {
 	surfcache_t     *cache;
@@ -370,7 +352,7 @@ The subdivision width is a direct fill-rate/quality tradeoff: too coarse and dis
 
 Skeletal-free MDL models (monsters, the player, pickups) are drawn by `R_AliasDrawModel` (`WinQuake/r_alias.c:703`), called per-visible-entity from `R_DrawEntitiesOnList` (`WinQuake/r_main.c:527`):
 ```c
-// WinQuake/r_alias.c:703-738
+// WinQuake/r_alias.c:703-751
 void R_AliasDrawModel (alight_t *plighting)
 {
 	finalvert_t		finalverts[MAXALIASVERTS +
@@ -398,11 +380,13 @@ void R_AliasDrawModel (alight_t *plighting)
 		R_AliasPreparePoints ();
 }
 ```
-This is Quake's own miniature software triangle rasterizer, entirely separate from the BSP edge-list machinery: it transforms model-space vertices, interpolates lighting per vertex (Gouraud), and rasterizes independent, self-contained affine triangles: `D_PolysetDrawSpans8` (`WinQuake/d_polyse.c:614`) steps `s`/`t` by a constant per pixel with no depth divide, the shortcut the world spans below refuse. Monsters are small enough on screen to hide it; the viewmodel is not, and its skin visibly shears and kinks at triangle edges (with an optimized path, `trivial_accept == 3`, when the whole model is known to be fully on-screen and needs no clipping). `R_DrawEntitiesOnList` (`WinQuake/r_main.c:527-596`) is also where sprites are dispatched via `R_DrawSprite` for `mod_sprite` entities, and where dynamic-light contribution is folded into an entity's `alight_t` before the alias draw call. Particles are handled separately again — `R_DrawParticles` (`WinQuake/r_part.c:653`) is one function shared textually between both renderers via `#ifdef GLQUAKE` (software draws particles as software-projected quads via `D_StartParticles`/`D_DrawParticle`, GL draws camera-facing triangles with `glBegin(GL_TRIANGLES)`), reflecting that particles never interact with the BSP edge list or lightmaps at all — they are pure billboard geometry layered on top of the already-resolved scene.
+This is Quake's own miniature software triangle rasterizer, entirely separate from the BSP edge-list machinery: it transforms model-space vertices, interpolates lighting per vertex (Gouraud), and rasterizes independent, self-contained affine triangles: `D_PolysetDrawSpans8` (`WinQuake/d_polyse.c:614`) steps `s`/`t` by a constant per pixel with no depth divide, the shortcut the world spans above refuse. Monsters are small enough on screen to hide it; the viewmodel is not, and its skin visibly shears and kinks at triangle edges. `trivial_accept` nonzero skips clipping (`R_AliasPrepareUnclippedPoints`); `trivial_accept == 3` also enables the recursive affine path (`WinQuake/r_alias.c:727-728,748-751`). `R_DrawEntitiesOnList` (`WinQuake/r_main.c:527-599`) dispatches sprites via `R_DrawSprite` (`WinQuake/r_sprite.c:286`) for `mod_sprite` entities and folds dynamic-light contribution into an entity's `alight_t` before the alias draw call. Brush models are not in this list; they already went through `R_DrawBEntitiesOnList`. Particles are later still — `R_DrawParticles` (`WinQuake/r_part.c:653`) is one function shared textually between both renderers via `#ifdef GLQUAKE`. Software projects each particle to a Z-tested square of 1–N pixels (`D_DrawParticle`, `WinQuake/d_part.c:55`); `D_StartParticles` is a no-op. GL draws camera-facing triangles with `glBegin(GL_TRIANGLES)`. Particles never interact with the BSP edge list or lightmaps.
 
 ## Assembly walkthrough: where the Pentium speedup comes from
 
-The assembly makes most sense after surface caching and span generation: Quake has already decided which pixels survive visibility testing and has a lit texture ready to sample. Now a small routine must write those pixels millions of times. Follow **`D_DrawSpans8` in `WinQuake/d_draw.s`** alongside its C equivalent, `WinQuake/d_scan.c:257-383`. `D_DrawSurfaces` obtains the cache and calls through `d_drawspans` at `WinQuake/d_edge.c:299-307`.
+Skip this section on a first pass; `D_DrawSpans8` in `WinQuake/d_scan.c:257-383` is the algorithm. The assembly is the same mapper with a different schedule.
+
+The assembly makes most sense after surface caching and span generation: Quake has already decided which pixels survive visibility testing and has a lit texture ready to sample. Now a small routine must write those pixels millions of times. Follow **`D_DrawSpans8` in `WinQuake/d_draw.s`** alongside its C equivalent. `D_DrawSurfaces` obtains the cache and calls through `d_drawspans` at `WinQuake/d_edge.c:299-307`.
 
 > **What “about 2×” measures.** In [Fabien Sanglard’s “How Michael Abrash doubled Quake framerate”](https://fabiensanglard.net/quake_asm_optimizations/index.html), his 2026 recreation on a Pentium MMX 233 MHz runs the VC++ 6 release build at **42.2 fps with assembly versus 22.7 fps with C**: about **1.86× the frame rate**. Both run `timedemo demo1` with `-wavonly +d_subdiv16 0`. Disabling 16-pixel subdivision matters because `D_DrawSpans16` has no C counterpart. This is a whole-engine comparison on period hardware, not a claim that every assembly routine is twice as fast, or a measurement of today’s compilers. His function-by-function experiment identifies `D_DrawSpans8` as the largest contributor.
 
@@ -426,10 +410,10 @@ The 1996 `.plan` files start after this mapper shipped, so they do not debate it
 
 Even across 8 or 16 pixels, a 39-cycle division latency was too long to hide behind integer pixel writes. Abrash exploited an architectural detail of the x87 FPU documented in [*Black Book* Chapter 63](../../../historical/abrash_black_book/black-book.html#chapter-63-floating-point-for-real-time-3-d): setting the FPU control word to 24-bit single precision mode via `fldcw` dropped `fdiv` execution time from 39 cycles to 19 cycles.
 
-Quake executes this mode switch in `WinQuake/r_main.c:972-976` immediately before edge rasterization:
+Quake executes this mode switch in `WinQuake/r_main.c:970-974` immediately before edge rasterization:
 
 ```c
-// WinQuake/r_main.c:972-976
+// WinQuake/r_main.c:970-974
 // make FDIV fast. This reduces timing precision after we've been running for a
 // while, so we don't do it globally.  This also sets chop mode, and we do it
 // here so that setup stuff like the refresh area calculations match what's
@@ -437,7 +421,7 @@ Quake executes this mode switch in `WinQuake/r_main.c:972-976` immediately befor
 	Sys_LowFPPrecision ();
 ```
 
-`Sys_LowFPPrecision` (`WinQuake/sys_wina.s:68-72`, `WinQuake/sys_dosa.s:47-51`) loads `single_cw` (`0x003f` masked and configured with `orb $0x0C, %ah` in `WinQuake/sys_wina.s:105` for single precision and chop mode). Once the scene finishes rendering, `Sys_HighFPPrecision` (`WinQuake/r_main.c:1048`) restores 64-bit precision (`full_cw`).
+`Sys_LowFPPrecision` (`WinQuake/sys_wina.s:68-72`, `WinQuake/sys_dosa.s:47-51`) loads `single_cw`. That word is built in `Sys_SetFPCW` by `andb $0xF0, %ah` then `orb $0x0C, %ah` (`WinQuake/sys_wina.s:104-107`) — 24-bit precision and chop. Once the scene finishes rendering, `Sys_HighFPPrecision` (`WinQuake/r_main.c:1046`) restores 64-bit precision (`full_cw`).
 
 > **Pentium FDIV bug.** The overlapping `fdiv` this inner loop depends on is also where Abrash reproduced Intel’s 1994 FDIV bug (missing SRT-table entries; wrong quotients from some camera angles). Romero described that hunt in a 2019 talk; it is not in the `.plan` files. See [Pentium FDIV bug](https://en.wikipedia.org/wiki/Pentium_FDIV_bug).
 
@@ -542,7 +526,7 @@ That removes a decrement-and-branch for every tail pixel. It does **not** make b
 
 ### 4. Build lit texels with byte registers and patched instructions
 
-Now move one stage earlier, to a **surface-cache miss**. `R_DrawSurfaceBlock8_mip0` builds a block of the lit texture that the span drawer will later read. The corresponding C combines an interpolated lighting value with the source palette index and looks up the lit palette index (`WinQuake/r_surf.c:361-374`):
+Now move one stage earlier, to a **surface-cache miss**. `R_DrawSurfaceBlock8_mip0` builds a block of the lit texture that the span drawer will later read. The corresponding C combines an interpolated lighting value with the source palette index and looks up the lit palette index (`WinQuake/r_surf.c:368-374`):
 
 ```c
 // WinQuake/r_surf.c:368-374
@@ -714,7 +698,7 @@ Lightmaps are precomputed low-resolution light grids baked at BSP-compile time a
 			return;
 		}
 ```
-The extension probing itself lives in `CheckMultiTextureExtensions` and is the piece added in this branch's history for portability beyond Windows: `WinQuake/gl_vidlinuxglx.c:548-581` checks for either `GL_SGIS_multitexture` or `GL_ARB_multitexture` and resolves the right entry points (`glMTexCoord2fSGIS`/`glSelectTextureSGIS` vs. `glMultiTexCoord2fARB`/`glActiveTextureARB`) via `dlsym`:
+The Linux GLX probe is `CheckMultiTextureExtensions` (`WinQuake/gl_vidlinuxglx.c:548-584`): it checks for `GL_SGIS_multitexture` or `GL_ARB_multitexture` and resolves the right entry points (`glMTexCoord2fSGIS`/`glSelectTextureSGIS` vs. `glMultiTexCoord2fARB`/`glActiveTextureARB`) via `dlsym`. If `gl_mtexable`, `R_Init` forces `gl_texsort` to 0 (`WinQuake/gl_rmisc.c:196-197`) so the BSP walk draws with `R_DrawSequentialPoly` instead of chaining for a later blend pass.
 ```c
 // WinQuake/gl_vidlinuxglx.c:552-571
 	qboolean gl_mtex_avail = strstr(gl_extensions, "GL_SGIS_multitexture ") || strstr(gl_extensions, "GL_ARB_multitexture ");
@@ -816,9 +800,9 @@ void R_DrawAliasModel (entity_t *e)
 	VectorCopy (currententity->origin, r_entorigin);
 	VectorSubtract (r_origin, r_entorigin, modelorg);
 ```
-but instead of rasterizing triangles itself, it delegates to `GL_DrawAliasFrame` (`WinQuake/gl_rmain.c:289`), which walks a command stream built once at model load by `gl_mesh.c`. `BuildTris` (`WinQuake/gl_mesh.c:194-282`) greedily chains adjacent triangles into `GL_TRIANGLE_STRIP` or `GL_TRIANGLE_FAN` runs (`StripLength`/`FanLength`, `WinQuake/gl_mesh.c:58`/`127`), reducing repeated vertex submissions. The strip/fan length is sign-encoded into a single `commands[]` int array (positive = strip length, negative = fan length):
+but instead of rasterizing triangles itself, it delegates to `GL_DrawAliasFrame` (`WinQuake/gl_rmain.c:289`), which walks a command stream built once at model load by `gl_mesh.c`. `BuildTris` (`WinQuake/gl_mesh.c:198`) greedily chains adjacent triangles into `GL_TRIANGLE_STRIP` or `GL_TRIANGLE_FAN` runs (`StripLength`/`FanLength`, `WinQuake/gl_mesh.c:58`/`127`), reducing repeated vertex submissions. The strip/fan length is sign-encoded into a single `commands[]` int array (positive = strip length, negative = fan length):
 ```c
-// WinQuake/gl_mesh.c:245-249
+// WinQuake/gl_mesh.c:252-255
 		if (besttype == 1)
 			commands[numcommands++] = (bestlen+2);
 		else
@@ -826,7 +810,7 @@ but instead of rasterizing triangles itself, it delegates to `GL_DrawAliasFrame`
 ```
 `GL_DrawAliasFrame` then just replays that command stream every frame, re-transforming the (fixed) vertex order against the *current* frame's pose data and shading:
 ```c
-// WinQuake/gl_rmain.c:306-332
+// WinQuake/gl_rmain.c:306-335
 	order = (int *)((byte *)paliashdr + paliashdr->commands);
 
 	while (1)
@@ -863,9 +847,9 @@ Per-vertex lighting here does not compute a dot product against each live normal
 
 ### The GL frame in one call
 
-`R_RenderView` (`WinQuake/gl_rmain.c:1104`) clears buffers, then calls `R_RenderScene` (`WinQuake/gl_rmain.c:949`), which is the GL analogue of the software `R_EdgeDrawing`/`R_DrawEntitiesOnList` sequence, minus any edge-list bookkeeping:
+`R_RenderView` (`WinQuake/gl_rmain.c:1104`) clears buffers, then calls `R_RenderScene` (`WinQuake/gl_rmain.c:949`), which is the GL analogue of the software `R_EdgeDrawing` / entity sequence, minus any edge-list bookkeeping:
 ```c
-// WinQuake/gl_rmain.c:949-968
+// WinQuake/gl_rmain.c:949-969
 void R_RenderScene (void)
 {
 	R_SetupFrame ();
@@ -889,7 +873,24 @@ void R_RenderScene (void)
 	R_DrawParticles ();
 }
 ```
-`R_SetFrustum` (`WinQuake/gl_rmain.c:769`) computes the four frustum plane normals from the current view vectors and FOV (rotating the view-plane-normal by half the horizontal/vertical FOV), which is what `R_CullBox` tests candidate boxes against for the remainder of the frame.
+GL `R_MarkLeaves` is `WinQuake/gl_rsurf.c:1352`, not the software function. GL `R_DrawEntitiesOnList` (`WinQuake/gl_rmain.c:602`) is also separate: alias and brush in the first loop, sprites in a second loop "because of alpha blending". `R_SetFrustum` (`WinQuake/gl_rmain.c:769`) computes the four frustum plane normals from the current view vectors and FOV (rotating the view-plane-normal by half the horizontal/vertical FOV), which is what `R_CullBox` tests candidate boxes against for the remainder of the frame.
+
+A `QUAKE2` ifdef in `R_DrawWorld` (`WinQuake/gl_rsurf.c:1331-1343`) wraps `R_ClearSkyBox` / `R_DrawSkyBox`. This tree does not define `QUAKE2`, so sky is `R_DrawSkyChain` (`WinQuake/gl_warp.c:304`, itself under `#ifndef QUAKE2`).
+
+## Software vs GL
+
+Both consume `r_refdef` from `V_RenderView`. After that they diverge.
+
+- **World visibility.** Software: global edge list → opaque spans, no world-surface overdraw. `D_DrawZSpans` still writes a 16-bit z-buffer for later objects. GL: GPU depth buffer; surfaces go on **texture chains**, or `R_DrawSequentialPoly` immediately when `gl_texsort` is 0.
+- **World lighting.** Software composites lightmaps into the **surface cache**. GL keeps a lightmap atlas and blends it, or multitextures it.
+- **Brush models** (doors, plats). Software inserts them into the world edge list (`R_DrawBEntitiesOnList`, `WinQuake/r_main.c:744`). GL draws them with `R_DrawBrushModel` after the world (`WinQuake/gl_rmain.c:620-621`).
+- **Alias / sprites.** Software: one pass over `cl_visedicts` after the world (`WinQuake/r_main.c:527-599`), then viewmodel, then particles. GL: alias+brush first, sprites second (`WinQuake/gl_rmain.c:602-639`), then dlight sprites and particles *inside* `R_RenderScene`; viewmodel, water, and `R_PolyBlend` run after that (`WinQuake/gl_rmain.c:1140-1151`).
+- **Warp.** Software warps water texcoords in `Turbulent8` and, if the camera is underwater, warps the framebuffer with `D_WarpScreen`. GL warps water texcoords in `EmitWaterPolys` only.
+- **Present.** Software: `vid.buffer` → `VID_Update`. GL: GPU back buffer → `GL_EndRendering`.
+
+`r_speeds`: software `R_PrintTimes` prints ms, `c_faceclip` / `r_polycount` / `r_drawnpolycount`, and `c_surf` cache rebuilds (`WinQuake/r_misc.c:194-204`). GL prints ms, `c_brush_polys`, `c_alias_polys` (`WinQuake/gl_rmain.c:1153-1157`).
+
+Overbright / fullbright. Software samples `vid.colormap` (`VID_GRADES` 64 rows × 256, `WinQuake/vid.h:22-23,37`): `(light & 0xFF00) + pix` (`WinQuake/r_surf.c:371-372`). Row 0 is brightest — `r_fullbright` stores 0 into `blocklights` (`WinQuake/r_surf.c:166-170`). Indices ≥ `vid.fullbright` are the same in every row. Alias lighting clamps ambient to 128 and ambient+shade to 192 (`WinQuake/r_main.c:584-588`). GL has no world colormap: `r_fullbright` skips lightmaps (`WinQuake/gl_rsurf.c:157-161,677`); flame models are forced to 256 because "no fullbright colors" (`WinQuake/gl_rmain.c:511-514`).
 
 ## Call graph
 
@@ -899,8 +900,8 @@ Host_Frame
     V_RenderView                      view.c:995
       V_CalcRefdef                    view.c:864
         V_CalcBob                     view.c:112
-        CalcGunAngle                  view.c (called view.c:924)
-      R_PushDlights
+        CalcGunAngle                  view.c:705 (called view.c:925)
+      R_PushDlights                   r_light.c:115
       R_RenderView  [software]        r_main.c:1049 -> R_RenderView_ r_main.c:953
         R_SetupFrame                  r_misc.c:367
         R_MarkLeaves                  r_main.c:491
@@ -908,16 +909,19 @@ Host_Frame
           R_RenderWorld                r_bsp.c:648
             R_RecursiveWorldNode       r_bsp.c:448
               R_RenderFace              r_draw.c:386
+          R_DrawBEntitiesOnList        r_main.c:744
           R_ScanEdges                  r_edge.c:663
-            R_LeadingEdgeBackwards      r_edge.c:335
-            R_TrailingEdge
-            D_DrawSurfaces              d_iface.h:154 (d_edge.c)
+            R_GenerateSpans             r_edge.c:588
+              R_LeadingEdge              r_edge.c:460
+              R_TrailingEdge             r_edge.c:416
+            D_DrawSurfaces              d_edge.c (decl d_iface.h:154)
               D_CacheSurface            d_surf.c:264
                 R_DrawSurface
-                  D_DrawSpans8 / Turbulent8   d_scan.c:257 / d_scan.c:122
+                  D_DrawSpans8 / Turbulent8 / D_DrawSkyScans8
+                                        d_scan.c:257 / d_scan.c:122 / d_sky.c:65
         R_DrawEntitiesOnList          r_main.c:527
           R_AliasDrawModel            r_alias.c:703
-          R_DrawSprite
+          R_DrawSprite                r_sprite.c:286
         R_DrawViewModel               r_main.c:606
         R_DrawParticles               r_part.c:653
         D_WarpScreen                  d_scan.c:44
@@ -926,20 +930,22 @@ Host_Frame
         R_RenderScene                 gl_rmain.c:949
           R_SetupFrame                gl_rmain.c:810
           R_SetFrustum                gl_rmain.c:769
-          R_MarkLeaves
+          R_MarkLeaves                gl_rsurf.c:1352
           R_DrawWorld                 gl_rsurf.c:1316
             R_RecursiveWorldNode       gl_rsurf.c:1190
               R_CullBox                 gl_rmain.c:111
+              R_DrawSequentialPoly      gl_rsurf.c:413  (gl_texsort 0)
             DrawTextureChains          gl_rsurf.c:1029
-              R_DrawSequentialPoly      gl_rsurf.c:413
               R_DrawSkyChain            gl_warp.c:304
                 EmitSkyPolys
-            R_BlendLightmaps
-          R_DrawEntitiesOnList        r_main.c:527 (shared)
+            R_BlendLightmaps           gl_rsurf.c:670  (gl_texsort 1)
+          R_DrawEntitiesOnList        gl_rmain.c:602
             R_DrawAliasModel           gl_rmain.c:446
               GL_DrawAliasFrame         gl_rmain.c:289
+            R_DrawBrushModel           gl_rsurf.c:1078
+            R_DrawSpriteModel          gl_rmain.c:197
         R_DrawViewModel                gl_rmain.c:647
-        R_DrawWaterSurfaces
+        R_DrawWaterSurfaces            gl_rsurf.c:957
           EmitWaterPolys                gl_warp.c:194
         R_Mirror
         R_PolyBlend                    gl_rmain.c:718
@@ -947,15 +953,16 @@ Host_Frame
 
 ## Key data structures
 
-- `surf_t` — `WinQuake/r_shared.h:79-99` — active-surface-stack node in `r_edge.c`; carries `key` (BSP sort order), `spans`, and `nearzi` for the software renderer's depth resolution.
+- `surf_t` — `WinQuake/r_shared.h:80-99` — active-surface-stack node in `r_edge.c`; `key` at line 85 is BSP sort order; `nearzi` is nearest 1/z for mip selection.
 - `edge_t` — `WinQuake/r_shared.h:144-153` — one BSP-surface edge in the global edge table; `u`/`u_step` are the fixed-point screen-x position and per-scanline slope.
-- `espan_t` — `WinQuake/r_shared.h:71-75` — a single horizontal visible pixel run (`u`, `v`, `count`) queued for texturing.
+- `espan_t` — `WinQuake/r_shared.h:72-76` — a single horizontal visible pixel run (`u`, `v`, `count`) queued for texturing.
 - `surfcache_t` — `WinQuake/d_local.h:37-49` — one cached, pre-lit/pre-textured surface bitmap in the software surface-cache heap; invalidated by animation, dlights, or lightstyle changes.
 - `msurface_t` — `WinQuake/model.h:102-126` — a BSP face: plane, texinfo, lighting styles, `SURF_*` flags (sky/turb/planeback/underwater).
 - `mnode_t` — `WinQuake/model.h:128-144` — BSP interior/leaf node; carries `minmaxs` bounding box used by both frustum-cull paths and `visframe` for PVS marking.
 - `glpoly_t` — `WinQuake/gl_model.h:115-122` — GL renderer's fragmented (t-junction-free) polygon representation, `verts[][VERTEXSIZE]` packing xyz + two texcoord pairs (base + lightmap).
-- `aliashdr_t` / MDL command stream — `WinQuake/gl_mesh.c` builds `commands[]`/`vertexorder[]` consumed by `GL_DrawAliasFrame` (`gl_rmain.c:289`).
-- `cshift_t` / `cl.cshifts[NUM_CSHIFTS]` — `WinQuake/view.c:254-257` (constants) — per-cause (water/slime/lava/damage/bonus/powerup) destination color + blend percent.
+- `aliashdr_t` / MDL command stream — `WinQuake/gl_mesh.c` `BuildTris` (`WinQuake/gl_mesh.c:198`) builds `commands[]` consumed by `GL_DrawAliasFrame` (`gl_rmain.c:289`).
+- `cshift_t` / `cl.cshifts[NUM_CSHIFTS]` — struct `WinQuake/client.h:50-54`, four slots `WinQuake/client.h:56-60`; water/slime/lava templates `WinQuake/view.c:254-257`.
+- `viddef_t` — `WinQuake/vid.h:34-54` — software `buffer`, `colormap`, `fullbright`; GL still fills colormap/fullbright but does not draw into `buffer`.
 
 ## Further reading
 
