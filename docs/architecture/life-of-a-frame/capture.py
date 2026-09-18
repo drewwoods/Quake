@@ -43,7 +43,11 @@ COMPARE_PAIRS = [
      'description': ('The exact same camera viewpoint rendered by Software Quake and '
                      'GLQuake. Software Quake uses the 8-bit paletted software pipeline '
                      'with surface caching and span rasterization; GLQuake uses hardware '
-                     'rasterization with bilinear filtering and multipass dynamic lightmaps.')},
+                     'rasterization with bilinear filtering and multipass dynamic lightmaps. '
+                     'The shotgun shows the software alias rasterizer: d_polyse.c maps each '
+                     'triangle affinely with no depth divide, so the skin shears and kinks at '
+                     'triangle edges, and Gouraud light quantized through the colormap leaves '
+                     'flat bands per facet. GL is perspective-correct per pixel. Same mesh.')},
     {'id': 'fullbright',
      'title': 'Fullbright texels: e1m1 corridor lamps',
      'before': 'software/fullbright.png', 'after': 'fullbright.png',
