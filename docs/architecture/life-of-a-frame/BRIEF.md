@@ -21,8 +21,9 @@ links resolve from `sections/` and are adjusted for the generated page.
 
 The guide describes the original NetQuake loop at local commit `3ef8a7a`.
 The current branch has a different host loop; keep that distinction visible.
-Verify baseline claims with `git show 3ef8a7a:WinQuake/<file>` and distinguish
-code behavior from inferred design motives. Diagrams must have text equivalents,
+Verify baseline claims with `git show 3ef8a7a:WinQuake/<file>` — do not grep
+working-tree `WinQuake/` for line numbers; `host.c` on this branch has moved.
+Distinguish code behavior from inferred design motives. Diagrams must have text equivalents,
 work in light/dark themes and stay usable on narrow screens. Check the generated
 page's links, controls and visual layout after rebuilding.
 

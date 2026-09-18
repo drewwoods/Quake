@@ -22,7 +22,7 @@ else
 CDAudio_Update();
 ```
 
-`S_Update` is called with the render view origin and axes (`r_origin`, `vpn`, `vright`, `vup`) when `cls.signon == SIGNONS`; otherwise with zeros, so mixing still fills the device buffer during load screens. `CDAudio_Update()` after it is not the mixer: it is a CD-ROM transport (`WinQuake/cd_win.c:398-417`; other ports in `cd_*.c`) and does not write the DMA buffer. On Windows it only pauses or resumes on `bgmvolume`. `Cbuf_Execute` (`WinQuake/host.c:657`) runs once per accepted frame, before networking and simulation. `Host_GetConsoleCommands` (`WinQuake/host.c:672`) only queues stdin; those lines run on the next frame's `Cbuf_Execute`.
+`S_Update` is called with the render view origin and axes (`r_origin`, `vpn`, `vright`, `vup`) when `cls.signon == SIGNONS`; otherwise with zeros, so mixing still fills the device buffer during load screens. `CDAudio_Update()` after it is not the mixer: it is a CD-ROM transport (`WinQuake/cd_win.c:398-417`; other ports in `cd_*.c`) and does not write the DMA buffer. On Windows it only pauses or resumes on `bgmvolume`. The sound box on the [frame map](#pipe) is this whole `host_speeds` bucket (mix + light decay + CD); integer milliseconds truncate a sub-millisecond mix to zero. `Cbuf_Execute` (`WinQuake/host.c:657`) runs once per accepted frame, before networking and simulation. `Host_GetConsoleCommands` (`WinQuake/host.c:672`) only queues stdin; those lines run on the next frame's `Cbuf_Execute`.
 
 ## Sound: S_Update and spatialization
 
@@ -65,7 +65,7 @@ Channels are a flat array `channel_t channels[MAX_CHANNELS]` (`WinQuake/snd_dma.
 - `NUM_AMBIENTS .. NUM_AMBIENTS+MAX_DYNAMIC_CHANNELS-1` — eight dynamic voices; the only range `SND_PickChannel` walks (`WinQuake/snd_dma.c:363`)
 - `NUM_AMBIENTS+MAX_DYNAMIC_CHANNELS .. total_channels` — static loops from `S_StaticSound` (`WinQuake/snd_dma.c:620`)
 
-`NUM_AMBIENTS` is 4, `MAX_DYNAMIC_CHANNELS` is 8 (`WinQuake/sound.h:131`). Those eight dynamic slots are shared by every entity; they are not one mixer voice per `entnum/entchannel`. `sound.h:135-137` comments the regions in a different order (dynamic, then ambient, then static). Static origins never move after spawn. `S_Update` at `snd_dma.c:751-784` *combines* static channels that share an `sfx` into one volume sum ("so we don't mix five torches every frame"). Combined loops keep the selected channel's playback phase.
+`NUM_AMBIENTS` is 4, `MAX_DYNAMIC_CHANNELS` is 8 (`WinQuake/sound.h:131`). Those eight dynamic slots are shared by every entity; they are not one mixer voice per `entnum/entchannel`. `sound.h:135-137` comments the regions in a different order (dynamic, then ambient, then static). `S_StopSound` (`WinQuake/snd_dma.c:519-532`) follows the comment: it walks `i = 0 .. MAX_DYNAMIC_CHANNELS-1` (slots 0–7). That can clear an ambient and never sees dynamic slots 8–11. `SND_PickChannel` uses the runtime map. Static origins never move after spawn. `S_Update` at `snd_dma.c:751-784` *combines* static channels that share an `sfx` into one volume sum ("so we don't mix five torches every frame"). Combined loops keep the selected channel's playback phase.
 
 `SND_Spatialize` (`WinQuake/snd_dma.c:398-444`) computes per-channel left/right volume from 3D geometry:
 
@@ -469,6 +469,7 @@ _Host_Frame (host.c:633)
 
 SV_StartSound (sv_main.c:118)                    <- called from game/QuakeC side on the server
   MSG_WriteByte(svc_sound) -> sv.datagram
+S_StopSound (snd_dma.c:519)                      <- walks slots 0–7, not 4–11
 
 Host_Error (host.c:121)                          <- called from anywhere on error
   Host_ShutdownServer / CL_Disconnect

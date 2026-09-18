@@ -518,7 +518,7 @@ Then it fudges them (`WinQuake/world.c:417-437`):
 
 Two different epsilons for two different reasons: items get a 15-unit horizontal grab radius because feeling like you picked up the shotgun matters more than geometric truth, and everything else gets 1 unit because `DIST_EPSILON` stops movers 1/32 short of contact and a strict AABB test would then miss touches that should register. The second comment is a direct consequence of the trace epsilon three sections up.
 
-Third, it refreshes the PVS leaf cache used by `SV_WriteEntitiesToClient`, via `SV_FindTouchedLeafs` (`WinQuake/world.c:328-364`) walking the rendering BSP with `BOX_ON_PLANE_SIDE` and recording up to `MAX_ENT_LEAFS` (16) leaf numbers. An entity straddling more than 16 leaves silently truncates (`WinQuake/world.c:342-343`) — a source of rare "entity vanishes" bugs on very large brush models. Note the guard `if (ent->v.modelindex)` at `WinQuake/world.c:441`: invisible logic entities skip this entirely.
+Third, it refreshes the PVS leaf cache used by `SV_WriteEntitiesToClient`, via `SV_FindTouchedLeafs` (`WinQuake/world.c:328-364`) walking the rendering BSP with `BOX_ON_PLANE_SIDE` and recording up to `MAX_ENT_LEAFS` (16) leaf numbers. An entity straddling more than 16 leaves silently truncates (`WinQuake/world.c:342-343`); the send-side consequence is in [BSP and PVS](#sec-4). Note the guard `if (ent->v.modelindex)` at `WinQuake/world.c:441`: invisible logic entities skip this entirely.
 
 Fourth, it links into the areanode tree (unless `SOLID_NOT`, `WinQuake/world.c:444-445`) and optionally fires triggers.
 
@@ -741,24 +741,24 @@ Results are returned through *globals*, not a return value, because the QuakeC A
 
 Because `mins`/`maxs` are `vec3_origin`, hitscan uses **hull 0** against the world and each target's own bounding box (via `SV_HullForBox`) against entities. Player hit detection in Quake is therefore box-vs-ray against a 32×32×56 AABB — no per-limb hitboxes, no model geometry, no head shots.
 
-The QuakeC side is a loop of traces. The shipped shotgun code (this tree carries the QuakeWorld variant of the same routine at `qw-qc/weapons.qc:290-315`) is:
+The QuakeC side is a loop of traces. NetQuake QC is not in the GPL engine tree; the official source is `qcc/v101qc/weapons.qc` in [Quake-Tools](https://github.com/id-Software/Quake-Tools/blob/master/qcc/v101qc/weapons.qc). `FireBullets` (`weapons.qc:253-275`):
 
 ```c
-	traceline (src, src + dir*2048, FALSE, self);
-	puff_org = trace_endpos - dir*4;
-
+	ClearMultiDamage ();
 	while (shotcount > 0)
 	{
 		direction = dir + crandom()*spread_x*v_right + crandom()*spread_y*v_up;
+
 		traceline (src, src + direction*2048, FALSE, self);
 		if (trace_fraction != 1.0)
 			TraceAttack (4, direction);
 
 		shotcount = shotcount - 1;
 	}
+	ApplyMultiDamage ();
 ```
 
-Six traces for the shotgun, fourteen for the super shotgun, every shot, plus one for the aim puff — with `2048` units as the hard-coded weapon range. `ClearMultiDamage`/`ApplyMultiDamage` around the loop coalesce pellets into a single damage event so a target doesn't run its pain animation fourteen times.
+Six traces for the shotgun (`weapons.qc:292`), fourteen for the super shotgun (`weapons.qc:317`), every shot — `2048` units is the hard-coded weapon range. `ClearMultiDamage`/`ApplyMultiDamage` coalesce pellets into one damage event so a target doesn't run its pain animation fourteen times. QuakeWorld's copy (`qw-qc/weapons.qc:290-315`) adds a sighting `traceline` for `puff_org` and a `Multi_Finish` after apply; those are not in NetQuake.
 
 **Projectiles** are edicts. QuakeC spawns one, sets `.movetype` to `MOVETYPE_FLYMISSILE`, `.solid` to `SOLID_BBOX`, `.owner` to the shooter, and a `.touch` function; the engine then moves it each frame through `SV_Physics_Toss` → `SV_PushEntity` → `SV_Move`, and `SV_Impact` (`WinQuake/sv_phys.c:153`) invokes the touch function on contact. `MOVETYPE_FLYMISSILE` is what selects `MOVE_MISSILE` and the ±15 monster-clipping expansion described above.
 
@@ -841,6 +841,7 @@ PF_setorigin -> SV_LinkEdict                           pr_cmds.c:120
 - Quake BSP format specifics (nodes, clipnodes, planes, contents values): https://www.gamers.org/dEngine/quake/spec/quake-spec34/qkspec_4.htm (archived: https://web.archive.org/web/20250222033358/https://www.gamers.org/dEngine/quake/spec/quake-spec34/qkspec_4.htm)
 - Michael Abrash, *Graphics Programming Black Book*, ch. 59–64 — BSP construction and traversal; the same tree the collision hulls are derived from: https://www.jagregory.com/abrash-black-book/
 - QuakeC reference — `traceline`, `walkmove`, `movetogoal`, `droptofloor`, and the `trace_*` globals: https://www.gamers.org/dEngine/quake/spec/quake-spec34/qc-menu.htm (archived: https://web.archive.org/web/20251124162531/https://www.gamers.org/dEngine/quake/spec/quake-spec34/qc-menu.htm)
+- id Software, NetQuake QuakeC (`qcc/v101qc`, GPL via Quake-Tools) — `FireBullets` and the weapon traces: https://github.com/id-Software/Quake-Tools/blob/master/qcc/v101qc/weapons.qc
 - John Carmack .plan archive — contemporaneous notes on collision, stuck players, and hull limitations: https://github.com/ESWAT/john-carmack-plan-archive
 - Matthew Earl (Matt's Ramblings), "Uncovering Quake's unseen collision hulls" (2025) — the expanded hulls visualised against the render geometry: https://www.youtube.com/watch?v=3KjMjHJ3WQg
 - Matthew Earl (Matt's Ramblings), "BSP Trees: The Magic Behind Collision Detection in Quake" (2023) — the trace as a tree descent: https://www.youtube.com/watch?v=wLHXn8IlAiA

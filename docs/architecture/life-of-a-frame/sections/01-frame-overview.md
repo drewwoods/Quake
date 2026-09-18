@@ -6,7 +6,7 @@ The host loop is the spine of the engine: it gathers input, runs any local serve
 
 ## Where it sits in the frame
 
-This *is* the frame. Everything else in this document is a callee of `_Host_Frame` (`WinQuake/host.c:633-727`), which is called from `Host_Frame` (`WinQuake/host.c:729-763`), which is called from a platform `main`/`WinMain` loop: `WinQuake/sys_win.c:855-888`, `WinQuake/sys_linux.c:403-429`, `WinQuake/sys_dos.c:937-950`. Citations are `3ef8a7a`. The current branch splits simulation from rendering and steps at a fixed `host_maxfps`; that loop is not this chapter.
+This *is* the frame. Everything else in this document is a callee of `_Host_Frame` (`WinQuake/host.c:633-727`), which is called from `Host_Frame` (`WinQuake/host.c:729-763`), which is called from a platform `main`/`WinMain` loop: `WinQuake/sys_win.c:855-888`, `WinQuake/sys_linux.c:403-429`, `WinQuake/sys_dos.c:937-950`. Citations are `git show 3ef8a7a:WinQuake/...`, not this checkout. The current branch splits simulation from rendering and steps at a fixed `host_maxfps`; that loop is not this chapter.
 
 ## The platform loop: three ports, one shape
 

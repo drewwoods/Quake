@@ -324,7 +324,11 @@ The comment block right above this code in `sv_main.c` explains the "why" direct
 				continue;		// not visible
 ```
 
-This is coarse server-side visibility culling: the server omits an entity when none of the leaves it touches intersects the client's fat PVS. It is not an anti-cheat boundary. PVS is leaf-to-leaf for the world; entities are not in the bitset. `SV_FindTouchedLeafs` (`WinQuake/world.c:328-364`) records up to `MAX_ENT_LEAFS` (16, `WinQuake/progs.h:34`) leaves per edict — extra leaves are dropped. Water and air are different leaves with different vis rows, which is why fat PVS exists. `r_novis` affects only the GL world walk. Physics still runs every edict (`WinQuake/sv_phys.c:1507-1563`).
+This is coarse server-side visibility culling: the server omits an entity when none of the leaves it touches intersects the client's fat PVS. It is not an anti-cheat boundary. PVS is leaf-to-leaf for the world; entities are not in the bitset.
+
+`SV_FindTouchedLeafs` (`WinQuake/world.c:328-364`) is a DFS of the *render* BSP, called from `SV_LinkEdict` (`WinQuake/world.c:439-442`). At a leaf it records `leaf - sv.worldmodel->leafs - 1` and returns. At a node it tests `BOX_ON_PLANE_SIDE` on the edict's abs box and recurses `children[0]` then `children[1]`. If `ent->num_leafs == MAX_ENT_LEAFS` (16, `WinQuake/progs.h:34`) it returns without recording (`WinQuake/world.c:342-343`). The stored 16 are the first leaves in that walk, not the 16 most relevant to any client. `SV_WriteEntitiesToClient` tests only that list. The entity is omitted when none of those 16 bits is set in the fat PVS, even if an unrecorded leaf would have been. Typical case: a large bmodel (plat, train, door) that straddles many leaves, mostly outside the client's PVS, with the overlapping leaf among the dropped ones. Physics still runs (`WinQuake/sv_phys.c:1507-1563`). Linking itself is in [collision](#sec-3).
+
+Water and air are different leaves with different vis rows, which is why fat PVS exists. `r_novis` affects only the GL world walk.
 
 ## Contents types: collision hulls vs. render nodes
 

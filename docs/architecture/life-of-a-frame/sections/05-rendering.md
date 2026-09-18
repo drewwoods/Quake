@@ -888,7 +888,7 @@ Both consume `r_refdef` from `V_RenderView`. After that they diverge.
 - **Warp.** Software warps water texcoords in `Turbulent8` and, if the camera is underwater, warps the framebuffer with `D_WarpScreen`. GL warps water texcoords in `EmitWaterPolys` only.
 - **Present.** Software: `vid.buffer` → `VID_Update`. GL: GPU back buffer → `GL_EndRendering`.
 
-`r_speeds`: software `R_PrintTimes` prints ms, `c_faceclip` / `r_polycount` / `r_drawnpolycount`, and `c_surf` cache rebuilds (`WinQuake/r_misc.c:194-204`). GL prints ms, `c_brush_polys`, `c_alias_polys` (`WinQuake/gl_rmain.c:1153-1157`).
+`r_speeds`: software `R_PrintTimes` prints ms, `c_faceclip` / `r_polycount` / `r_drawnpolycount`, and `c_surf` cache rebuilds (`WinQuake/r_misc.c:194-204`). GL prints ms, `c_brush_polys`, `c_alias_polys` (`WinQuake/gl_rmain.c:1153-1157`). Share of one measured run is the screen-update bar on the [frame map](#pipe), not a local diagram.
 
 Overbright / fullbright. Software samples `vid.colormap` (`VID_GRADES` 64 rows × 256, `WinQuake/vid.h:22-23,37`): `(light & 0xFF00) + pix` (`WinQuake/r_surf.c:371-372`). Row 0 is brightest — `r_fullbright` stores 0 into `blocklights` (`WinQuake/r_surf.c:166-170`). Indices ≥ `vid.fullbright` are the same in every row. Alias lighting clamps ambient to 128 and ambient+shade to 192 (`WinQuake/r_main.c:584-588`). GL has no world colormap: `r_fullbright` skips lightmaps (`WinQuake/gl_rsurf.c:157-161,677`); flame models are forced to 256 because "no fullbright colors" (`WinQuake/gl_rmain.c:511-514`).
 
