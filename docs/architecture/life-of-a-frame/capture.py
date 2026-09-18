@@ -23,6 +23,47 @@ OUTPUT = pathlib.Path(__file__).resolve().parent
 REPO = OUTPUT.parents[2]
 SCENE = ('demo1, %d wait commands after timedemo starts; '
          '640×480; fixed host_framerate 0.05' % FRAME_WAITS)
+DEMO_SCENE = 'timedemo demo1\n' + 'wait\n' * FRAME_WAITS
+
+# Extra viewpoints captured in both renderers with default settings, for the
+# Compare tab. Values are the console script that reaches the viewpoint.
+COMPARE_SCENES = {
+    # Explosion mid-air: particles and a dynamic light on the surrounding walls.
+    'explosion': 'timedemo demo3\n' + 'wait\n' * 680,
+    # e1m1 corridor lamps in a dark spot: fullbright texels. A local server, not
+    # a demo: spawn, walk 15 fixed steps forward, let the view bob settle.
+    'fullbright': 'map e1m1\n' + 'wait\n' * 20 + '+forward\n' + 'wait\n' * 15
+                  + '-forward\n' + 'wait\n' * 10,
+}
+COMPARE_PAIRS = [
+    {'id': 'renderers',
+     'title': 'Renderer: GLQuake (OpenGL) vs Software Quake',
+     'before': 'software/normal.png', 'after': 'normal.png',
+     'before_label': 'Software', 'after_label': 'GL',
+     'description': ('The exact same camera viewpoint rendered by Software Quake and '
+                     'GLQuake. Software Quake uses the 8-bit paletted software pipeline '
+                     'with surface caching and span rasterization; GLQuake uses hardware '
+                     'rasterization with bilinear filtering and multipass dynamic lightmaps.')},
+    {'id': 'fullbright',
+     'title': 'Fullbright texels: e1m1 corridor lamps',
+     'before': 'software/fullbright.png', 'after': 'fullbright.png',
+     'before_label': 'Software', 'after_label': 'GL',
+     'description': ('Every light level of the colormap maps palette indices 224–255 to '
+                     'themselves, so the software renderer draws lamp faces at full '
+                     'intensity whatever the lightmap says. GLQuake converts textures to RGB '
+                     'and multiplies every texel by the lightmap, so the same lamps fade into '
+                     'the dark. Torch models are exempt: R_DrawAliasModel forces flame.mdl to '
+                     'full light. Not a demo: a local server, 15 fixed steps forward from spawn.')},
+    {'id': 'explosion',
+     'title': 'Dynamic light and particles: demo3 rocket explosion',
+     'before': 'software/explosion.png', 'after': 'explosion.png',
+     'before_label': 'Software', 'after_label': 'GL',
+     'description': ('The software renderer adds the explosion dlight into the surface '
+                     'cache, so nearby walls brighten. GLQuake defaults to gl_flashblend 1: '
+                     'lightmaps are left alone and R_RenderDlights draws an additive sphere '
+                     'instead. Particles are distance-scaled squares in software and small '
+                     'textured triangles in GL. Same demo message in both.')},
+]
 
 # GL writes TGA; software writes 8-bit PCX. Same viewpoint via timedemo+wait.
 RENDERERS = {
@@ -215,10 +256,12 @@ def capture_renderer(root, name):
     dest = shots / spec['subdir'] if spec['subdir'] else shots
     dest.mkdir(parents=True, exist_ok=True)
     command = [str(root / spec['binary']), '-basedir', str(root)] + spec['args']
-    for variant, setting in spec['variants'].items():
+    scenes = [(variant, DEMO_SCENE, setting) for variant, setting in spec['variants'].items()]
+    scenes += [(scene, script, '') for scene, script in COMPARE_SCENES.items()]
+    for variant, scene, setting in scenes:
         # Fixed simulation steps and demo messages reproduce the same camera without a fake pause.
-        cfg = spec['settings'] + 'host_framerate 0.05\n' + setting + '\ntimedemo demo1\n'
-        cfg += 'wait\n' * FRAME_WAITS + 'screenshot\ntoggleconsole\nquit\n'
+        cfg = spec['settings'] + 'host_framerate 0.05\n' + setting + '\n' + scene
+        cfg += 'screenshot\ntoggleconsole\nquit\n'
         (root / 'id1/capture.cfg').write_text(cfg)
         (dest / (variant + '.cfg')).write_text(cfg)
         existing = set((root / 'id1').glob('*' + spec['shot_ext']))
@@ -242,6 +285,7 @@ def capture_renderer(root, name):
         'pairs': spec['pairs'],
         'notes': spec['notes'],
     }
+    renderers['compare'] = {'label': 'Compare', 'pairs': COMPARE_PAIRS, 'notes': []}
     (shots / 'captures.json').write_text(json.dumps(metadata, indent=2) + '\n', encoding='utf-8')
     return command
 

@@ -1,11 +1,11 @@
 {
   "commit": "78216afaad7ece08e98b0bff0b835a7628b699ee",
   "scene": "demo1, 200 wait commands after timedemo starts; 640\u00d7480; fixed host_framerate 0.05",
-  "captured_at": "2026-09-18T04:17:50.594935+00:00",
+  "captured_at": "2026-09-18T04:37:01.462740+00:00",
   "renderers": {
     "software": {
       "label": "Software",
-      "captured_at": "2026-09-18T04:17:50.594935+00:00",
+      "captured_at": "2026-09-18T04:37:01.462740+00:00",
       "pairs": [
         {
           "id": "entities",
@@ -45,7 +45,7 @@
     },
     "gl": {
       "label": "GL",
-      "captured_at": "2026-09-18T04:17:47.636209+00:00",
+      "captured_at": "2026-09-18T04:36:56.356157+00:00",
       "pairs": [
         {
           "id": "visibility",
@@ -103,6 +103,24 @@
           "before_label": "Software",
           "after_label": "GL",
           "description": "The exact same camera viewpoint rendered by Software Quake and GLQuake. Software Quake uses the 8-bit paletted software pipeline with surface caching and span rasterization; GLQuake uses hardware rasterization with bilinear filtering and multipass dynamic lightmaps."
+        },
+        {
+          "id": "fullbright",
+          "title": "Fullbright texels: e1m1 corridor lamps",
+          "before": "software/fullbright.png",
+          "after": "fullbright.png",
+          "before_label": "Software",
+          "after_label": "GL",
+          "description": "Every light level of the colormap maps palette indices 224\u2013255 to themselves, so the software renderer draws lamp faces at full intensity whatever the lightmap says. GLQuake converts textures to RGB and multiplies every texel by the lightmap, so the same lamps fade into the dark. Torch models are exempt: R_DrawAliasModel forces flame.mdl to full light. Not a demo: a local server, 15 fixed steps forward from spawn."
+        },
+        {
+          "id": "explosion",
+          "title": "Dynamic light and particles: demo3 rocket explosion",
+          "before": "software/explosion.png",
+          "after": "explosion.png",
+          "before_label": "Software",
+          "after_label": "GL",
+          "description": "The software renderer adds the explosion dlight into the surface cache, so nearby walls brighten. GLQuake defaults to gl_flashblend 1: lightmaps are left alone and R_RenderDlights draws an additive sphere instead. Particles are distance-scaled squares in software and small textured triangles in GL. Same demo message in both."
         }
       ],
       "notes": []

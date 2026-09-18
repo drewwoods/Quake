@@ -28,10 +28,14 @@ Its tracked `id1/pak0.pak` supplies the shareware demo. It replaces the PNGs,
 companion configs, capture metadata, timing config, log, and timing metadata.
 The documentation build itself stays offline and never launches Quake.
 
-Each screenshot runs `timedemo demo1`, uses `host_framerate 0.05`, and executes
-200 `wait` commands before `screenshot`. Timedemo consumes at most one demo
-message per host frame after signon. Separate runs therefore select the same
-viewpoint without relying on `pause`, which does not freeze demo playback.
+Each screenshot uses `host_framerate 0.05` and reaches its viewpoint by
+`wait` commands: the setting variants run `timedemo demo1` and 200 waits; the
+Compare tab adds `timedemo demo3` and 680 waits (explosion), and `map e1m1`,
+20 waits, `+forward`, 15 waits, `-forward`, 10 waits (fullbright lamps, on a
+local server). Timedemo consumes at most one demo message per host frame after
+signon, and the local server steps by the same fixed time. Separate runs
+therefore select the same viewpoint without relying on `pause`, which does not
+freeze demo playback.
 Timing counters can vary across runs; this is not a promise of identical pixels.
 
 All shots use 640×480, `viewsize 100`, and `volume 0`. GLQuake uses `-window`,
