@@ -6,11 +6,12 @@ and `struct`. Captions supply annotations; the pixels contain only engine output
 
 ## Revision
 
-Captures use native macOS revision `7a74a7c6d901e39f907b39bec94819476bb7b845`.
-The guide’s baseline, `3ef8a7a9e53e226c831467f1b200bc77239e2e0d`, predates that
-backend. `host.c`, `screen.c`, `r_main.c`, `r_surf.c`, `gl_rmain.c`, and
-`gl_rsurf.c` are identical between these revisions. Platform, audio, and demo
-instrumentation differ.
+Captures use native macOS revision `78216afaad7ece08e98b0bff0b835a7628b699ee`
+(branch `capture-base`: the first native build plus `NSOpenGLPFABackingStore`,
+see below). The guide’s baseline, `3ef8a7a9e53e226c831467f1b200bc77239e2e0d`,
+predates that backend. `host.c`, `screen.c`, `r_main.c`, `r_surf.c`,
+`gl_rmain.c`, and `gl_rsurf.c` are identical between these revisions.
+Platform, audio, and demo instrumentation differ.
 
 ## Regenerate
 
@@ -40,21 +41,24 @@ The variants change only the named diagnostic and, for `r_speeds`, notification
 visibility. The `r_speeds` text is the engine’s console notification output.
 Each variant has a companion `.cfg` in this directory.
 
-## Alignment and Drift
+## Alignment
 
-GL and Software captures diverge slightly in camera angle and entity animation (e.g. the Ogre's pose) despite using the same 200 `wait` commands:
-
-- **Cadence**: `wait` delays by host frames, not simulation clock time.
-- **Signon desync**: GL and Software consume different frame counts during video initialization (OpenGL context and texture setup vs. palette and surface cache allocation). Signon packets drain across different frame boundaries, shifting post-signon demo message indices by 3–4 frames.
-- **Message offset**: GL captures at demo message 200 (yaw 59.92°, Ogre crouched); Software captures at message 203 (yaw 53.45°, Ogre attack raised).
-- **Capture order**: `screenshot` executes in `Cbuf_Execute` at the start of `_Host_Frame`, saving the prior frame's buffer before incoming demo packets are parsed or rendered for the current frame.
+Both renderers consume the demo identically: signon drains in the frame that
+runs `timedemo`, then one message per host frame. After 200 `wait` commands,
+`screenshot` runs in `Cbuf_Execute` at the start of frame 200 and saves the
+buffer rendered in frame 199. Software reads `vid.buffer`, the single render
+target. GL reads the back buffer with `glReadPixels`, which after a double-buffer
+flip held frame 198. The pinned revision adds `NSOpenGLPFABackingStore` so the
+swapped-out frame survives, and both renderers now capture frame 199 (demo
+message 204). Verified by stamping `host_framecount` into the framebuffer of
+an instrumented build.
 
 ## Timings
 
 [Timing data](../timings.json) comes from [the retained log](../timings.log):
 969 pre-summary `host_speeds` rows after discarding the initial stale timestamp.
-Their means reproduce the JSON exactly. The demo reports 970 frames, 8.2 seconds,
-and 118.5 fps; that summary uses a different timing boundary. Logged rows include
+Their means reproduce the JSON exactly. The demo reports 970 frames, 8.1 seconds,
+and 119.3 fps; that summary uses a different timing boundary. Logged rows include
 end-of-demo work and are not individual CPU profiles.
 
 The printed `server` bucket includes other host work, scheduling, and prior

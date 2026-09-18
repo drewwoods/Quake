@@ -1,11 +1,11 @@
 {
-  "commit": "7a74a7c6d901e39f907b39bec94819476bb7b845",
+  "commit": "78216afaad7ece08e98b0bff0b835a7628b699ee",
   "scene": "demo1, 200 wait commands after timedemo starts; 640\u00d7480; fixed host_framerate 0.05",
-  "captured_at": "2026-09-18T00:20:21.807018+00:00",
+  "captured_at": "2026-09-18T04:17:50.594935+00:00",
   "renderers": {
     "software": {
       "label": "Software",
-      "captured_at": "2026-09-18T00:20:21.807018+00:00",
+      "captured_at": "2026-09-18T04:17:50.594935+00:00",
       "pairs": [
         {
           "id": "entities",
@@ -36,7 +36,7 @@
         }
       ],
       "notes": [
-        "Captured from clean native macOS commit 7a74a7c, not documentation baseline 3ef8a7a. Host and software render paths cited here are unchanged between those commits.",
+        "Captured from clean native macOS commit 78216af, not documentation baseline 3ef8a7a. Host and software render paths cited here are unchanged between those commits.",
         "Unedited engine screenshots, converted from the software renderer\u2019s PCX output to PNG. No overlays were drawn onto the images.",
         "Separate scripted runs use the same demo-message index, fixed 0.05-second simulation step, and camera as the GL captures. The baseline pause command does not freeze demo playback; timedemo plus wait supplies reproducible frame selection instead.",
         "Windowed 640\u00d7480, viewsize 100, muted audio. r_novis and r_lightmap are GL-only; r_drawflat is the software-only world-span diagnostic.",
@@ -45,6 +45,7 @@
     },
     "gl": {
       "label": "GL",
+      "captured_at": "2026-09-18T04:17:47.636209+00:00",
       "pairs": [
         {
           "id": "visibility",
@@ -84,7 +85,7 @@
         }
       ],
       "notes": [
-        "Captured from clean native macOS commit 7a74a7c, not documentation baseline 3ef8a7a. Host and GL render paths cited here are unchanged between those commits.",
+        "Captured from clean native macOS commit 78216af, not documentation baseline 3ef8a7a. Host and GL render paths cited here are unchanged between those commits.",
         "Unedited engine screenshots, converted from TGA to PNG with sips. No overlays were drawn onto the images.",
         "Separate scripted runs use the same demo-message index, fixed 0.05-second simulation step, and camera. The baseline pause command does not freeze demo playback; timedemo plus wait supplies reproducible frame selection instead.",
         "All shots use -nomtex, gl_texsort 1, viewsize 100, and muted audio. r_lightmap has no effect in the default multitexture path.",

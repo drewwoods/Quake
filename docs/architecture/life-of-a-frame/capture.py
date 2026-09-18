@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Capture the first native macOS revision; requires macOS, clang and sips."""
+"""Capture the pinned native macOS revision; requires macOS, clang and sips."""
 import argparse
 import datetime
 import io
@@ -13,7 +13,7 @@ import tarfile
 import tempfile
 import zlib
 
-COMMIT = '7a74a7c6d901e39f907b39bec94819476bb7b845'
+COMMIT = '78216afaad7ece08e98b0bff0b835a7628b699ee'
 BASELINE = '3ef8a7a9e53e226c831467f1b200bc77239e2e0d'
 FRAME_WAITS = 200
 WAIT_BATCH = 100
@@ -71,7 +71,7 @@ RENDERERS = {
                              'frames remain visible; the displayed timing is one instrumented run.')},
         ],
         'notes': [
-            'Captured from clean native macOS commit 7a74a7c, not documentation baseline 3ef8a7a. Host and GL render paths cited here are unchanged between those commits.',
+            'Captured from clean native macOS commit ' + COMMIT[:7] + ', not documentation baseline ' + BASELINE[:7] + '. Host and GL render paths cited here are unchanged between those commits.',
             'Unedited engine screenshots, converted from TGA to PNG with sips. No overlays were drawn onto the images.',
             'Separate scripted runs use the same demo-message index, fixed 0.05-second simulation step, and camera. The baseline pause command does not freeze demo playback; timedemo plus wait supplies reproducible frame selection instead.',
             'All shots use -nomtex, gl_texsort 1, viewsize 100, and muted audio. r_lightmap has no effect in the default multitexture path.',
@@ -114,7 +114,7 @@ RENDERERS = {
                              'faceclip, polygon count, drawn polygon count, and surface count (c_surf).')},
         ],
         'notes': [
-            'Captured from clean native macOS commit 7a74a7c, not documentation baseline 3ef8a7a. Host and software render paths cited here are unchanged between those commits.',
+            'Captured from clean native macOS commit ' + COMMIT[:7] + ', not documentation baseline ' + BASELINE[:7] + '. Host and software render paths cited here are unchanged between those commits.',
             'Unedited engine screenshots, converted from the software renderer’s PCX output to PNG. No overlays were drawn onto the images.',
             'Separate scripted runs use the same demo-message index, fixed 0.05-second simulation step, and camera as the GL captures. The baseline pause command does not freeze demo playback; timedemo plus wait supplies reproducible frame selection instead.',
             'Windowed 640×480, viewsize 100, muted audio. r_novis and r_lightmap are GL-only; r_drawflat is the software-only world-span diagnostic.',
@@ -267,7 +267,7 @@ def capture_timings(root, command):
     if not rows:
         raise RuntimeError('No timing samples after initialization')
     notes = [
-        'First native macOS GL revision; not an executable of documentation baseline ' + BASELINE[:7] + '.',
+        'Native macOS GL revision ' + COMMIT[:7] + '; not an executable of documentation baseline ' + BASELINE[:7] + '.',
         'host.c, gl_rmain.c, gl_rsurf.c and gl_screen.c match the documentation baseline.',
         'Windowed 640×480, -nomtex, gl_texsort 1; volume 0; default display synchronization.',
         'Means of integer millisecond host_speeds rows before the completed demo summary; first stale-timestamp row excluded.',
