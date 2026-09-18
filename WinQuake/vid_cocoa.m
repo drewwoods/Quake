@@ -175,6 +175,8 @@ int Cocoa_CreateWindow (const char *title, int width, int height, int fullscreen
 {
 	NSOpenGLPixelFormatAttribute	attrs[] = {
 		NSOpenGLPFADoubleBuffer,
+		NSOpenGLPFABackingStore,	// keep the back buffer after swap so
+							// screenshot reads the frame just drawn
 		NSOpenGLPFAAccelerated,
 		NSOpenGLPFAColorSize, 24,
 		NSOpenGLPFAAlphaSize, 8,
