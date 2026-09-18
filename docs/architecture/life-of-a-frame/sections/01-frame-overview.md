@@ -322,7 +322,7 @@ From that, the frame behaviour falls out:
 
 ## How client and server coexist in one process
 
-Commands and replicated entity state cross a network-message interface, even in single player. That unification is a [design choice](design:leaving-lockstep-behind-the-client-server-split), not a local-play shortcut. Timing, cvars, allocators and the model registry are shared, and client code can check server state. For example, `CL_LerpPoint` checks `sv.active` to disable interpolation locally (`WinQuake/cl_main.c:391-402`); `Mod_ForName` reuses model records (`WinQuake/model.c:186-243`, `WinQuake/model.c:329-336`). The normal gameplay message path still uses `WinQuake/net_loop.c`.
+Commands and replicated entity state cross a network-message interface, even in single player. That unification is a [design choice](design:leaving-lockstep-behind-the-client-server-split), not a local-play shortcut. Timing, cvars, allocators and the model registry are shared, and client code can check server state. For example, `CL_LerpPoint` checks `sv.active` to disable interpolation locally (`WinQuake/cl_main.c:391-402`); `Mod_ForName` reuses model records (`WinQuake/model.c:186-228`, `WinQuake/model.c:329-336`). The normal gameplay message path still uses `WinQuake/net_loop.c`.
 
 `Loop_SendMessage` (`WinQuake/net_loop.c:154-185`) does not send anything — it copies the message into the *peer* qsocket's receive buffer with a 4-byte header (type byte, 16-bit length, one alignment pad byte), then clears `canSend`. A missing peer (`!sock->driverdata`, `WinQuake/net_loop.c:159-160`) returns -1; overflow calls `Sys_Error`:
 

@@ -253,7 +253,7 @@ void R_MarkLeaves (void)
 
 Two things worth noting. First, the early-out `r_oldviewleaf == r_viewleaf` means the entire PVS walk is skipped whenever the camera hasn't crossed into a new leaf since last frame — in a typical frame where the player is standing still or moving within one room, this function does nothing at all, which matters a great deal at 1996 frame budgets. Second, `leafs[i+1]` — vis bit `i` corresponds to leaf `i+1`, because leaf 0 (the shared solid leaf) is never included in the PVS matrix (`dmodel_t.visleafs` explicitly excludes it, `WinQuake/bspfile.h:87`). The `do { ... node = node->parent; }` loop stops early if it finds a node already marked for this `r_visframecount` — since an ancestor being already marked means everything further up is too, this turns what could be a full-tree-height walk per leaf into an amortized near-constant cost once the upper tree is marked.
 
-`r_novis` (`WinQuake/gl_rmain.c:86`, registered `WinQuake/gl_rmisc.c:189`) is a debug/benchmarking cvar: when set, `R_MarkLeaves` fabricates an all-`0xff` vis buffer instead of decompressing the real PVS, forcing every leaf to be considered potentially visible (the `!r_novis.value` in the early-out means toggling it re-marks even from a stationary viewpoint). It does not change the server's fat PVS. The software `R_MarkLeaves` (`WinQuake/r_main.c:491-519`) has no `r_novis` check — that cvar and the `mirror` early-out are GL-only. A map with no vis lump (`compressed_vis == NULL`) already fills the row with `0xff` in `Mod_DecompressVis`, which is the software equivalent.
+`r_novis` (`WinQuake/gl_rmain.c:86`, registered `WinQuake/gl_rmisc.c:189`) is a debug/benchmarking cvar: when set, `R_MarkLeaves` fabricates an all-`0xff` vis buffer instead of decompressing the real PVS, forcing every leaf to be considered potentially visible (the `!r_novis.value` in the early-out means enabling it re-marks even from a stationary viewpoint). It does not change the server's fat PVS. The software `R_MarkLeaves` (`WinQuake/r_main.c:491-519`) has no `r_novis` check — that cvar and the `mirror` early-out are GL-only. A map with no vis lump (`compressed_vis == NULL`) already fills the row with `0xff` in `Mod_DecompressVis`, which is the software equivalent.
 
 Only nodes/leaves marked for the current `r_visframecount` are recursed into by the surface-walking code (`R_DrawWorld`/`R_RecursiveWorldNode`), so PVS culling composes with frustum culling and the `dnode_t` bounding boxes to minimize the amount of BSP tree actually traversed and rasterized each frame.
 
@@ -508,11 +508,12 @@ Host_Frame
                  └─ R_EdgeDrawing            (r_main.c:876) -- R_RenderWorld (r_bsp.c:648) walks visframe
 
 SV_SendClientMessages (sv_main.c:819)
- └─ SV_WriteEntitiesToClient                (sv_main.c:427)
-     └─ SV_FatPVS                            (sv_main.c:410)
-         └─ SV_AddToFatPVS                   (sv_main.c:367)
-             └─ Mod_LeafPVS                  (model.c:155)
-                 └─ Mod_DecompressVis        (model.c:115)
+ └─ SV_SendClientDatagram                    (sv_main.c:720)
+     └─ SV_WriteEntitiesToClient             (sv_main.c:427)
+         └─ SV_FatPVS                        (sv_main.c:410)
+             └─ SV_AddToFatPVS               (sv_main.c:367)
+                 └─ Mod_LeafPVS              (model.c:155)
+                     └─ Mod_DecompressVis    (model.c:115)
 
 Mod_LoadModel
  └─ Mod_LoadBrushModel                       (model.c:1143)

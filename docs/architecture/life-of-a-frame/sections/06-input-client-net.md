@@ -103,7 +103,7 @@ the keynum as a parameter for `+` commands:
 
 Note this never touches `usercmd_t` directly — it only appends text to the
 console command buffer (`Cbuf_AddText`), which `Cbuf_Execute()` runs later in
-the same frame (`WinQuake/host.c:656`). This is the same mechanism used for
+the same frame (`WinQuake/host.c:657`). This is the same mechanism used for
 ordinary console commands, which is why every movement key can also be bound
 to an arbitrary console command string.
 
@@ -167,12 +167,12 @@ void KeyDown (kbutton_t *b)
 
 `state` bit 0 is "currently down", bits 1/2 are edge-triggered "went down" /
 "went up" impulses *within this frame*. `CL_KeyState` (`WinQuake/cl_input.c:
-171-201`) turns that bit state into an analog fraction the movement code can
+171-202`) turns that bit state into an analog fraction the movement code can
 scale a speed by, which matters because a key can be pressed and released
 *within* a single frame at low framerate:
 
 ```c
-// WinQuake/cl_input.c:171-201
+// WinQuake/cl_input.c:171-202
 float CL_KeyState (kbutton_t *key)
 {
 	float		val;
@@ -275,7 +275,7 @@ direction during play; the server can still overwrite it with `svc_setangle`
 
 ## Client movement: CL_AdjustAngles / CL_BaseMove / CL_SendMove
 
-`CL_SendCmd` (`WinQuake/cl_main.c:670-706`) is the orchestrator, called from
+`CL_SendCmd` (`WinQuake/cl_main.c:670-710`) is the orchestrator, called from
 `_Host_Frame` as shown above:
 
 ```c
@@ -373,7 +373,7 @@ typedef struct
 } usercmd_t;
 ```
 
-Finally `CL_SendMove` (`WinQuake/cl_input.c:332-403`) serializes the command
+Finally `CL_SendMove` (`WinQuake/cl_input.c:332-402`) serializes the command
 into a `clc_move` (`WinQuake/protocol.h:139`, `#define clc_move 3
 // [usercmd_t]`) network message and fires it unreliably:
 
@@ -431,8 +431,8 @@ if anything is queued (`WinQuake/cl_main.c:696-709`).
 
 ## Net layer: driver abstraction, loopback, and datagram delivery
 
-`NET_SendMessage` / `NET_GetMessage` (`WinQuake/net_main.c:540-555,
-625-653`) are thin wrappers that dispatch to a driver vtable (`sfunc`) chosen
+`NET_SendMessage` / `NET_GetMessage` (`WinQuake/net_main.c:625-653,
+540-603`) are thin wrappers that dispatch to a driver vtable (`sfunc`) chosen
 per-socket — either the loopback driver (`net_loop.c`, used for single-player
 and to talk to your own listen server) or a real datagram driver (`net_dgrm.c`,
 UDP/IPX). There is no QuakeWorld `netchan_t`; each `qsocket_t` holds its own
@@ -894,7 +894,7 @@ codebase, no rewind-and-replay, and no local physics integration of
 `usercmd_t` against the world.
 
 View bob, punch-angle kick, and stair smoothing are client *presentation*
-applied in `V_CalcRefdef` (`WinQuake/view.c:864-979`) on top of the
+applied in `V_CalcRefdef` (`WinQuake/view.c:864-983`) on top of the
 server-authored origin. They are not local movement.
 
 Over loopback and LAN the round trip is short enough that the missing
