@@ -1,14 +1,16 @@
 # Runtime evidence
 
-These are unedited GLQuake screenshots, converted from TGA to PNG with `sips`.
-Captions supply annotations; the pixels contain only engine output.
+These are unedited GLQuake and Software Quake screenshots. GLQuake TGAs are
+converted with `sips`; Software Quake PCXs are converted with Python's `zlib`
+and `struct`. Captions supply annotations; the pixels contain only engine output.
 
 ## Revision
 
 Captures use native macOS revision `7a74a7c6d901e39f907b39bec94819476bb7b845`.
 The guide’s baseline, `3ef8a7a9e53e226c831467f1b200bc77239e2e0d`, predates that
-backend. `host.c`, `gl_rmain.c`, `gl_rsurf.c`, and `gl_screen.c` are identical
-between these revisions. Platform, audio, and demo instrumentation differ.
+backend. `host.c`, `screen.c`, `r_main.c`, `r_surf.c`, `gl_rmain.c`, and
+`gl_rsurf.c` are identical between these revisions. Platform, audio, and demo
+instrumentation differ.
 
 ## Regenerate
 
@@ -16,7 +18,7 @@ From the repository root, on macOS with an active graphical session,
 Python 3.12+, Xcode command-line tools, and `sips`:
 
 ```sh
-python3 docs/architecture/life-of-a-frame/capture.py
+python3 docs/architecture/life-of-a-frame/capture.py [--renderer gl|software|both]
 python3 docs/architecture/life-of-a-frame/build.py
 ```
 
@@ -31,10 +33,21 @@ message per host frame after signon. Separate runs therefore select the same
 viewpoint without relying on `pause`, which does not freeze demo playback.
 Timing counters can vary across runs; this is not a promise of identical pixels.
 
-All shots use windowed 640×480, `-nomtex`, `gl_texsort 1`, `viewsize 100`, and
-`volume 0`. Disabling multitexture makes `r_lightmap` effective. The variants
-change only the named diagnostic and, for `r_speeds`, notification visibility.
-The `r_speeds` text is the engine’s console notification output.
+All shots use 640×480, `viewsize 100`, and `volume 0`. GLQuake uses `-window`,
+`-nomtex`, and `gl_texsort 1`; disabling multitexture makes `r_lightmap`
+effective. Software Quake runs in its standard windowed 8-bit paletted pipeline.
+The variants change only the named diagnostic and, for `r_speeds`, notification
+visibility. The `r_speeds` text is the engine’s console notification output.
+Each variant has a companion `.cfg` in this directory.
+
+## Alignment and Drift
+
+GL and Software captures diverge slightly in camera angle and entity animation (e.g. the Ogre's pose) despite using the same 200 `wait` commands:
+
+- **Cadence**: `wait` delays by host frames, not simulation clock time.
+- **Signon desync**: GL and Software consume different frame counts during video initialization (OpenGL context and texture setup vs. palette and surface cache allocation). Signon packets drain across different frame boundaries, shifting post-signon demo message indices by 3–4 frames.
+- **Message offset**: GL captures at demo message 200 (yaw 59.92°, Ogre crouched); Software captures at message 203 (yaw 53.45°, Ogre attack raised).
+- **Capture order**: `screenshot` executes in `Cbuf_Execute` at the start of `_Host_Frame`, saving the prior frame's buffer before incoming demo packets are parsed or rendered for the current frame.
 
 ## Timings
 

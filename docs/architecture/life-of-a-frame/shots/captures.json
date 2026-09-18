@@ -1,49 +1,110 @@
 {
   "commit": "7a74a7c6d901e39f907b39bec94819476bb7b845",
   "scene": "demo1, 200 wait commands after timedemo starts; 640\u00d7480; fixed host_framerate 0.05",
-  "pairs": [
-    {
-      "id": "visibility",
-      "title": "Visibility: more submitted geometry need not change the view",
-      "before": "normal.png",
-      "after": "no-vis.png",
-      "before_label": "r_novis 0",
-      "after_label": "r_novis 1",
-      "description": "PVS rejection is disabled. Walls still occlude geometry through depth testing, so a similar image does not imply equal rendering work."
+  "captured_at": "2026-09-18T00:20:21.807018+00:00",
+  "renderers": {
+    "software": {
+      "label": "Software",
+      "captured_at": "2026-09-18T00:20:21.807018+00:00",
+      "pairs": [
+        {
+          "id": "entities",
+          "title": "World geometry and entities",
+          "before": "software/normal.png",
+          "after": "software/no-entities.png",
+          "before_label": "r_drawentities 1",
+          "after_label": "r_drawentities 0",
+          "description": "The enemy, pickup and weapon disappear. The bars also disappear: moving brush models are entities. The static BSP world and particles remain."
+        },
+        {
+          "id": "drawflat",
+          "title": "Surface span rasterization",
+          "before": "software/normal.png",
+          "after": "software/drawflat.png",
+          "before_label": "r_drawflat 0",
+          "after_label": "r_drawflat 1",
+          "description": "Surfaces are drawn in solid colors without textures, showing how the BSP front-to-back traversal and edge scan conversion partition the visible scene into surface spans."
+        },
+        {
+          "id": "speeds",
+          "title": "Renderer counters in the console notification area",
+          "before": "software/normal.png",
+          "after": "software/speeds.png",
+          "before_label": "r_speeds 0",
+          "after_label": "r_speeds 1",
+          "description": "The top-left console notifications show render time in milliseconds, faceclip, polygon count, drawn polygon count, and surface count (c_surf)."
+        }
+      ],
+      "notes": [
+        "Captured from clean native macOS commit 7a74a7c, not documentation baseline 3ef8a7a. Host and software render paths cited here are unchanged between those commits.",
+        "Unedited engine screenshots, converted from the software renderer\u2019s PCX output to PNG. No overlays were drawn onto the images.",
+        "Separate scripted runs use the same demo-message index, fixed 0.05-second simulation step, and camera as the GL captures. The baseline pause command does not freeze demo playback; timedemo plus wait supplies reproducible frame selection instead.",
+        "Windowed 640\u00d7480, viewsize 100, muted audio. r_novis and r_lightmap are GL-only; r_drawflat is the software-only world-span diagnostic.",
+        "Each variant has a companion .cfg. Reproduce from the repository with python3 docs/architecture/life-of-a-frame/capture.py --renderer software. This creates a temporary clean export and builds the pinned revision."
+      ]
     },
-    {
-      "id": "entities",
-      "title": "World geometry and entities",
-      "before": "normal.png",
-      "after": "no-entities.png",
-      "before_label": "r_drawentities 1",
-      "after_label": "r_drawentities 0",
-      "description": "The enemy, pickup and weapon disappear. The bars also disappear: moving brush models are entities. The static BSP world and particles remain."
+    "gl": {
+      "label": "GL",
+      "pairs": [
+        {
+          "id": "visibility",
+          "title": "Visibility: more submitted geometry need not change the view",
+          "before": "normal.png",
+          "after": "no-vis.png",
+          "before_label": "r_novis 0",
+          "after_label": "r_novis 1",
+          "description": "PVS rejection is disabled. Walls still occlude geometry through depth testing, so a similar image does not imply equal rendering work."
+        },
+        {
+          "id": "entities",
+          "title": "World geometry and entities",
+          "before": "normal.png",
+          "after": "no-entities.png",
+          "before_label": "r_drawentities 1",
+          "after_label": "r_drawentities 0",
+          "description": "The enemy, pickup and weapon disappear. The bars also disappear: moving brush models are entities. The static BSP world and particles remain."
+        },
+        {
+          "id": "lightmaps",
+          "title": "The lightmap pass",
+          "before": "normal.png",
+          "after": "lightmap.png",
+          "before_label": "r_lightmap 0",
+          "after_label": "r_lightmap 1",
+          "description": "The multipass path draws its lightmap texture without the usual blend. This diagnostic is not a final illumination-only render; entities keep their textures. Both captures use -nomtex and gl_texsort 1."
+        },
+        {
+          "id": "speeds",
+          "title": "Renderer counters in the console notification area",
+          "before": "normal.png",
+          "after": "speeds.png",
+          "before_label": "r_speeds 0",
+          "after_label": "r_speeds 1",
+          "description": "The top-left console notifications show milliseconds, world polygons (wpoly), and entity polygons (epoly). Several recent frames remain visible; the displayed timing is one instrumented run."
+        }
+      ],
+      "notes": [
+        "Captured from clean native macOS commit 7a74a7c, not documentation baseline 3ef8a7a. Host and GL render paths cited here are unchanged between those commits.",
+        "Unedited engine screenshots, converted from TGA to PNG with sips. No overlays were drawn onto the images.",
+        "Separate scripted runs use the same demo-message index, fixed 0.05-second simulation step, and camera. The baseline pause command does not freeze demo playback; timedemo plus wait supplies reproducible frame selection instead.",
+        "All shots use -nomtex, gl_texsort 1, viewsize 100, and muted audio. r_lightmap has no effect in the default multitexture path.",
+        "Each variant has a companion .cfg. Reproduce from the repository with python3 docs/architecture/life-of-a-frame/capture.py --renderer gl. This creates a temporary clean export and builds the pinned revision."
+      ]
     },
-    {
-      "id": "lightmaps",
-      "title": "The lightmap pass",
-      "before": "normal.png",
-      "after": "lightmap.png",
-      "before_label": "r_lightmap 0",
-      "after_label": "r_lightmap 1",
-      "description": "The multipass path draws its lightmap texture without the usual blend. This diagnostic is not a final illumination-only render; entities keep their textures. Both captures use -nomtex and gl_texsort 1."
-    },
-    {
-      "id": "speeds",
-      "title": "Renderer counters in the console notification area",
-      "before": "normal.png",
-      "after": "speeds.png",
-      "before_label": "r_speeds 0",
-      "after_label": "r_speeds 1",
-      "description": "The top-left console notifications show milliseconds, world polygons (wpoly), and entity polygons (epoly). Several recent frames remain visible; the displayed timing is one instrumented run."
+    "compare": {
+      "label": "Compare",
+      "pairs": [
+        {
+          "id": "renderers",
+          "title": "Renderer: GLQuake (OpenGL) vs Software Quake",
+          "before": "software/normal.png",
+          "after": "normal.png",
+          "before_label": "Software",
+          "after_label": "GL",
+          "description": "The exact same camera viewpoint rendered by Software Quake and GLQuake. Software Quake uses the 8-bit paletted software pipeline with surface caching and span rasterization; GLQuake uses hardware rasterization with bilinear filtering and multipass dynamic lightmaps."
+        }
+      ],
+      "notes": []
     }
-  ],
-  "notes": [
-    "Captured from clean native macOS commit 7a74a7c, not documentation baseline 3ef8a7a. Host and GL render paths cited here are unchanged between those commits.",
-    "Unedited engine screenshots, converted from TGA to PNG with sips. No overlays were drawn onto the images.",
-    "Separate scripted runs use the same demo-message index, fixed 0.05-second simulation step, and camera. The baseline pause command does not freeze demo playback; timedemo plus wait supplies reproducible frame selection instead.",
-    "All shots use -nomtex, gl_texsort 1, viewsize 100, and muted audio. r_lightmap has no effect in the default multitexture path.",
-    "Each variant has a companion .cfg. Reproduce from the repository with python3 docs/architecture/life-of-a-frame/capture.py. This creates a temporary clean export and builds the pinned revision."
-  ]
+  }
 }

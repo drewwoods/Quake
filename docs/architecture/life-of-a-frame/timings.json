@@ -1,18 +1,18 @@
 {
   "commit": "7a74a7c6d901e39f907b39bec94819476bb7b845",
   "baseline": "3ef8a7a9e53e226c831467f1b200bc77239e2e0d",
-  "captured_at": "2026-09-07T21:08:19.369649+00:00",
+  "captured_at": "2026-09-18T00:18:26.934726+00:00",
   "machine": "Apple M2, macOS 26.6.2",
   "renderer": "GLQuake Cocoa / Apple OpenGL, multipass lightmaps",
   "command": "WinQuake/build/macos/release/glquake -basedir <export> -window -width 640 -height 480 -nomtex +exec timings.cfg",
   "samples": 969,
   "means_ms": {
-    "total": 7.853457172342622,
-    "server": 0.047471620227038186,
-    "gfx": 7.805985552115583,
+    "total": 8.071207430340557,
+    "server": 0.0392156862745098,
+    "gfx": 8.031991744066048,
     "snd": 0.0
   },
-  "demo_summary": "970 frames   8.2 seconds 118.5 fps",
+  "demo_summary": "970 frames   8.4 seconds 115.9 fps",
   "log": "timings.log",
   "notes": [
     "First native macOS GL revision; not an executable of documentation baseline 3ef8a7a.",

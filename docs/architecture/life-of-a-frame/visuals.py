@@ -57,28 +57,47 @@ def refresh():
     (HERE / 'diagrams' / 'measured-costs.html').write_text(caption + '\n', encoding='utf-8')
 
     captures = json.loads((HERE / 'shots' / 'captures.json').read_text(encoding="utf-8"))
-    figures = ['<div class="capture-gallery"><h3>Same viewpoint, different renderer settings</h3>']
-    for pair in captures['pairs']:
-        figure_id = 'capture-' + pair['id']
-        figures.append('<figure class="capture-pair" id="%s"><h4>%s</h4>'
-                       '<div class="capture-images">' % (escaped(figure_id), escaped(pair['title'])))
-        for side in ['before', 'after']:
-            asset = HERE / 'shots' / pair[side]
-            if not asset.is_file():
-                raise FileNotFoundError('Missing capture: %s' % asset)
-            figures.append('<div class="capture-%s"><p>%s</p><img loading="lazy" '
-                           'width="640" height="480" src="shots/%s" alt="%s"></div>'
-                           % (side, escaped(pair[side + '_label']), escaped(pair[side]),
-                              escaped(pair[side + '_label'] + '. ' + pair['description'])))
-        figures.append('</div><div class="capture-control" hidden><label for="%s-slider">'
-                       'Reveal changed image (%s → %s)</label> <input id="%s-slider" type="range" min="0" '
-                       'max="100" value="50" step="1" aria-describedby="%s-description"> '
-                       '<output for="%s-slider">50%%</output></div>'
-                       '<figcaption id="%s-description">%s Capture build <code>%s</code>. %s</figcaption>'
-                       '</figure>' % (figure_id, escaped(pair['before_label']), escaped(pair['after_label']),
-                                      figure_id, figure_id, figure_id, figure_id,
-                                      escaped(pair['description']), escaped(captures['commit']),
-                                      escaped(captures['scene'])))
-    figures.append('<p>%s</p><p><a href="shots/README.md">Capture settings and regeneration</a>'
-                   '</p></div>' % ' '.join(escaped(note) for note in captures['notes']))
+    renderers = captures.get('renderers')
+    if not renderers:
+        renderers = {'gl': {'label': 'GL', 'pairs': captures['pairs'],
+                            'notes': captures.get('notes', [])}}
+    keys = [key for key in ('software', 'gl', 'compare') if key in renderers] or list(renderers)
+    figures = ['<div class="capture-gallery">',
+               '<div class="capture-gallery-head">',
+               '<h3>Same viewpoint, different renderer settings</h3>']
+    if len(keys) > 1:
+        figures.append('<div class="capture-renderer modeswitch" role="group" aria-label="Renderer">')
+        for i, key in enumerate(keys):
+            figures.append('<button type="button" data-renderer="%s" aria-pressed="%s">%s</button>'
+                           % (escaped(key), 'true' if i == 0 else 'false',
+                              escaped(renderers[key]['label'])))
+        figures.append('</div>')
+    figures.append('</div>')
+    for key in keys:
+        data = renderers[key]
+        figures.append('<div class="capture-set" data-renderer="%s">'
+                       '<p class="capture-renderer-label">%s renderer</p>'
+                       % (escaped(key), escaped(data['label'])))
+        for pair in data['pairs']:
+            figure_id = 'capture-%s-%s' % (key, pair['id'])
+            figures.append('<figure class="capture-pair" id="%s"><h4>%s</h4>'
+                           '<div class="capture-images">' % (escaped(figure_id), escaped(pair['title'])))
+            for side in ['before', 'after']:
+                asset = HERE / 'shots' / pair[side]
+                if not asset.is_file():
+                    raise FileNotFoundError('Missing capture: %s' % asset)
+                figures.append('<div class="capture-%s"><p>%s</p><img loading="lazy" '
+                               'width="640" height="480" src="shots/%s" alt="%s"></div>'
+                               % (side, escaped(pair[side + '_label']), escaped(pair[side]),
+                                  escaped(pair[side + '_label'] + '. ' + pair['description'])))
+            figures.append('</div><div class="capture-control" hidden><label for="%s-slider">'
+                           'Reveal changed image (%s → %s)</label> <input id="%s-slider" type="range" min="0" '
+                           'max="100" value="50" step="1" aria-describedby="%s-description"> '
+                           '<output for="%s-slider">50%%</output></div>'
+                           '<figcaption id="%s-description">%s</figcaption>'
+                           '</figure>' % (figure_id, escaped(pair['before_label']), escaped(pair['after_label']),
+                                          figure_id, figure_id, figure_id, figure_id,
+                                          escaped(pair['description'])))
+        figures.append('</div>')
+    figures.append('</div>')
     (HERE / 'diagrams' / 'screenshots.html').write_text('\n'.join(figures) + '\n', encoding='utf-8')

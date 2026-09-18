@@ -14,6 +14,11 @@
 .runtime-costs, .capture-pair { margin: 1.5rem 0; }
 .runtime-costs code { overflow-wrap: anywhere; }
 .capture-gallery { max-width: 640px; }
+.capture-gallery-head { display: flex; flex-wrap: wrap; gap: .5rem 1rem; align-items: baseline; margin-bottom: 1rem; }
+.capture-gallery-head h3 { margin: 0; flex: 1 1 12rem; }
+.capture-renderer { margin-left: 0; }
+.capture-renderer-label { font-family: var(--f-mono); font-size: .85em; color: var(--muted); margin: 0 0 .75rem; }
+.capture-gallery.is-interactive .capture-renderer-label { position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0, 0, 0, 0); }
 .capture-images { display: grid; gap: .5rem; }
 .capture-images p { margin: .25rem 0; font-family: var(--f-mono); font-size: .85em; }
 .capture-images img { display: block; width: 100%; height: auto; }
@@ -24,10 +29,12 @@
 .capture-pair.is-interactive .capture-images p { display: none; }
 .capture-pair.is-interactive .capture-images::after { content: ""; position: absolute; top: 0; bottom: 0; left: var(--reveal, 50%); border-left: 2px solid var(--cl); pointer-events: none; }
 @media print {
-  .capture-control, .capture-images::after { display: none; }
+  .capture-control, .capture-images::after, .capture-renderer { display: none; }
   .capture-pair.is-interactive .capture-images { display: grid; }
   .capture-pair.is-interactive .capture-after { position: static; clip-path: none; }
   .capture-pair.is-interactive .capture-images p { display: block; }
+  .capture-gallery.is-interactive .capture-set[hidden] { display: block !important; }
+  .capture-gallery.is-interactive .capture-renderer-label { position: static; width: auto; height: auto; clip: auto; overflow: visible; }
 }
 
 </style>
@@ -268,6 +275,29 @@ document.querySelectorAll(".capture-pair").forEach(function (figure) {
   control.hidden = false;
   slider.addEventListener("input", reveal);
   reveal();
+});
+
+document.querySelectorAll(".capture-gallery").forEach(function (gallery) {
+  var buttons = [].slice.call(gallery.querySelectorAll(".capture-renderer button"));
+  var sets = [].slice.call(gallery.querySelectorAll(".capture-set"));
+  if (!buttons.length || sets.length < 2) return;
+  function show(name) {
+    buttons.forEach(function (b) {
+      b.setAttribute("aria-pressed", String(b.getAttribute("data-renderer") === name));
+    });
+    sets.forEach(function (s) {
+      s.hidden = s.getAttribute("data-renderer") !== name;
+    });
+    try { localStorage.setItem("lof-capture-renderer", name); } catch (e) {}
+  }
+  gallery.classList.add("is-interactive");
+  buttons.forEach(function (b) {
+    b.addEventListener("click", function () { show(b.getAttribute("data-renderer")); });
+  });
+  var stored = null;
+  try { stored = localStorage.getItem("lof-capture-renderer"); } catch (e) {}
+  show(stored && gallery.querySelector('.capture-set[data-renderer="' + stored + '"]')
+       ? stored : buttons[0].getAttribute("data-renderer"));
 });
 </script>
 
