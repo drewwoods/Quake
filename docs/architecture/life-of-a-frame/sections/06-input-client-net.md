@@ -1,8 +1,18 @@
 # Input, client movement, and networking
 
-The client turns keyboard and mouse input into movement requests. It also decodes server messages into a scene for rendering. These are the two directions of the same conversation; the client’s requested movement is not the authoritative result.
+The client turns keyboard and mouse input into movement requests. It also
+decodes server messages into a scene for rendering. These are the two directions
+of the same conversation; the client’s requested movement is not the
+authoritative result.
 
-> **First pass.** A key binding such as `+forward` becomes a console command, then `kbutton_t` state, then fields in a `usercmd_t` — a request, not a new position. The client sends that request (`clc_move`). Later it parses entity updates and draws them, often interpolating between the last two server timestamps (`cl.mtime[0]` and `cl.mtime[1]`). **Interpolation is not movement prediction**; original NetQuake does not run the player’s physics ahead locally. Source: `WinQuake/keys.c:599-714`, `WinQuake/cl_input.c:283-323`, `WinQuake/cl_main.c:391-434`. [Next: the server and QuakeC →](#sec-2)
+> **First pass.** A key binding such as `+forward` becomes a console command,
+> then `kbutton_t` state, then fields in a `usercmd_t` — a request, not a new
+> position. The client sends that request (`clc_move`). Later it parses entity
+> updates and draws them, often interpolating between the last two server
+> timestamps (`cl.mtime[0]` and `cl.mtime[1]`). **Interpolation is not movement
+> prediction**; original NetQuake does not run the player’s physics ahead
+> locally. Source: `WinQuake/keys.c:599-714`, `WinQuake/cl_input.c:283-323`,
+> `WinQuake/cl_main.c:391-434`. [Next: the server and QuakeC →](#sec-2)
 
 ::: diagram ownership
 
@@ -17,22 +27,22 @@ frame:
    which synchronously calls back into `Key_Event`.
 2. `IN_Commands()` — `WinQuake/host.c:654`, `WinQuake/in_win.c:963` — joystick
    buttons and POV only. Mouse buttons arrive via the window procedure
-   (`IN_MouseEvent`, `WinQuake/gl_vidnt.c:1079`, `WinQuake/vid_win.c:2962`)
-   or DirectInput inside `IN_MouseMove`.
+   (`IN_MouseEvent`, `WinQuake/gl_vidnt.c:1079`, `WinQuake/vid_win.c:2962`) or
+   DirectInput inside `IN_MouseMove`.
 3. `Cbuf_Execute()` — `WinQuake/host.c:657` — executes any `+forward`-style
    commands the key events queued into the command buffer.
 4. `NET_Poll()` — `WinQuake/host.c:659`.
 5. `CL_SendCmd()` is called from **one of two places** depending on topology:
    `WinQuake/host.c:663` (`if (sv.active) CL_SendCmd();`, before the server
    simulates — a listen server samples input before running the world and
-   delivers it through the in-process loopback driver), or
-   `WinQuake/host.c:686` (`if (!sv.active) CL_SendCmd();`) for a pure client,
-   after the skipped server-frame block and immediately before the network
-   read. The source comment says incoming messages have already been read,
-   but the executable order is send, then read.
-6. `CL_ReadFromServer()` — `WinQuake/host.c:693` — only when
-   `cls.state == ca_connected`; this both drains the socket and calls
-   `CL_ParseServerMessage`, `CL_RelinkEntities`, `CL_UpdateTEnts`.
+   delivers it through the in-process loopback driver), or `WinQuake/host.c:686`
+   (`if (!sv.active) CL_SendCmd();`) for a pure client, after the skipped
+   server-frame block and immediately before the network read. The source
+   comment says incoming messages have already been read, but the executable
+   order is send, then read.
+6. `CL_ReadFromServer()` — `WinQuake/host.c:693` — only when `cls.state ==
+   ca_connected`; this both drains the socket and calls `CL_ParseServerMessage`,
+   `CL_RelinkEntities`, `CL_UpdateTEnts`.
 
 ## Input: Sys_SendKeyEvents and Key_Event
 
@@ -41,15 +51,15 @@ On Windows, `Sys_SendKeyEvents` (`WinQuake/sys_win.c:641-656`) is just a
 happens in the window procedure, which eventually calls `Key_Event(int key,
 qboolean down)` (`WinQuake/keys.c:599`). `Key_Event` is the single funnel for
 every physical input source — keyboard, mouse buttons (`WinQuake/in_win.c:561,
-567, 659, 665`), joystick buttons (`WinQuake/in_win.c:982, 988, 1015, 1020`)
-all call it with a "key number" and up/down state.
+567, 659, 665`), joystick buttons (`WinQuake/in_win.c:982, 988, 1015, 1020`) all
+call it with a "key number" and up/down state.
 
 The design problem `Key_Event` solves: keybindings map a keynum to a command
 string, and "button" commands (leading `+`) need matching press/release pairs
-even though two different physical keys can be bound to the same logical
-action (e.g. mouse2 and space both bound to `+jump`). The fix is to pass the
-keynum as a text argument to the queued command, so the release handler
-(`KeyUp`, see below) knows which physical key came up:
+even though two different physical keys can be bound to the same logical action
+(e.g. mouse2 and space both bound to `+jump`). The fix is to pass the keynum as
+a text argument to the queued command, so the release handler (`KeyUp`, see
+below) knows which physical key came up:
 
 ```c
 // WinQuake/keys.c:664-682
@@ -104,13 +114,13 @@ the keynum as a parameter for `+` commands:
 Note this never touches `usercmd_t` directly — it only appends text to the
 console command buffer (`Cbuf_AddText`), which `Cbuf_Execute()` runs later in
 the same frame (`WinQuake/host.c:657`). This is the same mechanism used for
-ordinary console commands, which is why every movement key can also be bound
-to an arbitrary console command string.
+ordinary console commands, which is why every movement key can also be bound to
+an arbitrary console command string.
 
 ## +/- button commands: kbutton_t and cl_input.c
 
-The `+forward`/`-forward` command pair (and `+left`, `+attack`, `+jump`, …)
-are registered in `CL_InitInput` (`WinQuake/cl_input.c:409-447`):
+The `+forward`/`-forward` command pair (and `+left`, `+attack`, `+jump`, …) are
+registered in `CL_InitInput` (`WinQuake/cl_input.c:409-447`):
 
 ```c
 // WinQuake/cl_input.c:419-420
@@ -207,17 +217,16 @@ float CL_KeyState (kbutton_t *key)
 	key->state &= 1;		// clear impulses
 ```
 
-The 0.25/0.5/0.75/1.0 scale is a crude time-fraction estimate — it doesn't
-know *when within the frame* the tap happened, only whether an edge occurred,
-so it approximates. This matters more on old, low, variable framerates than
-on modern hardware.
+The 0.25/0.5/0.75/1.0 scale is a crude time-fraction estimate — it doesn't know
+*when within the frame* the tap happened, only whether an edge occurred, so it
+approximates. This matters more on old, low, variable framerates than on modern
+hardware.
 
 ## Mouse input: IN_Move / IN_MouseMove
 
 `IN_Move` is the platform-specific entry point called once per frame from
 `CL_SendCmd` (see below); the Windows implementation
-(`WinQuake/in_win.c:738-746`) just fans out to the mouse and joystick
-handlers:
+(`WinQuake/in_win.c:738-746`) just fans out to the mouse and joystick handlers:
 
 ```c
 // WinQuake/in_win.c:738-746
@@ -236,8 +245,8 @@ void IN_Move (usercmd_t *cmd)
 deltas or (in the non-DirectInput path, further down the function) raw
 `GetCursorPos` deltas, applies `m_filter` smoothing and `sensitivity`, then
 converts pixel deltas directly into `usercmd_t` fields or view-angle deltas —
-mouse input bypasses the `kbutton_t`/`CL_KeyState` machinery entirely because
-it is naturally continuous, not edge-triggered:
+mouse input bypasses the `kbutton_t`/`CL_KeyState` machinery entirely because it
+is naturally continuous, not edge-triggered:
 
 ```c
 // WinQuake/in_win.c:700-723
@@ -267,10 +276,10 @@ it is naturally continuous, not edge-triggered:
 	}
 ```
 
-This writes `cl.viewangles` (what the renderer uses) as well as move fields
-of `cmd`. `CL_SendMove` later serializes `cl.viewangles`, not
-`cmd->viewangles` (`WinQuake/cl_input.c:352-353`). The client owns look
-direction during play; the server can still overwrite it with `svc_setangle`
+This writes `cl.viewangles` (what the renderer uses) as well as move fields of
+`cmd`. `CL_SendMove` later serializes `cl.viewangles`, not `cmd->viewangles`
+(`WinQuake/cl_input.c:352-353`). The client owns look direction during play; the
+server can still overwrite it with `svc_setangle`
 (`WinQuake/cl_parse.c:813-816`) on spawn and teleport.
 
 ## Client movement: CL_AdjustAngles / CL_BaseMove / CL_SendMove
@@ -347,15 +356,14 @@ void CL_AdjustAngles (void)
 ```
 
 Mouse and keyboard share `cl.viewangles`. Keyboard yaw is `host_frametime *
-cl_yawspeed` (framerate-independent). Mouse yaw is a pixel delta times
-`m_yaw`, applied after `CL_BaseMove` via `IN_Move`, so it is not time-scaled.
-`+strafe` steals keyboard left/right into `sidemove`; with `lookstrafe`,
-mouse X as well.
+cl_yawspeed` (framerate-independent). Mouse yaw is a pixel delta times `m_yaw`,
+applied after `CL_BaseMove` via `IN_Move`, so it is not time-scaled. `+strafe`
+steals keyboard left/right into `sidemove`; with `lookstrafe`, mouse X as well.
 
 `usercmd_t` (`WinQuake/client.h:22-33`) holds intended velocities and a
-`viewangles` field. `CL_BaseMove` `memset`s the struct and fills only the
-move floats — never `cmd->viewangles`. The `#ifdef QUAKE2` `lightlevel`
-field is compiled out of shipping NetQuake:
+`viewangles` field. `CL_BaseMove` `memset`s the struct and fills only the move
+floats — never `cmd->viewangles`. The `#ifdef QUAKE2` `lightlevel` field is
+compiled out of shipping NetQuake:
 
 ```c
 // WinQuake/client.h:22-33
@@ -374,8 +382,8 @@ typedef struct
 ```
 
 Finally `CL_SendMove` (`WinQuake/cl_input.c:332-402`) serializes the command
-into a `clc_move` (`WinQuake/protocol.h:139`, `#define clc_move 3
-// [usercmd_t]`) network message and fires it unreliably:
+into a `clc_move` (`WinQuake/protocol.h:139`, `#define clc_move 3 //
+[usercmd_t]`) network message and fires it unreliably:
 
 ```c
 // WinQuake/cl_input.c:348-375
@@ -409,35 +417,34 @@ into a `clc_move` (`WinQuake/protocol.h:139`, `#define clc_move 3
 	in_impulse = 0;
 ```
 
-The wire `clc_move` is that struct plus extras: `cl.mtime[0]`, angles taken
-from `cl.viewangles`, attack/jump bits, and an impulse byte
-(`WinQuake/cl_input.c:348-375`). `cl.mtime[0]` is the server timestamp from
-the last parsed `svc_time` (`WinQuake/cl_parse.c:773-776`) — the newer of
-the two slots `CL_LerpPoint` will use. Piggybacking it on every move is the
-ping mechanism: the server stores `sv.time - MSG_ReadFloat()` in
+The wire `clc_move` is that struct plus extras: `cl.mtime[0]`, angles taken from
+`cl.viewangles`, attack/jump bits, and an impulse byte
+(`WinQuake/cl_input.c:348-375`). `cl.mtime[0]` is the server timestamp from the
+last parsed `svc_time` (`WinQuake/cl_parse.c:773-776`) — the newer of the two
+slots `CL_LerpPoint` will use. Piggybacking it on every move is the ping
+mechanism: the server stores `sv.time - MSG_ReadFloat()` in
 `host_client->ping_times[host_client->num_pings % NUM_PING_TIMES]`
 (`WinQuake/sv_user.c:445-447`). The first two `clc_move`s after a level are
-dropped (`WinQuake/cl_input.c:394-395`) so leftover keys from the previous
-map never fire.
+dropped (`WinQuake/cl_input.c:394-395`) so leftover keys from the previous map
+never fire.
 
-The move goes via `NET_SendUnreliableMessage` (`WinQuake/cl_input.c:397`)
-rather than the reliable stream: a lost movement packet is harmless because
-the *next* frame sends a fresh, complete command a fraction of a second later
-— retransmitting a stale input would be actively wrong. [Perishable state
-rides the lossy channel](design:replace-stale-state-instead-of-waiting-for-it);
+The move goes via `NET_SendUnreliableMessage` (`WinQuake/cl_input.c:397`) rather
+than the reliable stream: a lost movement packet is harmless because the *next*
+frame sends a fresh, complete command a fraction of a second later —
+retransmitting a stale input would be actively wrong. [Perishable state rides
+the lossy channel](design:replace-stale-state-instead-of-waiting-for-it);
 signon, stringcmds, and other data that must arrive ride the reliable one.
-`CL_SendCmd` flushes `cls.message` on that reliable channel after the move,
-if anything is queued (`WinQuake/cl_main.c:696-709`).
+`CL_SendCmd` flushes `cls.message` on that reliable channel after the move, if
+anything is queued (`WinQuake/cl_main.c:696-709`).
 
 ## Net layer: driver abstraction, loopback, and datagram delivery
 
-`NET_SendMessage` / `NET_GetMessage` (`WinQuake/net_main.c:625-653,
-540-603`) are thin wrappers that dispatch to a driver vtable (`sfunc`) chosen
-per-socket — either the loopback driver (`net_loop.c`, used for single-player
-and to talk to your own listen server) or a real datagram driver (`net_dgrm.c`,
-UDP/IPX). There is no QuakeWorld `netchan_t`; each `qsocket_t` holds its own
-reliable and unreliable sequence counters and a one-message reliable window
-(`canSend`):
+`NET_SendMessage` / `NET_GetMessage` (`WinQuake/net_main.c:625-653, 540-603`)
+are thin wrappers that dispatch to a driver vtable (`sfunc`) chosen per-socket —
+either the loopback driver (`net_loop.c`, used for single-player and to talk to
+your own listen server) or a real datagram driver (`net_dgrm.c`, UDP/IPX). There
+is no QuakeWorld `netchan_t`; each `qsocket_t` holds its own reliable and
+unreliable sequence counters and a one-message reliable window (`canSend`):
 
 ```c
 // WinQuake/net_main.c:625-641 (NET_SendMessage)
@@ -461,9 +468,9 @@ int NET_SendMessage (qsocket_t *sock, sizebuf_t *data)
 ```
 
 `net_loop.c` implements this vtable without touching a real socket at all:
-`Loop_SendMessage` (`WinQuake/net_loop.c:154-183`) copies the serialized
-message into the *other* endpoint's linear `receiveMessage` buffer,
-and `Loop_GetMessage` (`WinQuake/net_loop.c:127-150`) reads it back out:
+`Loop_SendMessage` (`WinQuake/net_loop.c:154-183`) copies the serialized message
+into the *other* endpoint's linear `receiveMessage` buffer, and
+`Loop_GetMessage` (`WinQuake/net_loop.c:127-150`) reads it back out:
 
 ```c
 // WinQuake/net_loop.c:127-150
@@ -494,24 +501,24 @@ int Loop_GetMessage (qsocket_t *sock)
 }
 ```
 
-This is why single-player and listen-server-hosted LAN play use the same
-message format and parser as remote play. The client and server halves in one
-process use two `qsocket_t`s pointed at each other through `driverdata`, and
-the client still consumes messages through `CL_ParseServerMessage`.
+This is why single-player and listen-server-hosted LAN play use the same message
+format and parser as remote play. The client and server halves in one process
+use two `qsocket_t`s pointed at each other through `driverdata`, and the client
+still consumes messages through `CL_ParseServerMessage`.
 
-`net_dgrm.c` is the real driver, and it implements two delivery models over
-one UDP socket per connection:
+`net_dgrm.c` is the real driver, and it implements two delivery models over one
+UDP socket per connection:
 
-- **Reliable stream** (used for the signon sequence, `svc_print`, level
-  changes, etc. — anything that must arrive and arrive in order):
-  `Datagram_SendMessage` (`WinQuake/net_dgrm.c:161-205`) fragments messages
-  larger than `MAX_DATAGRAM` (1024 bytes, `WinQuake/quakedef.h:102`) into
-  `NETFLAG_DATA`-tagged packets carrying a monotonically increasing
-  `sendSequence`, sets `canSend = false`, and won't send the next fragment
-  until the peer ACKs the current one. `Datagram_GetMessage`
-  (`WinQuake/net_dgrm.c:315-463`) resends the unacked packet after a 1-second
-  timeout (`ReSendMessage`, `WinQuake/net_dgrm.c:241-271`, gated at
-  `WinQuake/net_dgrm.c:324-326`), and processes incoming ACKs like this:
+- **Reliable stream** (used for the signon sequence, `svc_print`, level changes,
+  etc. — anything that must arrive and arrive in order): `Datagram_SendMessage`
+  (`WinQuake/net_dgrm.c:161-205`) fragments messages larger than `MAX_DATAGRAM`
+  (1024 bytes, `WinQuake/quakedef.h:102`) into `NETFLAG_DATA`-tagged packets
+  carrying a monotonically increasing `sendSequence`, sets `canSend = false`,
+  and won't send the next fragment until the peer ACKs the current one.
+  `Datagram_GetMessage` (`WinQuake/net_dgrm.c:315-463`) resends the unacked
+  packet after a 1-second timeout (`ReSendMessage`,
+  `WinQuake/net_dgrm.c:241-271`, gated at `WinQuake/net_dgrm.c:324-326`), and
+  processes incoming ACKs like this:
 
 ```c
 // WinQuake/net_dgrm.c:395-419
@@ -543,28 +550,28 @@ one UDP socket per connection:
 			{
 ```
 
-- **Unreliable datagrams** (used for `clc_move` and entity fast updates — anything
-  perishable, sent every frame): `Datagram_SendUnreliableMessage`
+- **Unreliable datagrams** (used for `clc_move` and entity fast updates —
+  anything perishable, sent every frame): `Datagram_SendUnreliableMessage`
   (`WinQuake/net_dgrm.c:289-312`) fires and forgets, tagging the packet
   `NETFLAG_UNRELIABLE` with its own independent sequence counter
   (`unreliableSendSequence`). On the receive side
   (`WinQuake/net_dgrm.c:370-384`): a sequence older than
   `unreliableReceiveSequence` is discarded as stale; a gap increments
-  `droppedDatagrams` and the later packet is still accepted (the sequence
-  jumps forward). Nothing is retransmitted. The next snapshot is a full
-  baseline delta, so a lost unreliable update does not poison the next one.
-  Reliable data with the wrong `receiveSequence` is counted as a duplicate
-  and dropped (`WinQuake/net_dgrm.c:433-436`).
+  `droppedDatagrams` and the later packet is still accepted (the sequence jumps
+  forward). Nothing is retransmitted. The next snapshot is a full baseline
+  delta, so a lost unreliable update does not poison the next one. Reliable data
+  with the wrong `receiveSequence` is counted as a duplicate and dropped
+  (`WinQuake/net_dgrm.c:433-436`).
 
 Only one reliable message may be in flight per connection at a time (`canSend`
 gates it). Signon and control messages are low-volume compared with the
 independent per-frame unreliable snapshot stream, so the protocol needs no
 reliable sliding window.
 
-`MSG_Write*`/`MSG_Read*` in `common.c` are the shared serialization
-primitives both `cl_input.c`/`cl_parse.c` and the server side use.
-Two are protocol-defining and bandwidth-driven: `MSG_WriteCoord` packs a
-world coordinate into a 16-bit fixed-point value at 1/8-unit precision, and
+`MSG_Write*`/`MSG_Read*` in `common.c` are the shared serialization primitives
+both `cl_input.c`/`cl_parse.c` and the server side use. Two are
+protocol-defining and bandwidth-driven: `MSG_WriteCoord` packs a world
+coordinate into a 16-bit fixed-point value at 1/8-unit precision, and
 `MSG_WriteAngle` packs a full 0-360° angle into a single byte:
 
 ```c
@@ -582,15 +589,15 @@ void MSG_WriteAngle (sizebuf_t *sb, float f)
 
 1/8-unit position precision and ~1.4°-angle precision are both imperceptible
 in-game but cut the per-axis cost from a 32-bit float to 16 or 8 bits — with
-dozens of entities updated every frame over a 28.8k modem, this quantization
-was not optional polish, it was the difference between a playable and
-unplayable connection.
+dozens of entities updated every frame over a 28.8k modem, this quantization was
+not optional polish, it was the difference between a playable and unplayable
+connection.
 
 ## Server round trip: CL_ReadFromServer / CL_ParseServerMessage
 
-`CL_ReadFromServer` (`WinQuake/cl_main.c:634-663`) drains every waiting
-message this frame (there can be more than one if the client is behind),
-parses each, and only then relinks entities and updates temp-entity effects:
+`CL_ReadFromServer` (`WinQuake/cl_main.c:634-663`) drains every waiting message
+this frame (there can be more than one if the client is behind), parses each,
+and only then relinks entities and updates temp-entity effects:
 
 ```c
 // WinQuake/cl_main.c:634-655
@@ -615,8 +622,7 @@ int CL_ReadFromServer (void)
 ```
 
 `CL_GetMessage` (`WinQuake/cl_demo.c:90-156`) is the actual call site — it wraps
-`NET_GetMessage` and transparently interposes demo record/playback (see
-below).
+`NET_GetMessage` and transparently interposes demo record/playback (see below).
 
 ::: diagram packet
 
@@ -652,27 +658,27 @@ everything else:
 
 The `svc_*` opcodes span everything from `svc_time`, `svc_print`,
 `svc_serverinfo`, `svc_setangle`, `svc_sound`, `svc_spawnbaseline` to
-`svc_intermission` (full list `WinQuake/cl_parse.c:769-959`); most simply
-read a fixed set of fields and store them into `cl` or trigger a side effect
-(e.g. `svc_sound` calls `S_StartSound`). `svc_time` shifts `cl.mtime[1] ←
-cl.mtime[0]` and stores the new server clock in `cl.mtime[0]`
-(`WinQuake/cl_parse.c:773-776`). The interesting path for this section is
-the entity update.
+`svc_intermission` (full list `WinQuake/cl_parse.c:769-959`); most simply read a
+fixed set of fields and store them into `cl` or trigger a side effect (e.g.
+`svc_sound` calls `S_StartSound`). `svc_time` shifts `cl.mtime[1] ← cl.mtime[0]`
+and stores the new server clock in `cl.mtime[0]`
+(`WinQuake/cl_parse.c:773-776`). The interesting path for this section is the
+entity update.
 
 ### CL_ParseUpdate and the delta bitmask
 
 Each `entity_t` carries a `baseline` (defaults sent once at spawn via
 `svc_spawnbaseline`) and two origin/angle slots (`msg_origins[2]`,
-`msg_angles[2]`; slot 0 is newest). `cl.mtime[0]`/`cl.mtime[1]` stamp the last two
-`svc_time` values. The fast-update byte is a bitmask of which fields this
-packet carries; missing fields copy from the **baseline**, not from the
-previous packet, so a lost snapshot does not poison the next decode.
+`msg_angles[2]`; slot 0 is newest). `cl.mtime[0]`/`cl.mtime[1]` stamp the last
+two `svc_time` values. The fast-update byte is a bitmask of which fields this
+packet carries; missing fields copy from the **baseline**, not from the previous
+packet, so a lost snapshot does not poison the next decode.
 
-`CL_ParseUpdate(int bits)` (`WinQuake/cl_parse.c:330-484`) implements that
-mask. Rather than resending every field of every visible entity every frame,
-the server sends only which fields changed. The mask itself can be extended
-past the initial byte via `U_MOREBITS` (`WinQuake/protocol.h:25`, plus
-`U_ANGLE1` etc. defined up to `U_LONGENTITY` at `WinQuake/protocol.h:35-41`):
+`CL_ParseUpdate(int bits)` (`WinQuake/cl_parse.c:330-484`) implements that mask.
+Rather than resending every field of every visible entity every frame, the
+server sends only which fields changed. The mask itself can be extended past the
+initial byte via `U_MOREBITS` (`WinQuake/protocol.h:25`, plus `U_ANGLE1` etc.
+defined up to `U_LONGENTITY` at `WinQuake/protocol.h:35-41`):
 
 ```c
 // WinQuake/cl_parse.c:346-357
@@ -690,13 +696,13 @@ past the initial byte via `U_MOREBITS` (`WinQuake/protocol.h:25`, plus
 	ent = CL_EntityNum (num);
 ```
 
-For each of position/angle per axis, the field is either read from the wire
-(bit set) or copied from the entity's `baseline` (the state sent once at
-level-load via `svc_spawnbaseline`/`CL_ParseBaseline`,
-`WinQuake/cl_parse.c:491+`) — most entities are stationary or move
-predictably, so most bits are usually clear (baseline itself is filled in by
-`CL_ParseBaseline`, `WinQuake/cl_parse.c:491-...`, dispatched from
-`svc_spawnbaseline`, `WinQuake/cl_parse.c:868`):
+For each of position/angle per axis, the field is either read from the wire (bit
+set) or copied from the entity's `baseline` (the state sent once at level-load
+via `svc_spawnbaseline`/`CL_ParseBaseline`, `WinQuake/cl_parse.c:491+`) — most
+entities are stationary or move predictably, so most bits are usually clear
+(baseline itself is filled in by `CL_ParseBaseline`,
+`WinQuake/cl_parse.c:491-...`, dispatched from `svc_spawnbaseline`,
+`WinQuake/cl_parse.c:868`):
 
 ```c
 // WinQuake/cl_parse.c:442-453
@@ -714,21 +720,20 @@ predictably, so most bits are usually clear (baseline itself is filled in by
 		ent->msg_angles[0][0] = ent->baseline.angles[0];
 ```
 
-Note the shift-before-read: `msg_origins[1]` (the *previous* update) is set
-from the outgoing `msg_origins[0]` *before* `msg_origins[0]` is overwritten
-with the new value. `msg_origins[0]`/`msg_angles[0]` are "newest", `[1]` is
-"one update ago" — this two-slot history is exactly what
-`CL_RelinkEntities` interpolates between (next section). `U_NOLERP` lets the
-server force a hard snap (e.g. teleporters). `forcelink` is also set when
-`ent->msgtime != cl.mtime[1]` — no previous frame to lerp from
-(`WinQuake/cl_parse.c:363-366, 476-482`). An entity absent from this message
-is not kept at its last pose; `CL_RelinkEntities` nulls its model
-(`WinQuake/cl_main.c:490-494`).
+Note the shift-before-read: `msg_origins[1]` (the *previous* update) is set from
+the outgoing `msg_origins[0]` *before* `msg_origins[0]` is overwritten with the
+new value. `msg_origins[0]`/`msg_angles[0]` are "newest", `[1]` is "one update
+ago" — this two-slot history is exactly what `CL_RelinkEntities` interpolates
+between (next section). `U_NOLERP` lets the server force a hard snap (e.g.
+teleporters). `forcelink` is also set when `ent->msgtime != cl.mtime[1]` — no
+previous frame to lerp from (`WinQuake/cl_parse.c:363-366, 476-482`). An entity
+absent from this message is not kept at its last pose; `CL_RelinkEntities` nulls
+its model (`WinQuake/cl_main.c:490-494`).
 
 ## Entity interpolation: entity_t, cl.mtime, CL_RelinkEntities
 
-`entity_t` (`WinQuake/render.h:39-70`) is the client-side render entity;
-the fields relevant here are the two-deep history buffers:
+`entity_t` (`WinQuake/render.h:39-70`) is the client-side render entity; the
+fields relevant here are the two-deep history buffers:
 
 ```c
 // WinQuake/render.h:39-51
@@ -750,11 +755,11 @@ typedef struct entity_s
 `origin`/`angles` are what the renderer actually draws; `msg_origins[2]` /
 `msg_angles[2]` are raw server snapshots. `CL_RelinkEntities`
 (`WinQuake/cl_main.c:442-624`) usually blends between the two most recent
-snapshots using a fraction computed by
-`CL_LerpPoint` (`WinQuake/cl_main.c:391-434`), based on where `cl.time`
-(the client's local clock, advanced every frame in `CL_ReadFromServer`) sits
-between the timestamps of the last two server messages, `cl.mtime[0]` and
-`cl.mtime[1]` (`double mtime[2]`, `WinQuake/client.h:196`):
+snapshots using a fraction computed by `CL_LerpPoint`
+(`WinQuake/cl_main.c:391-434`), based on where `cl.time` (the client's local
+clock, advanced every frame in `CL_ReadFromServer`) sits between the timestamps
+of the last two server messages, `cl.mtime[0]` and `cl.mtime[1]` (`double
+mtime[2]`, `WinQuake/client.h:196`):
 
 ```c
 // WinQuake/cl_main.c:391-434
@@ -801,21 +806,21 @@ float	CL_LerpPoint (void)
 }
 ```
 
-The `0.1` rewrite bounds a dropped-packet or demo-start gap; it does not
-invent the missing pose. [Keep displayed time between the last two
-packets](design:replace-stale-state-instead-of-waiting-for-it)
-([10 Aug 1996](../../../historical/plans/carmack/by_day/johnc_plan_19960810.txt)).
-If no new `svc_time` arrives, `CL_ReadFromServer` still advances `cl.time`
-by `host_frametime`, `frac` walks past 1, and the clamp freezes every entity
-at the newest pose — no extrapolation.
+The `0.1` rewrite bounds a dropped-packet or demo-start gap; it does not invent
+the missing pose. [Keep displayed time between the last two
+packets](design:replace-stale-state-instead-of-waiting-for-it) ([10 Aug
+1996](../../../historical/plans/carmack/by_day/johnc_plan_19960810.txt)). If no
+new `svc_time` arrives, `CL_ReadFromServer` still advances `cl.time` by
+`host_frametime`, `frac` walks past 1, and the clamp freezes every entity at the
+newest pose — no extrapolation.
 
-`sv.active` (running a local/listen server) forces `frac = 1` — snap
-straight to the newest snapshot, no interpolation needed, because the local
-server ticks in lockstep with the client's own frame loop so there's no
-inter-packet gap to smooth over. Loopback still uses the same message format
-and `CL_ParseServerMessage`; it just copies bytes between two `qsocket_t`s
-in one process. For a remote connection, `frac` walks from 0 to 1 across the
-interval between the last two updates, and each entity is blended:
+`sv.active` (running a local/listen server) forces `frac = 1` — snap straight to
+the newest snapshot, no interpolation needed, because the local server ticks in
+lockstep with the client's own frame loop so there's no inter-packet gap to
+smooth over. Loopback still uses the same message format and
+`CL_ParseServerMessage`; it just copies bytes between two `qsocket_t`s in one
+process. For a remote connection, `frac` walks from 0 to 1 across the interval
+between the last two updates, and each entity is blended:
 
 ```c
 // WinQuake/cl_main.c:499-526
@@ -849,61 +854,60 @@ interval between the last two updates, and each entity is blended:
 			}
 ```
 
-The >100-unit heuristic distinguishes "the entity teleported" from "the
-entity is just moving fast," since blending across a teleport would draw a
-visible streak through the level geometry. The in-tree `forcelink` comment
-("not updated in the last message") is not what drops a missing entity —
-that is `ent->msgtime != cl.mtime[0]` just above this block. `forcelink`
-means snap: first appearance, `U_NOLERP`, or no previous frame to lerp from.
+The >100-unit heuristic distinguishes "the entity teleported" from "the entity
+is just moving fast," since blending across a teleport would draw a visible
+streak through the level geometry. The in-tree `forcelink` comment ("not updated
+in the last message") is not what drops a missing entity — that is `ent->msgtime
+!= cl.mtime[0]` just above this block. `forcelink` means snap: first appearance,
+`U_NOLERP`, or no previous frame to lerp from.
 
 ## Temp entities (cl_tent.c)
 
-Transient, non-persistent effects — bullet impacts, explosions, lightning
-bolts, the grapple beam — don't get full `entity_t` slots in the delta-update
-system at all; they're one-shot events. `CL_ParseTEnt`
-(`WinQuake/cl_tent.c:115-...`) is invoked from `svc_temp_entity`
-(`WinQuake/cl_parse.c:876`), reads a `TE_*` type byte, and immediately
-spawns a particle effect, sound, or (for beams like `TE_LIGHTNING1..3`,
-`WinQuake/cl_tent.c:216-227`) a short-lived `beam_t` tracked outside the
-normal entity list. `CL_UpdateTEnts` (`WinQuake/cl_tent.c:325-...`), called
-every frame right after `CL_RelinkEntities` (`WinQuake/cl_main.c:657`),
-advances/expires those beams and dynamic lights each frame independent of
-any further server messages.
+Transient, non-persistent effects — bullet impacts, explosions, lightning bolts,
+the grapple beam — don't get full `entity_t` slots in the delta-update system at
+all; they're one-shot events. `CL_ParseTEnt` (`WinQuake/cl_tent.c:115-...`) is
+invoked from `svc_temp_entity` (`WinQuake/cl_parse.c:876`), reads a `TE_*` type
+byte, and immediately spawns a particle effect, sound, or (for beams like
+`TE_LIGHTNING1..3`, `WinQuake/cl_tent.c:216-227`) a short-lived `beam_t` tracked
+outside the normal entity list. `CL_UpdateTEnts` (`WinQuake/cl_tent.c:325-...`),
+called every frame right after `CL_RelinkEntities` (`WinQuake/cl_main.c:657`),
+advances/expires those beams and dynamic lights each frame independent of any
+further server messages.
 
 ## Demo recording (cl_demo.c)
 
 A `.dem` file starts with an ASCII CD-track number and a newline
-(`WinQuake/cl_demo.c:255`, `307-314`). Each record is then
-`LittleLong(length)`, three `LittleFloat` view angles, then `length` bytes
-of the raw server message (`WinQuake/cl_demo.c:66-80`, `117-128`). During
-`cls.demoplayback`, `CL_GetMessage` reads those records instead of calling
-`NET_GetMessage` (`WinQuake/cl_demo.c:90-135`) and feeds the same
-`CL_ParseServerMessage` path. Playback waits until `cl.time > cl.mtime[0]`
-before pulling the next record, except during timedemo. Recording is a
-side-effect of a live `NET_GetMessage` (`WinQuake/cl_demo.c:152-153`).
+(`WinQuake/cl_demo.c:255`, `307-314`). Each record is then `LittleLong(length)`,
+three `LittleFloat` view angles, then `length` bytes of the raw server message
+(`WinQuake/cl_demo.c:66-80`, `117-128`). During `cls.demoplayback`,
+`CL_GetMessage` reads those records instead of calling `NET_GetMessage`
+(`WinQuake/cl_demo.c:90-135`) and feeds the same `CL_ParseServerMessage` path.
+Playback waits until `cl.time > cl.mtime[0]` before pulling the next record,
+except during timedemo. Recording is a side-effect of a live `NET_GetMessage`
+(`WinQuake/cl_demo.c:152-153`).
 
 ## No client-side prediction: NetQuake vs. QuakeWorld
 
 **NetQuake does not simulate the local player's movement client-side.**
-`CL_SendCmd` builds a `usercmd_t` and ships it off. The client keeps
-rendering, handling look input, and parsing messages while it waits for the
-server's next entity update. It interpolates between the last two received
-poses (`CL_RelinkEntities`, `CL_LerpPoint`) — including the local player's
-own `cl_entities[cl.viewentity]` slot. There is no `CL_PredictMove` in this
-codebase, no rewind-and-replay, and no local physics integration of
-`usercmd_t` against the world.
+`CL_SendCmd` builds a `usercmd_t` and ships it off. The client keeps rendering,
+handling look input, and parsing messages while it waits for the server's next
+entity update. It interpolates between the last two received poses
+(`CL_RelinkEntities`, `CL_LerpPoint`) — including the local player's own
+`cl_entities[cl.viewentity]` slot. There is no `CL_PredictMove` in this
+codebase, no rewind-and-replay, and no local physics integration of `usercmd_t`
+against the world.
 
 View bob, punch-angle kick, and stair smoothing are client *presentation*
 applied in `V_CalcRefdef` (`WinQuake/view.c:864-983`) on top of the
 server-authored origin. They are not local movement.
 
-Over loopback and LAN the round trip is short enough that the missing
-prediction is not obvious. On modem and WAN links the gap between sending
-input and drawing the resulting pose is visible. QuakeWorld (`QW/`, a
-separate tree — not covered here) adds real client-side prediction
-(`QW/client/cl_pred.c`) and reconciles against the server's later snapshot.
-[Why NetQuake's client-as-terminal broke on dialup](design:the-reality-of-dialup-why-netquake-broke);
-[what QuakeWorld changed](design:quakeworld-client-side-prediction-and-the-packet-loop).
+Over loopback and LAN the round trip is short enough that the missing prediction
+is not obvious. On modem and WAN links the gap between sending input and drawing
+the resulting pose is visible. QuakeWorld (`QW/`, a separate tree — not covered
+here) adds real client-side prediction (`QW/client/cl_pred.c`) and reconciles
+against the server's later snapshot. [Why NetQuake's client-as-terminal broke on
+dialup](design:the-reality-of-dialup-why-netquake-broke); [what QuakeWorld
+changed](design:quakeworld-client-side-prediction-and-the-packet-loop).
 
 ## Call graph
 
@@ -961,6 +965,14 @@ _Host_Frame (host.c:633)
 
 ## Further reading
 
-- Fabien Sanglard, "Quake Source Code Review" — network and client architecture chapters: https://fabiensanglard.net/quakeSource/index.php
-- Olivier Montanuy et al., "Unofficial Quake Specs" — protocol opcode/bit-level reference for `svc_*`/`clc_*` and the `U_*` update bitmask: https://www.gamers.org/dEngine/quake/spec/quake-spec34/ (archived: https://web.archive.org/web/20251206223630/https://www.gamers.org/dEngine/quake/spec/quake-spec34/)
-- John Carmack .plan archive (1996) — [10 Aug 1996](../../../historical/plans/carmack/by_day/johnc_plan_19960810.txt): NetQuake keeps displayed time between the last two server packets on purpose; QuakeWorld instead predicts from the newest packet. Year dump: [1996 .plan archive](../../../historical/plans/carmack/by_year/johnc_plan_1996.txt).
+- Fabien Sanglard, "Quake Source Code Review" — network and client architecture
+  chapters: https://fabiensanglard.net/quakeSource/index.php
+- Olivier Montanuy et al., "Unofficial Quake Specs" — protocol opcode/bit-level
+  reference for `svc_*`/`clc_*` and the `U_*` update bitmask:
+  https://www.gamers.org/dEngine/quake/spec/quake-spec34/ (archived:
+  https://web.archive.org/web/20251206223630/https://www.gamers.org/dEngine/quake/spec/quake-spec34/)
+- John Carmack .plan archive (1996) — [10 Aug
+  1996](../../../historical/plans/carmack/by_day/johnc_plan_19960810.txt):
+  NetQuake keeps displayed time between the last two server packets on purpose;
+  QuakeWorld instead predicts from the newest packet. Year dump: [1996 .plan
+  archive](../../../historical/plans/carmack/by_year/johnc_plan_1996.txt).
