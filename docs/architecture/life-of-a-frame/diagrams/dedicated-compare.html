@@ -1,0 +1,57 @@
+<figure class="concept" id="dedicated-compare" aria-labelledby="dedicated-compare-title">
+  <h3 id="dedicated-compare-title">Dedicated mode runs the same frame with the client stages switched off</h3>
+  <p><code>_Host_Frame</code> keeps its statement order; dedicated mode only changes which branches are taken. The server stage runs identically in both columns — the client stages either run or hit an early return.</p>
+  <div class="svg-scroll">
+    <svg class="explain-svg" viewBox="0 0 800 410" role="img" aria-labelledby="dedicated-compare-t dedicated-compare-d">
+      <title id="dedicated-compare-t">Listen-server versus dedicated-server frame stages</title>
+      <desc id="dedicated-compare-d">Five _Host_Frame stages in two columns. Listen server: CL_SendCmd runs, Host_ServerFrame runs, CL_ReadFromServer runs, SCR_UpdateScreen draws, S_Update mixes. Dedicated server: CL_SendCmd no-ops, Host_ServerFrame runs, CL_ReadFromServer is skipped, SCR_UpdateScreen returns early, S_Update is called with null vectors and no open device. Pacing moves from the frame gate to a platform sleep until sys_ticrate elapses. The table below is the text equivalent.</desc>
+      <text x="310" y="34" text-anchor="middle" class="svg-heading">Listen</text>
+      <text x="580" y="34" text-anchor="middle" class="svg-heading">Dedicated</text>
+      <text x="32" y="80">CL_SendCmd</text>
+      <rect x="200" y="56" width="220" height="38" class="client-shape"/>
+      <text x="310" y="80" text-anchor="middle">runs</text>
+      <rect x="470" y="56" width="220" height="38" class="solid-shape"/>
+      <path d="M470 56L690 94M690 56L470 94" class="divider-line"/>
+      <text x="580" y="80" text-anchor="middle">no-op</text>
+      <text x="32" y="134">Host_ServerFrame</text>
+      <rect x="200" y="110" width="220" height="38" class="expanded-shape"/>
+      <text x="310" y="134" text-anchor="middle">runs</text>
+      <rect x="470" y="110" width="220" height="38" class="expanded-shape"/>
+      <text x="580" y="134" text-anchor="middle">runs</text>
+      <text x="32" y="188">CL_ReadFromServer</text>
+      <rect x="200" y="164" width="220" height="38" class="client-shape"/>
+      <text x="310" y="188" text-anchor="middle">runs</text>
+      <rect x="470" y="164" width="220" height="38" class="solid-shape"/>
+      <path d="M470 164L690 202M690 164L470 202" class="divider-line"/>
+      <text x="580" y="188" text-anchor="middle">skipped</text>
+      <text x="32" y="242">SCR_UpdateScreen</text>
+      <rect x="200" y="218" width="220" height="38" class="client-shape"/>
+      <text x="310" y="242" text-anchor="middle">draws</text>
+      <rect x="470" y="218" width="220" height="38" class="solid-shape"/>
+      <path d="M470 218L690 256M690 218L470 256" class="divider-line"/>
+      <text x="580" y="242" text-anchor="middle">early return</text>
+      <text x="32" y="296">S_Update</text>
+      <rect x="200" y="272" width="220" height="38" class="client-shape"/>
+      <text x="310" y="296" text-anchor="middle">mixes</text>
+      <rect x="470" y="272" width="220" height="38" class="solid-shape"/>
+      <text x="580" y="296" text-anchor="middle">null vectors</text>
+      <text x="32" y="344">Pacing: frame gate (72 Hz) vs platform sleep to sys_ticrate, 0.05 s</text>
+      <text x="32" y="370">Operator input: key bindings vs stdin drained into the command buffer</text>
+    </svg>
+  </div>
+  <figcaption><b>Same frame, fewer branches taken.</b> The crossed boxes never execute their stage body; the server stage is untouched, which is why simulation steps land at a near-constant sys_ticrate. Sources: WinQuake/host.c:633-727, WinQuake/cl_main.c:674, WinQuake/host.c:691, WinQuake/screen.c:831, WinQuake/host.c:712, WinQuake/host.c:60, WinQuake/sys_win.c:857-864, WinQuake/host.c:532-543, WinQuake/client.h:102-104, WinQuake/host.c:157-201.</figcaption>
+  <div class="table-scroll" tabindex="0" role="region" aria-label="Frame stage comparison">
+    <table class="grid">
+      <thead><tr><th scope="col">Stage</th><th scope="col">Listen</th><th scope="col">Dedicated</th><th scope="col">Guard</th></tr></thead>
+      <tbody>
+        <tr><td>CL_SendCmd</td><td>Runs: builds and sends movement.</td><td>No-op before reading input.</td><td>WinQuake/cl_main.c:674</td></tr>
+        <tr><td>Host_ServerFrame</td><td>Runs.</td><td>Runs identically; fixed ~sys_ticrate steps.</td><td>WinQuake/host.c:633-727</td></tr>
+        <tr><td>CL_ReadFromServer</td><td>Runs.</td><td>Skipped: no usable client.</td><td>WinQuake/host.c:691</td></tr>
+        <tr><td>SCR_UpdateScreen</td><td>Draws.</td><td>Called, returns at the guard; console goes to stdout.</td><td>WinQuake/screen.c:831</td></tr>
+        <tr><td>S_Update</td><td>Mixes to an open device.</td><td>Called with null vectors; no device was ever opened.</td><td>WinQuake/host.c:712</td></tr>
+        <tr><td>Pacing</td><td>Spins; Host_FilterTime rejects excess frames.</td><td>Platform loop sleeps until sys_ticrate (0.05 s, 20 Hz) elapses.</td><td>WinQuake/host.c:501, WinQuake/host.c:60, WinQuake/sys_win.c:857-864</td></tr>
+        <tr><td>Operator input</td><td>Keys via input drivers.</td><td>Stdin lines drained into the command buffer each frame.</td><td>WinQuake/host.c:532-543</td></tr>
+      </tbody>
+    </table>
+  </div>
+</figure>

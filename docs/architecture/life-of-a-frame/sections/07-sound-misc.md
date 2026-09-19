@@ -2,7 +2,7 @@
 
 Sound is another client-side presentation of server events. The server names a sound and its location; the client chooses a mixer channel, computes left/right volume and mixes local sample data for the audio device.
 
-> **First pass.** Think **sound event → local sample → stereo mix → device buffer**. The server sends a sound identifier, not recorded audio. The mixer fills ahead of the playback cursor so audio can continue between frames. The console and memory allocators below support many stages; they are not extra steps after sound. Source: `WinQuake/sv_main.c:118-171`, `WinQuake/cl_parse.c:101-136`, `WinQuake/snd_dma.c:856-902`. [Return to the frame map →](#pipe)
+> **First pass.** Think **sound event → local sample → stereo mix → device buffer**. The server sends a sound identifier, not recorded audio. The mixer fills ahead of the playback cursor so audio can continue between frames. The console and memory allocators below support many stages; they are not extra steps after sound. Source: `WinQuake/sv_main.c:118-171`, `WinQuake/cl_parse.c:101-136`, `WinQuake/snd_dma.c:856-902`. [Next: demos →](#sec-8)
 
 ## Where it sits in the frame
 

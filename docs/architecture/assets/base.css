@@ -486,9 +486,18 @@ table thead th {
   text-transform: uppercase; color: var(--muted); font-weight: 500;
   border-bottom: 1px solid var(--rule); white-space: nowrap;
 }
-table.kds th[scope="row"] { font-weight: 400; white-space: nowrap; }
+/* Fixed layout with wrapping cells: all three columns fit the container at
+   any viewport instead of nowrap Symbol/Declared pushing Purpose off into a
+   horizontal scroll. Proportions give Purpose the most room. */
+table.kds { table-layout: fixed; }
+/* Fixed layout reads widths from the first row only, so the proportions live
+   on the thead cells; body-cell widths below are ignored but kept as docs. */
+table.kds thead th:nth-child(1) { width: 28%; }
+table.kds thead th:nth-child(2) { width: 32%; }
+table.kds th[scope="row"] { font-weight: 400; width: 28%; overflow-wrap: break-word; }
 table.kds th[scope="row"] code { background: none; border: 0; padding: 0; color: var(--sim); font-size: 13px; }
-.kds-loc { white-space: nowrap; }
+.kds-loc { width: 32%; overflow-wrap: anywhere; }
+table.kds td { overflow-wrap: anywhere; }
 .kds-loc code { background: none; border: 0; padding: 0; }
 table.grid td:first-child { font-weight: 600; }
 

@@ -1,0 +1,59 @@
+<figure class="concept" id="demo-record" aria-labelledby="demo-record-title">
+  <h3 id="demo-record-title">A demo record is a length, three angles, and the raw message</h3>
+  <p>Recording copies each accepted server message to disk with the camera attached; playback reads the same fields back through the same choke point. No timestamps are stored: pacing is re-derived from message contents by <code>CL_GetMessage</code>.</p>
+  <div class="svg-scroll">
+    <svg class="explain-svg" viewBox="0 0 800 380" role="img" aria-labelledby="demo-record-t demo-record-d">
+      <title id="demo-record-t">Demo record byte layout and CL_GetMessage playback pacing</title>
+      <desc id="demo-record-d">Each record holds a 4-byte little-endian length, three 4-byte little-endian view angles, then N raw message bytes, preceded once per file by a text CD-track header line. Playback pacing has three rules in priority order: before signon completes, grab every record; in timedemo, take exactly one message per host frame; otherwise take the next record only once cl.time has passed the last message timestamp, else return 0 and render on. The table below is the text equivalent.</desc>
+      <text x="32" y="28" class="svg-heading">On disk: one record per message</text>
+      <rect x="40" y="48" width="90" height="60" class="solid-shape"/>
+      <rect x="135" y="48" width="115" height="60" class="solid-shape"/>
+      <rect x="255" y="48" width="115" height="60" class="solid-shape"/>
+      <rect x="375" y="48" width="115" height="60" class="solid-shape"/>
+      <rect x="495" y="48" width="265" height="60" class="solid-shape"/>
+      <text x="85" y="73" text-anchor="middle">len</text>
+      <text x="85" y="95" text-anchor="middle">4 B LE</text>
+      <text x="192" y="73" text-anchor="middle">ang[0]</text>
+      <text x="192" y="95" text-anchor="middle">4 B LE</text>
+      <text x="312" y="73" text-anchor="middle">ang[1]</text>
+      <text x="312" y="95" text-anchor="middle">4 B LE</text>
+      <text x="432" y="73" text-anchor="middle">ang[2]</text>
+      <text x="432" y="95" text-anchor="middle">4 B LE</text>
+      <text x="627" y="73" text-anchor="middle">message</text>
+      <text x="627" y="95" text-anchor="middle">N bytes raw</text>
+      <text x="40" y="134">fields written in order, then fflush — one record per message</text>
+      <text x="40" y="158">text header line (CD track + newline) precedes all records</text>
+      <text x="32" y="198" class="svg-heading">In the frame: CL_GetMessage decides</text>
+      <rect x="40" y="220" width="200" height="64" class="client-shape"/>
+      <rect x="270" y="220" width="200" height="64" class="client-shape"/>
+      <rect x="500" y="220" width="260" height="64" class="client-shape"/>
+      <path d="M240 252H270" class="divider-line"/>
+      <path d="M470 252H500" class="divider-line"/>
+      <text x="140" y="245" text-anchor="middle">signon &lt; 4?</text>
+      <text x="140" y="267" text-anchor="middle">grab next record</text>
+      <text x="370" y="245" text-anchor="middle">timedemo?</text>
+      <text x="370" y="267" text-anchor="middle">one msg per frame</text>
+      <text x="630" y="245" text-anchor="middle">cl.time &gt; mtime[0]?</text>
+      <text x="630" y="267" text-anchor="middle">grab; else return 0</text>
+      <text x="40" y="318">record path: accepted live message → tee to disk</text>
+      <text x="40" y="342">playback path: fread record → net_message → parsed as live</text>
+      <text x="40" y="366">stop trailer: lone svc_disconnect byte closes cleanly</text>
+    </svg>
+  </div>
+  <figcaption><b>File instead of socket, paced by contents.</b> The layout is fixed-width except the payload; the pacing reuses the live "don't need another message yet" gate, so playback inherits interpolation for free. Sources: WinQuake/cl_demo.c:66-81, WinQuake/cl_demo.c:90-156, WinQuake/cl_demo.c:178-180, WinQuake/cl_demo.c:347-366, WinQuake/client.h:69, WinQuake/cl_main.c:397, WinQuake/cl_main.c:634, WinQuake/host.c:505.</figcaption>
+  <div class="table-scroll" tabindex="0" role="region" aria-label="Demo record fields and pacing rules">
+    <table class="grid">
+      <thead><tr><th scope="col">Part</th><th scope="col">Behavior</th><th scope="col">Source</th></tr></thead>
+      <tbody>
+        <tr><td>Text header</td><td>CD-track override as decimal text plus newline; −1 means the level's track.</td><td>WinQuake/cl_demo.c:255, WinQuake/cl_demo.c:307-314</td></tr>
+        <tr><td>Length</td><td>4-byte little-endian message length; oversized lengths are a hard Sys_Error.</td><td>WinQuake/cl_demo.c:66-81, WinQuake/cl_demo.c:117-135</td></tr>
+        <tr><td>Angles</td><td>Three little-endian floats of the recorder's viewangles; shifted through mviewangles history like entity snapshots.</td><td>WinQuake/cl_demo.c:66-81, WinQuake/cl_demo.c:117-135</td></tr>
+        <tr><td>Payload</td><td>Raw net_message bytes, followed by fflush so a crash keeps a playable prefix.</td><td>WinQuake/cl_demo.c:66-81</td></tr>
+        <tr><td>Pre-signon</td><td>Before signon == 4, every call grabs the next record; loading never waits on a clock.</td><td>WinQuake/cl_demo.c:95-114, WinQuake/client.h:69</td></tr>
+        <tr><td>Timedemo</td><td>Exactly one message per host_framecount; start time re-grabbed on the second frame to skip load time; 72 Hz gate bypassed.</td><td>WinQuake/cl_demo.c:95-114, WinQuake/cl_demo.c:347-366, WinQuake/host.c:505</td></tr>
+        <tr><td>Normal playback</td><td>Return 0 while cl.time has not passed mtime[0]; otherwise read the next record. Same gate as live play.</td><td>WinQuake/cl_demo.c:95-114, WinQuake/cl_main.c:634</td></tr>
+        <tr><td>End of file</td><td>Short read calls CL_StopPlayback; a timedemo then prints frames over wall seconds.</td><td>WinQuake/cl_demo.c:117-135, WinQuake/cl_demo.c:325-338</td></tr>
+      </tbody>
+    </table>
+  </div>
+</figure>

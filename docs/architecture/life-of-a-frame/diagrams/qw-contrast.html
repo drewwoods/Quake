@@ -1,0 +1,48 @@
+<figure class="concept" id="qw-contrast" aria-labelledby="qw-contrast-title">
+  <h3 id="qw-contrast-title">NetQuake interpolates the past; QuakeWorld predicts the present</h3>
+  <p>NetQuake holds displayed time between the last two server snapshots and blends; QuakeWorld simulates the local player immediately from timestamped inputs and re-bases the replay on every server ack. Remote entities get no interpolation in this build — the newest packet draws as-is.</p>
+  <div class="svg-scroll">
+    <svg class="explain-svg" viewBox="0 0 800 380" role="img" aria-labelledby="qw-contrast-t qw-contrast-d">
+      <title id="qw-contrast-t">NetQuake interpolation versus QuakeWorld prediction timeline</title>
+      <desc id="qw-contrast-d">Top lane: two server snapshots on a time axis; the displayed position sits between them at an interpolated fraction, and nothing is drawn past the newest snapshot. Bottom lane: a local input stamped with its duration starts a predicted line immediately through shared player physics; a later server ack snaps the replay base forward. Remote entities are drawn from the newest packet with no blending. The table below is the text equivalent.</desc>
+      <text x="32" y="28" class="svg-heading">NetQuake: display between the last two snapshots</text>
+      <path d="M80 90H720" class="divider-line"/>
+      <circle cx="300" cy="90" r="6" class="client-dot"/>
+      <circle cx="550" cy="90" r="6" class="client-dot"/>
+      <text x="300" y="68" text-anchor="middle">snap t0</text>
+      <text x="550" y="68" text-anchor="middle">snap t1</text>
+      <circle cx="425" cy="90" r="8" class="client-dot"/>
+      <path d="M425 98V130" class="trace-line"/>
+      <text x="425" y="150" text-anchor="middle">shown: lerp, frac in [0, 1]</text>
+      <text x="80" y="118">displayed time held ≤ t1</text>
+      <text x="580" y="118">past t1: wait, never extrapolate</text>
+      <text x="32" y="196" class="svg-heading">QuakeWorld: predict now, correct on ack</text>
+      <path d="M80 260H720" class="divider-line"/>
+      <path d="M200 240V280" class="hull-boundary"/>
+      <text x="200" y="232" text-anchor="middle">input + msec</text>
+      <path d="M200 260L560 200" class="trace-line"/>
+      <circle cx="560" cy="200" r="6" class="client-dot"/>
+      <text x="380" y="212" text-anchor="middle">PlayerMove replay</text>
+      <path d="M560 200V260" class="hull-boundary"/>
+      <circle cx="560" cy="260" r="6" class="client-dot"/>
+      <text x="576" y="236">ack re-bases replay</text>
+      <text x="80" y="312">render origin = predicted simorg at cl.time = realtime − latency</text>
+      <text x="80" y="338">remote players: f = 0 — newest packet drawn as-is</text>
+      <text x="80" y="364">each input sent 3× with delta compression; msec splits past 50 ms</text>
+    </svg>
+  </div>
+  <figcaption><b>Opposite latency strategies, same game rules.</b> NetQuake buys smoothness by staying behind; QuakeWorld buys gunfeel by simulating ahead and paying for mispredictions with one-round-trip corrections. Sources: QW/client/cl_pred.c:112-212, QW/client/cl_pred.c:125, QW/client/cl_pred.c:64-103, QW/client/cl_input.c:383-474, QW/client/cl_input.c:356-359, QW/client/cl_ents.c:425-430, QW/client/cl_ents.c:970-988, QW/client/cl_main.c:1340-1359, QW/server/sv_main.c:1230-1271.</figcaption>
+  <div class="table-scroll" tabindex="0" role="region" aria-label="NetQuake versus QuakeWorld comparison">
+    <table class="grid">
+      <thead><tr><th scope="col">Aspect</th><th scope="col">NetQuake</th><th scope="col">QuakeWorld</th><th scope="col">Source</th></tr></thead>
+      <tbody>
+        <tr><td>Self movement</td><td>Nothing newer than interpolation between old snapshots.</td><td>Re-simulates every unacked command through PlayerMove each frame into simorg.</td><td>QW/client/cl_pred.c:112-212, QW/client/cl_pred.c:64-103</td></tr>
+        <tr><td>Render time</td><td>cl.time fitted between the last two server timestamps.</td><td>cl.time = realtime − latency − pushlatency; no acked baseline means no prediction.</td><td>QW/client/cl_pred.c:122-136, QW/client/cl_pred.c:125</td></tr>
+        <tr><td>Correction</td><td>Clock resets and per-entity relink overrides.</td><td>Implicit: each frame replays from the newest acked state; mispredictions last one round trip.</td><td>QW/client/cl_pred.c:168-177, QW/client/cl_pred.c:205-211</td></tr>
+        <tr><td>Input contents</td><td>Velocities and angles, no duration; one command per frame.</td><td>msec duration travels with the input; last three commands sent redundantly, delta-compressed.</td><td>QW/client/cl_input.c:356-359, QW/client/cl_input.c:435-447</td></tr>
+        <tr><td>Remote entities</td><td>Blended msg_origins[1] → [0] by frac.</td><td>f = 0, both samples point at the latest state; half-predicted ≤255 ms for collision only.</td><td>QW/client/cl_ents.c:425-430, QW/client/cl_ents.c:970-988</td></tr>
+        <tr><td>Server clock</td><td>Steps inside the host player's frame loop.</td><td>Own process and clock; simulates, then reads packets, then replies.</td><td>QW/server/sv_main.c:1230-1271</td></tr>
+      </tbody>
+    </table>
+  </div>
+</figure>
