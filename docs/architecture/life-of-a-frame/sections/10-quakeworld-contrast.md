@@ -9,10 +9,12 @@ a separate process. Same game rules, opposite latency strategy.
 > QuakeWorld's client stamps each input with milliseconds (`msec`), sends the
 > last three commands redundantly, and replays unacked commands through the real
 > player physics (`PlayerMove`) every frame — then blends the result toward
-> server time. Remote entities are *not* interpolated in this build (`f = 0; //
-> FIXME: no interpolation right now`). The server is a standalone program with
-> no client half at all. Sources: `QW/client/cl_pred.c:112-212`,
-> `QW/client/cl_input.c:383-474`, `QW/server/sv_main.c:1230-1271`. [Return to
+> server time. Remote players extrapolate their last command; packet entities
+> have no interpolation (`f = 0; // FIXME: no interpolation right now`). The
+> server is a standalone program with no client half at all. Sources:
+> `QW/client/cl_pred.c:112-212`,
+> `QW/client/cl_input.c:383-474`, `QW/client/cl_ents.c:867-886`,
+> `QW/client/cl_ents.c:425-430`, `QW/server/sv_main.c:1230-1271`. [Return to
 > the frame map →](#pipe)
 
 > **Scope.** Everything else in this guide cites `WinQuake/` at commit
@@ -124,10 +126,13 @@ void SV_Frame (float time)
 ```
 
 Two orderings differ from NetQuake's `Host_ServerFrame` beyond the missing
-client: packets are read *after* physics (the server simulates, then ingests
-input for the next step, then replies), and console commands are drained
-mid-frame rather than before simulation. The server loop itself is event-driven
-— `select` on socket plus stdin with a 1 s (unix) or 100 µs (Windows) timeout —
+client: autonomous entity physics runs before packet reception, and console
+commands are drained mid-frame. Player movement runs during reception:
+`SV_ReadPackets` calls `SV_ExecuteClientMessage`, which executes `SV_RunCmd`
+before the reply (`QW/server/sv_main.c:1110-1116`,
+`QW/server/sv_user.c:1640-1657`). Inputs do not wait for the next world step.
+The server loop itself is event-driven — `select` on socket plus stdin with a
+1 s (unix) or 100 µs (Windows) timeout —
 so the tic rate floats with traffic instead of sleeping to a fixed
 `sys_ticrate`. There is no listen-server mode and no loopback fast path: every
 client, even on localhost, speaks the wire protocol. What NetQuake got from
@@ -173,7 +178,7 @@ delta-compression state for the *downstream* (`clc_delta` with
 entity baseline the client can delta from — NetQuake's server sends full
 baselines and bitmask deltas without client feedback (see [input and
 networking](#sec-6)). During demo playback `CL_SendCmd` returns immediately
-(`QW/client/cl_input.c:390-391`): commands come from the file, as in NetQuake.
+(`QW/client/cl_input.c:393-394`): commands come from the file, as in NetQuake.
 
 ## Predicting yourself: `CL_PredictMove`
 
@@ -201,9 +206,9 @@ Each single step (`QW/client/cl_pred.c:64-103`) loads a `pmove` from the `from`
 state, installs the command, calls `PlayerMove`, and writes the `to` state —
 splitting commands longer than 50 ms into halves recursively
 (`QW/client/cl_pred.c:67-78`) so a hitch never integrates one giant step.
-`CL_NudgePosition` (`QW/client/cl_pred.c:37-57`) then un-sticks origins that
-landed inside solid geometry by the 1/8-unit network quantum, compensating for
-coordinate precision the wire format threw away.
+For non-spectators, `PlayerMove` first calls `NudgePosition`
+(`QW/client/pmove.c:869-875`), which tries 1/8-unit offsets to escape solid
+geometry after network rounding (`QW/client/pmove.c:735-769`).
 
 The result lands in `cl.simorg` / `cl.simvel` (`QW/client/client.h:247-248`),
 with view rendering driven from `cl.simangles` — the client's render origin is
@@ -219,21 +224,21 @@ anti-lerp heuristic: never blend across a discontinuity.
 
 ## Everyone else: half-predicted, un-interpolated
 
-The local player is special; the other 31 are not simulated, but they are
-lightly extrapolated. `CL_SetUpPlayerPrediction` (`QW/client/cl_ents.c:950-996`)
-runs twice per frame — once with `dopred=false` before `CL_PredictMove` (frozen
-positions for collision), once with `true` after (extrapolated positions for
-rendering). For each remote player present in the latest frame it predicts
-forward by `500*(playertime - state->state_time)` milliseconds of their last
-command (`QW/client/cl_ents.c:970-988`), capped at 255 ms and halved by design
-("only predict half the move to minimize overruns"). `CL_SetSolidPlayers`
-(`QW/client/cl_ents.c:1021-1048`) then injects those positions as `physent_t`
-boxes so the local player's `PlayerMove` collides against *where opponents
-appear to be*, not where the server last said they were — gated by the
-`cl_solid_players` cvar, since solid opponents can also feel wrong when the
-extrapolation overshoots.
+The local player replays its buffered commands; remote players extrapolate their
+last command. `CL_SetUpPlayerPrediction` (`QW/client/cl_ents.c:950-1009`) runs
+twice per frame: `dopred=false` supplies snapshot positions for local player
+collision, then `true` supplies extrapolated positions for remote player
+collision. `CL_SetSolidPlayers` inserts those positions as `physent_t` boxes,
+gated by `cl_solid_players` (`QW/client/cl_ents.c:1021-1053`).
 
-What the client does *not* do is interpolate the entity stream.
+Rendering has its own prediction in `CL_LinkPlayers`: it advances each remote
+player by `500*(playertime - state->state_time)` milliseconds of their last
+command, caps this at 255 ms, and copies the result into `ent->origin`
+(`QW/client/cl_ents.c:867-886`). The factor 500 predicts only half the elapsed
+time "to minimize overruns". If both `cl_predict_players` and
+`cl_predict_players2` are off, it copies the latest snapshot instead.
+
+Packet entities have no interpolation.
 `CL_LinkPacketEntities` (`QW/client/cl_ents.c:408-...`) draws the newest packet
 as-is:
 
@@ -253,7 +258,7 @@ delta-compresses whole `entity_state_t`s against a previous packet the client
 acknowledges (`cl.validsequence`, `UPDATE_BACKUP` = 64 buffered frames,
 `UPDATE_MASK` = 63, `QW/client/protocol.h:246-248`; `packet_entities_t` capped
 at 64 entities per packet, `QW/client/protocol.h:267-271`). Bandwidth comes from
-acknowledging shared history; smoothness for remote entities is simply deferred
+acknowledging shared history; smoothness for packet entities is simply deferred
 — the era's tradeoff, favoring the shooter's own gunfeel over spectators' glide,
 with the FIXME marking the known gap.
 
@@ -262,35 +267,40 @@ with the FIXME marking the known gap.
 ## Call graph
 
 ```
-QW server: main (server/sys_unix.c:254, server/sys_win.c:236)
-  select(socket + stdin) -> SV_Frame(time) (server/sv_main.c:1230)
-    SV_Physics (server/sv_main.c:1254)
-    SV_ReadPackets (server/sv_main.c:1257)
-    SV_GetConsoleCommands (server/sv_main.c:1260)
-    Cbuf_Execute (server/sv_main.c:1263)
-    SV_SendClientMessages (server/sv_main.c:1268)
-    Master_Heartbeat (server/sv_main.c:1271)
+QW server: main (QW/server/sys_unix.c:254, QW/server/sys_win.c:236)
+  select(socket + stdin) -> SV_Frame(time) (QW/server/sv_main.c:1230)
+    SV_Physics (QW/server/sv_main.c:1254)
+    SV_ReadPackets (QW/server/sv_main.c:1257)
+      SV_ExecuteClientMessage (QW/server/sv_main.c:1116)
+        SV_RunCmd (QW/server/sv_user.c:1655)
+          PlayerMove (QW/server/sv_user.c:1467)
+    SV_GetConsoleCommands (QW/server/sv_main.c:1260)
+    Cbuf_Execute (QW/server/sv_main.c:1263)
+    SV_SendClientMessages (QW/server/sv_main.c:1268)
+    Master_Heartbeat (QW/server/sv_main.c:1271)
 
-QW client: Host_Frame(time) (client/cl_main.c:1302)
-  fps gate from cl_maxfps/rate (client/cl_main.c:1317-1328)
-  CL_ReadPackets (client/cl_main.c:935)
+QW client: Host_Frame(time) (QW/client/cl_main.c:1302)
+  fps gate from cl_maxfps/rate (QW/client/cl_main.c:1317-1328)
+  CL_ReadPackets (QW/client/cl_main.c:935)
     Netchan_Process + CL_ParseServerMessage
-  CL_SendCmd (client/cl_input.c:383)
-    archive cmd into cl.frames[outgoing & UPDATE_MASK] (client/cl_input.c:397)
-    CL_BaseMove (client/cl_input.c:282) + IN_Move
-    CL_FinishMove: msec = host_frametime*1000 (client/cl_input.c:356-359)
-    MSG_WriteDeltaUsercmd x3 + checksum (client/cl_input.c:435-447)
-    Netchan_Transmit (client/cl_input.c:474)
-  CL_SetUpPlayerPrediction(false) (client/cl_ents.c:950)
-  CL_PredictMove (client/cl_pred.c:112)
-    cl.time = realtime - latency - pushlatency (client/cl_pred.c:125)
-    CL_PredictUsercmd per buffered cmd (client/cl_pred.c:64)
-      PlayerMove on pmove (client/cl_pred.c:92)
-      split msec > 50 (client/cl_pred.c:67-78)
-    write cl.simorg/simvel (client/cl_pred.c:205-211)
+  CL_SendCmd (QW/client/cl_input.c:383)
+    archive cmd into cl.frames[outgoing & UPDATE_MASK] (QW/client/cl_input.c:397)
+    CL_BaseMove (QW/client/cl_input.c:282) + IN_Move
+    CL_FinishMove: msec = host_frametime*1000 (QW/client/cl_input.c:356-359)
+    MSG_WriteDeltaUsercmd x3 + checksum (QW/client/cl_input.c:435-447)
+    Netchan_Transmit (QW/client/cl_input.c:474)
+  CL_SetUpPlayerPrediction(false) (QW/client/cl_ents.c:950)
+  CL_PredictMove (QW/client/cl_pred.c:112)
+    cl.time = realtime - latency - pushlatency (QW/client/cl_pred.c:125)
+    CL_PredictUsercmd per buffered cmd (QW/client/cl_pred.c:64)
+      PlayerMove on pmove (QW/client/cl_pred.c:92)
+        NudgePosition (QW/client/pmove.c:875)
+      split msec > 50 (QW/client/cl_pred.c:67-78)
+    write cl.simorg/simvel (QW/client/cl_pred.c:205-211)
   CL_SetUpPlayerPrediction(true)
-  CL_EmitEntities (client/cl_ents.c:1065)
-    CL_LinkPlayers + CL_LinkPacketEntities (f = 0, no lerp) (client/cl_ents.c:408-430)
+  CL_EmitEntities (QW/client/cl_ents.c:1065)
+    CL_LinkPlayers (half-prediction) (QW/client/cl_ents.c:867-886)
+    CL_LinkPacketEntities (f = 0, no lerp) (QW/client/cl_ents.c:408-430)
 ```
 
 ## Key data structures

@@ -73,15 +73,19 @@ which is why playback speed depends on the frame loop rather than the file.
 ## Recording: `record`, and the `stop` trailer
 
 `CL_Record_f` (`WinQuake/cl_demo.c:196-258`) implements `record <demoname>
-[<map> [cd track]]`. Three guards come first: the command must come from the
-console (`cmd_source != src_command` returns, so QuakeC or aliases cannot start
-recordings), pathnames containing `..` are rejected, and recording
-mid-connection is refused — with two arguments while `cls.state == ca_connected`
-it prints "Can not record - already connected to server" and returns
+[<map> [cd track]]`. Three guards come first: client-issued commands are rejected
+(`cmd_source != src_command` returns), pathnames containing `..` are rejected,
+and recording mid-connection is refused — with two arguments while
+`cls.state == ca_connected` it prints "Can not record - already connected to
+server" and returns
 (`WinQuake/cl_demo.c:218-222`). Recording must start before connecting because
 the demo needs the full signon handshake (serverinfo, baselines, precaches) from
 message zero; joining mid-stream would produce a file missing everything the
 client needs to decode later updates.
+
+Aliases and QuakeC `localcmd` can start recordings: both queue text that
+`Cbuf_Execute` runs with `src_command` (`WinQuake/cmd.c:183-184`,
+`WinQuake/cmd.c:636-643`, `WinQuake/pr_cmds.c:830-836`).
 
 With three or more arguments the command first starts the map
 (`Cmd_ExecuteString (va("map %s", ...))`, `WinQuake/cl_demo.c:239`), then opens
@@ -143,8 +147,9 @@ consumes one packet and the benchmark counts frames, not wall time. Normal
 playback instead compares clocks: if `cl.time` (advanced by `host_frametime`
 each `CL_ReadFromServer`) has not passed the last message's timestamp
 `cl.mtime[0]`, return 0 and render another frame on the existing state. This
-reuses the same "don't need another message yet" gate as live play, so demo
-playback inherits live interpolation behavior for free — including the
+gate is playback-only; live reception drains `NET_GetMessage` without comparing
+these clocks (`WinQuake/cl_demo.c:138-155`). Both paths share the parser and
+relinker, so playback uses the same interpolation — including the
 `CL_LerpPoint` fast path that snaps `frac` to 1 when `cls.timedemo` is set
 (`WinQuake/cl_main.c:397`).
 
@@ -294,9 +299,9 @@ different order — is a fatal `Sys_Error ("VCR missmatch")`, and end of log is 
 fatal `"=== END OF PLAYBACK==="` (`WinQuake/net_vcr.c:61`). That strictness is
 the point: the VCR is a debugging tool for reproducing exact network timing
 (notably around the dialup-era serial drivers), and silent divergence would make
-reproductions untrustworthy. The Linux dedicated loop even exempts VCR recording
-from its ticrate sleep (`vcrFile == -1 || recording`,
-`WinQuake/sys_linux.c:411`) so the log captures unthrottled timing. Demos record
+reproductions untrustworthy. The Linux dedicated loop exempts VCR playback
+from its ticrate sleep (`vcrFile != -1 && !recording`); recording retains the
+sleep (`WinQuake/sys_linux.c:409-416`). Demos record
 *what the game said*; the VCR records *when the network said it* — use the
 former to watch a game, the latter to replay a bug.
 

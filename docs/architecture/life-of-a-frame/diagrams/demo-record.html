@@ -40,7 +40,7 @@
       <text x="40" y="366">stop trailer: lone svc_disconnect byte closes cleanly</text>
     </svg>
   </div>
-  <figcaption><b>File instead of socket, paced by contents.</b> The layout is fixed-width except the payload; the pacing reuses the live "don't need another message yet" gate, so playback inherits interpolation for free. Sources: WinQuake/cl_demo.c:66-81, WinQuake/cl_demo.c:90-156, WinQuake/cl_demo.c:178-180, WinQuake/cl_demo.c:347-366, WinQuake/client.h:69, WinQuake/cl_main.c:397, WinQuake/cl_main.c:634, WinQuake/host.c:505.</figcaption>
+  <figcaption><b>File instead of socket, paced by contents.</b> The layout is fixed-width except the payload. The clock gate applies only to playback; live reception drains the socket. Both paths share parsing and interpolation. Sources: WinQuake/cl_demo.c:66-81, WinQuake/cl_demo.c:90-156, WinQuake/cl_demo.c:178-180, WinQuake/cl_demo.c:347-366, WinQuake/client.h:69, WinQuake/cl_main.c:397, WinQuake/cl_main.c:634, WinQuake/host.c:505.</figcaption>
   <div class="table-scroll" tabindex="0" role="region" aria-label="Demo record fields and pacing rules">
     <table class="grid">
       <thead><tr><th scope="col">Part</th><th scope="col">Behavior</th><th scope="col">Source</th></tr></thead>
@@ -51,7 +51,7 @@
         <tr><td>Payload</td><td>Raw net_message bytes, followed by fflush so a crash keeps a playable prefix.</td><td>WinQuake/cl_demo.c:66-81</td></tr>
         <tr><td>Pre-signon</td><td>Before signon == 4, every call grabs the next record; loading never waits on a clock.</td><td>WinQuake/cl_demo.c:95-114, WinQuake/client.h:69</td></tr>
         <tr><td>Timedemo</td><td>Exactly one message per host_framecount; start time re-grabbed on the second frame to skip load time; 72 Hz gate bypassed.</td><td>WinQuake/cl_demo.c:95-114, WinQuake/cl_demo.c:347-366, WinQuake/host.c:505</td></tr>
-        <tr><td>Normal playback</td><td>Return 0 while cl.time has not passed mtime[0]; otherwise read the next record. Same gate as live play.</td><td>WinQuake/cl_demo.c:95-114, WinQuake/cl_main.c:634</td></tr>
+        <tr><td>Normal playback</td><td>Return 0 while cl.time has not passed mtime[0]; otherwise read the next record. Live reception has no clock gate.</td><td>WinQuake/cl_demo.c:95-155, WinQuake/cl_main.c:634</td></tr>
         <tr><td>End of file</td><td>Short read calls CL_StopPlayback; a timedemo then prints frames over wall seconds.</td><td>WinQuake/cl_demo.c:117-135, WinQuake/cl_demo.c:325-338</td></tr>
       </tbody>
     </table>

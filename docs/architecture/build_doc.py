@@ -8,7 +8,7 @@ inline code/math, bold/italic, links, bullet/numbered lists, tables,
 blockquotes, horizontal rules.
 
 Plus Quake-specific transforms:
-  * WinQuake/file.c:NNN[-MMM]  ->  link to upstream id-Software/Quake
+  * WinQuake/ and QW/ refs    ->  link to upstream id-Software/Quake
   * ``` fences               ->  <figure class="code"> with a ref header bar
   * "## Call graph" fence     ->  nested collapsible <details> tree
   * "## Key data structures"  ->  table
@@ -35,19 +35,21 @@ PREVIEWS = {}   # (scheme, anchor) -> short description of the target heading
 
 ASSETS = os.path.join(os.path.dirname(os.path.abspath(__file__)), "assets")
 
-GH = "https://github.com/id-Software/Quake/blob/master/WinQuake/"
+GH = "https://github.com/id-Software/Quake/blob/master/"
+DEFAULT_REF_DIR = "WinQuake/"
 
 
 # ---------------------------------------------------------------- refs
 
-# C/header/assembly refs: WinQuake/foo.c:12-34 | WinQuake/foo.s:12 | WinQuake/foo.h
-REF_QUALIFIED = re.compile(r"WinQuake/([A-Za-z0-9_]+\.[chs])(?::(\d+)(?:-(\d+))?)?")
-# bare foo.c:12 — only used inside call-graph trees, where it is unambiguous
-REF_BARE = re.compile(r"\b([A-Za-z0-9_]+\.[chs]):(\d+)(?:-(\d+))?")
+# Keep the tree in qualified refs; bare call-tree refs default to WinQuake.
+REF_PATH_PATTERN = r"(?:WinQuake|QW/(?:client|server))/[A-Za-z0-9_]+\.[chs]"
+REF_QUALIFIED = re.compile(r"(" + REF_PATH_PATTERN + r")(?::(\d+)(?:-(\d+))?)?")
+REF_BARE = re.compile(r"(?<![\w/])(" + REF_PATH_PATTERN
+                      + r"|[A-Za-z0-9_]+\.[chs]):(\d+)(?:-(\d+))?")
 
 
 def ref_url(fname, start, end):
-    u = GH + fname
+    u = GH + (fname if "/" in fname else DEFAULT_REF_DIR + fname)
     if start:
         u += "#L" + start
         if end:
@@ -56,7 +58,7 @@ def ref_url(fname, start, end):
 
 
 def link_refs(text, bare=False):
-    """Linkify WinQuake refs in already-HTML-escaped text."""
+    """Linkify source refs in already-HTML-escaped text."""
 
     def sub(m):
         fname, start, end = m.group(1), m.group(2), m.group(3)
@@ -392,7 +394,7 @@ def convert(md, sec_index, sec_id, kicker):
             # ref for the header bar
             ref = None
             body = code.split("\n")
-            if body and re.match(r"^\s*(//|/\*)\s*WinQuake/", body[0]):
+            if body and re.match(r"^\s*(//|/\*)\s*" + REF_PATH_PATTERN, body[0]):
                 ref = first_ref(body[0])
                 code = "\n".join(body[1:]).lstrip("\n")
             if not ref:

@@ -1,10 +1,10 @@
 <figure class="concept" id="qw-contrast" aria-labelledby="qw-contrast-title">
   <h3 id="qw-contrast-title">NetQuake interpolates the past; QuakeWorld predicts the present</h3>
-  <p>NetQuake holds displayed time between the last two server snapshots and blends; QuakeWorld simulates the local player immediately from timestamped inputs and re-bases the replay on every server ack. Remote entities get no interpolation in this build — the newest packet draws as-is.</p>
+  <p>NetQuake holds displayed time between the last two server snapshots and blends; QuakeWorld simulates the local player immediately from timestamped inputs and re-bases the replay on every server ack. Remote players extrapolate their last command; other packet entities draw from the newest snapshot without interpolation.</p>
   <div class="svg-scroll">
     <svg class="explain-svg" viewBox="0 0 800 380" role="img" aria-labelledby="qw-contrast-t qw-contrast-d">
       <title id="qw-contrast-t">NetQuake interpolation versus QuakeWorld prediction timeline</title>
-      <desc id="qw-contrast-d">Top lane: two server snapshots on a time axis; the displayed position sits between them at an interpolated fraction, and nothing is drawn past the newest snapshot. Bottom lane: a local input stamped with its duration starts a predicted line immediately through shared player physics; a later server ack snaps the replay base forward. Remote entities are drawn from the newest packet with no blending. The table below is the text equivalent.</desc>
+      <desc id="qw-contrast-d">Top lane: two server snapshots on a time axis; the displayed position sits between them at an interpolated fraction, and nothing is drawn past the newest snapshot. Bottom lane: a local input stamped with its duration starts a predicted line immediately through shared player physics; a later server ack snaps the replay base forward. Remote players extrapolate their last command; other packet entities draw from the newest snapshot without interpolation. The table below is the text equivalent.</desc>
       <text x="32" y="28" class="svg-heading">NetQuake: display between the last two snapshots</text>
       <path d="M80 90H720" class="divider-line"/>
       <circle cx="300" cy="90" r="6" class="client-dot"/>
@@ -27,11 +27,11 @@
       <circle cx="560" cy="260" r="6" class="client-dot"/>
       <text x="576" y="236">ack re-bases replay</text>
       <text x="80" y="312">render origin = predicted simorg at cl.time = realtime − latency</text>
-      <text x="80" y="338">remote players: f = 0 — newest packet drawn as-is</text>
+      <text x="80" y="338">remote players: half-predicted; packet entities: no interpolation</text>
       <text x="80" y="364">each input sent 3× with delta compression; msec splits past 50 ms</text>
     </svg>
   </div>
-  <figcaption><b>Opposite latency strategies, same game rules.</b> NetQuake buys smoothness by staying behind; QuakeWorld buys gunfeel by simulating ahead and paying for mispredictions with one-round-trip corrections. Sources: QW/client/cl_pred.c:112-212, QW/client/cl_pred.c:125, QW/client/cl_pred.c:64-103, QW/client/cl_input.c:383-474, QW/client/cl_input.c:356-359, QW/client/cl_ents.c:425-430, QW/client/cl_ents.c:970-988, QW/client/cl_main.c:1340-1359, QW/server/sv_main.c:1230-1271.</figcaption>
+  <figcaption><b>Opposite latency strategies, same game rules.</b> NetQuake buys smoothness by staying behind; QuakeWorld buys gunfeel by simulating ahead and paying for mispredictions with one-round-trip corrections. Sources: QW/client/cl_pred.c:112-212, QW/client/cl_pred.c:125, QW/client/cl_pred.c:64-103, QW/client/cl_input.c:383-474, QW/client/cl_input.c:356-359, QW/client/cl_ents.c:425-430, QW/client/cl_ents.c:867-886, QW/client/cl_main.c:1340-1359, QW/server/sv_main.c:1230-1271.</figcaption>
   <div class="table-scroll" tabindex="0" role="region" aria-label="NetQuake versus QuakeWorld comparison">
     <table class="grid">
       <thead><tr><th scope="col">Aspect</th><th scope="col">NetQuake</th><th scope="col">QuakeWorld</th><th scope="col">Source</th></tr></thead>
@@ -40,8 +40,8 @@
         <tr><td>Render time</td><td>cl.time fitted between the last two server timestamps.</td><td>cl.time = realtime − latency − pushlatency; no acked baseline means no prediction.</td><td>QW/client/cl_pred.c:122-136, QW/client/cl_pred.c:125</td></tr>
         <tr><td>Correction</td><td>Clock resets and per-entity relink overrides.</td><td>Implicit: each frame replays from the newest acked state; mispredictions last one round trip.</td><td>QW/client/cl_pred.c:168-177, QW/client/cl_pred.c:205-211</td></tr>
         <tr><td>Input contents</td><td>Velocities and angles, no duration; one command per frame.</td><td>msec duration travels with the input; last three commands sent redundantly, delta-compressed.</td><td>QW/client/cl_input.c:356-359, QW/client/cl_input.c:435-447</td></tr>
-        <tr><td>Remote entities</td><td>Blended msg_origins[1] → [0] by frac.</td><td>f = 0, both samples point at the latest state; half-predicted ≤255 ms for collision only.</td><td>QW/client/cl_ents.c:425-430, QW/client/cl_ents.c:970-988</td></tr>
-        <tr><td>Server clock</td><td>Steps inside the host player's frame loop.</td><td>Own process and clock; simulates, then reads packets, then replies.</td><td>QW/server/sv_main.c:1230-1271</td></tr>
+        <tr><td>Remote entities</td><td>Blended msg_origins[1] → [0] by frac.</td><td>Packet entities: f = 0, newest snapshot. Remote players: half-predicted up to 255 ms for rendering and collision.</td><td>QW/client/cl_ents.c:425-430, QW/client/cl_ents.c:867-886, QW/client/cl_ents.c:988-1005</td></tr>
+        <tr><td>Server clock</td><td>Steps inside the host player's frame loop.</td><td>Own process and clock; autonomous physics, then packet-driven player movement, then replies.</td><td>QW/server/sv_main.c:1230-1271, QW/server/sv_user.c:1640-1657</td></tr>
       </tbody>
     </table>
   </div>

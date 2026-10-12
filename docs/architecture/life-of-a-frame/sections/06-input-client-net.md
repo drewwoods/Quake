@@ -14,7 +14,7 @@ authoritative result.
 > locally. Source: `WinQuake/keys.c:599-714`, `WinQuake/cl_input.c:283-323`,
 > `WinQuake/cl_main.c:391-434`. [Next: the server and QuakeC →](#sec-2)
 
-::: diagram ownership
+See [one press of “forward”](#ownership) for the client/server handoffs.
 
 ::: diagram interpolation
 

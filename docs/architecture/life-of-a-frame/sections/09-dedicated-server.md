@@ -149,13 +149,12 @@ construction, and the console/input code reads whichever layer it belongs to.
 
 The Linux loop (`WinQuake/sys_linux.c:402-424`) has the same shape with one
 extra clause: while dedicated, frames short of `sys_ticrate` are skipped via
-`usleep(1)` *unless a VCR recording is in progress* (`if (time <
+`usleep(1)` *unless VCR playback is in progress* (`if (time <
 sys_ticrate.value && (vcrFile == -1 || recording))`,
 `WinQuake/sys_linux.c:411`), then the delta is replaced wholesale with `time =
-sys_ticrate.value` (`WinQuake/sys_linux.c:416`). VCR capture (see
-[demos](#sec-8)) needs unthrottled timing, so recording exempts the process from
-pacing; playback instead drives timing from the log. Note the consequence for
-simulation: `host_frametime` on a dedicated server is nearly constant at
+sys_ticrate.value` (`WinQuake/sys_linux.c:416`). VCR recording retains the sleep;
+playback runs at maximum speed with the same fixed delta (see [demos](#sec-8)).
+Note the consequence for simulation: `host_frametime` is nearly constant at
 `sys_ticrate`, so `SV_Physics` integrates fixed-size steps and QuakeC sees a
 steady `frametime` — unlike a listen server, whose step varies with the host
 player's render rate. The 72 Hz cap in `Host_FilterTime` still applies in
